@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { MapScene } from "./scene.js";
+import { MapScene, nearestTown } from "./scene.js";
 import { EXPLAIN_URL } from "./config.js";
 import { ARCH, VARS, SOURCES, GUIDES, matchText } from "./scout.js";
 import * as charts from "./charts.js";
@@ -36,7 +36,10 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 const y2015 = T.find((d) => d.year === 2015);
 $("#heroStat").textContent = `Niño 3.4 hit +${O.nino34_max_2026.toFixed(2)} °C in ${MONTHS[O.nino34_monthly.at(-1)[0] - 1]} 2026.`;
 $("#heroSub").innerHTML = `The previous high in the NOAA ERSSTv5 record since 1950 was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire pixels</b> across Sumatra and Borneo in four months, and the haze crossed borders.`;
-$("#liveLine").textContent = `Latest · ${A.live.n} MODIS fire pixels in the study area, ${A.live.from} → ${A.live.to} (8-day composite, NASA AppEEARS)`;
+// the AppEEARS build writes a "sensor" field and 8-day composites; the previous build carried the NASA FIRMS 7-day feed
+$("#liveLine").textContent = A.live.sensor
+  ? `Latest · ${A.live.n} MODIS fire pixels in the study area, ${A.live.from} → ${A.live.to} (8-day composite, NASA AppEEARS)`
+  : `Latest · ${A.live.n} MODIS fire detections in the study area, ${A.live.from} → ${A.live.to} (NASA FIRMS, 7-day feed)`;
 $("#genTime").textContent = A.generated.replace("T", " ");
 
 const hero = new MapScene($("#heroScene"), { terrain, grid: A.grid, autoRotate: true, camera: "hero", labels: false, interactive: false, rotate: true });
@@ -60,9 +63,17 @@ setInterval(() => { nodes.forEach((n, i) => n.classList.toggle("lit", i === litI
 // ------------------------------------------------------------------ evidence
 const tr = Object.fromEntries(A.trends.map((t) => [t.key, t]));
 const cellsSig = A.spatial.filter((c) => c.sig_fdr);
+// name the places from the data: the nearest town to the strongest falling / rising cells
+const falling = cellsSig.filter((c) => c.sen < 0).sort((a, b) => a.sen - b.sen), rising = cellsSig.filter((c) => c.sen > 0).sort((a, b) => b.sen - a.sen);
+const townsOf = (cs, n) => [...new Set(cs.map((c) => nearestTown(c.lon, c.lat)).filter((t) => t.km <= 120 && !/^(Singapore|Kuala Lumpur)$/.test(t.name)).map((t) => t.name))].slice(0, n);
+const joinList = (a) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a.at(-1)}` : a[0] ?? "");
+const fallList = joinList(townsOf(falling.slice(0, 12), 3)), riseList = joinList(townsOf(rising, 2));
+const whereText = `are significantly falling after FDR control${fallList ? `, strongest around ${fallList}` : ""}. `
+  + (rising.length ? `${rising.length === 1 ? "One cell is" : `${rising.length} cells are`} significantly rising${riseList ? `, around ${riseList}` : ""}.` : "No cell is significantly rising.")
+  + (tr.share_outside ? ` The share of fires outside these two islands grew ${tr.share_outside.pct_per_decade.toFixed(0)}% per decade.` : "");
 const verdicts = [
   ["What", `Fire is falling`, `Fire-season detections are down ${Math.abs(tr.fires_season.pct_per_decade).toFixed(0)}% per decade (p = ${tr.fires_season.p.toFixed(3)}). Aqua-only and Terra-only counts agree.`],
-  ["Where", `${Math.round(100 * cellsSig.filter((c) => c.sen < 0).length / A.spatial.length)}% of cells`, `are significantly falling after FDR control, led by the Riau and Central Kalimantan peat domes. A few East Kalimantan cells are rising, and Indonesia's fire share outside these two islands grew ${tr.share_outside.pct_per_decade.toFixed(0)}% per decade.`],
+  ["Where", `${Math.round(100 * falling.length / A.spatial.length)}% of cells`, whereText],
   ["How much", `−${Math.round(-100 * A.chain.regime_effect)}% at equal dryness`, `After ${A.changepoint.regime_start}, the same soil wetness produces about ${(1 / (1 + A.chain.regime_effect)).toFixed(1)}× fewer fires. Soil wetness also trended wetter (+${tr.soil.pct_per_decade.toFixed(0)}%/decade, p = ${tr.soil.p.toFixed(3)}).`],
   ["Significant?", `Yes, twice`, `Mann–Kendall trend p = ${tr.fires_season.p.toFixed(3)}, and a Pettitt break in climate-adjusted fire at ${A.changepoint.regime_start} (p = ${A.changepoint.regime_p.toFixed(3)}). The chain model scores LOO R² = ${A.chain.soil_to_fires.r2_loo.toFixed(2)}.`],
 ];
@@ -105,7 +116,7 @@ $("#seasonSharePct").textContent = Math.round(100 * seasonShare);
 $("#aquaTrend").textContent = `${tr.fires_aqua_season.pct_per_decade.toFixed(0)}%/decade, p = ${pf(tr.fires_aqua_season.p)}; combined ${tr.fires_season.pct_per_decade.toFixed(0)}%/decade`;
 $("#keyResults").innerHTML = [
   `Fire-season detections: Sen slope ${fmt(tr.fires_season.sen_slope)} per year (${tr.fires_season.pct_per_decade.toFixed(0)}%/decade), p = ${pf(tr.fires_season.p)}. Aqua-only: p = ${pf(tr.fires_aqua_season.p)}. Terra-only 2001–2025: p = ${pf(tr.fires_terra_year.p)}.`,
-  `Root-zone soil wetness trended up ${tr.soil.pct_per_decade.toFixed(1)}%/decade (p = ${pf(tr.soil.p)}), but rainfall (p = ${pf(tr.rain.p)}), Tmax (p = ${pf(tr.tmax.p)}), ONI and DMI show no significant trend.`,
+  `Root-zone soil wetness trended up ${tr.soil.pct_per_decade.toFixed(1)}%/decade (p = ${pf(tr.soil.p)}), but rainfall (p = ${pf(tr.rain.p)}), ${tr.t2m ? "air temperature" : "Tmax"} (p = ${pf((tr.t2m ?? tr.tmax).p)}), ONI and DMI show no significant trend.`,
   `Pettitt change point: raw fire after ${A.changepoint.raw_after} (p = ${pf(A.changepoint.raw_p)}). Climate-adjusted residual: new regime from ${A.changepoint.regime_start} (p = ${pf(A.changepoint.regime_p)}).`,
   `Spatial: ${A.spatial.length} cells tested; ${A.spatial.filter((c) => c.sig_fdr && c.sen < 0).length} significantly decreasing and ${A.spatial.filter((c) => c.sig_fdr && c.sen > 0).length} increasing after FDR.`,
   `Lag structure: rain → soil wetness peaks at a 1-month lag; soil → fire and fire → AOD respond in the same month.`,
