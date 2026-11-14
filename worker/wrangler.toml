@@ -22,9 +22,8 @@ database_id = "a37c07a5-173d-47f0-8301-aec0295b59ca"
 binding = "CACHE"
 id = "36eaf04375ed41579cb138117050f553"
 
-# R2: the big JSON files, served through /data/<file>. Enable R2 in the dashboard, then:
-#   npx wrangler r2 bucket create ember-signal-data
-# and uncomment this block.
-# [[r2_buckets]]
-# binding = "BUCKET"
-# bucket_name = "ember-signal-data"
+# R2: the big JSON files, served through /data/<file>.json
+# (explore, timeline, analysis, terrain, land; uploaded with `wrangler r2 object put`)
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "ember-signal-data"
