@@ -249,7 +249,7 @@ let DATA = /*__DATA__*/null;
     window.__API = API;
     try {
       DATA = null;
-      if (API) { try { const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 4000); const r = await fetch(API + '/data/explore.json', { signal: ctl.signal }); clearTimeout(tm); if (r.ok) DATA = await r.json(); } catch { /* use the local file */ } }
+      if (API && await fetch(API + '/api/health').then(r => r.json()).then(j => !!j.r2).catch(() => false)) { try { const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 4000); const r = await fetch(API + '/data/explore.json', { signal: ctl.signal }); clearTimeout(tm); if (r.ok) DATA = await r.json(); } catch { /* use the local file */ } }
       if (!DATA) DATA = await (await fetch('data.json')).json();
     }
     catch (e) { document.body.innerHTML = '<div style="padding:40px;color:#f0efec;font-family:sans-serif;max-width:640px;line-height:1.6"><h2>No data loaded</h2><p>Run <code>python3 build.py</code> and open the built HTML, or serve this folder with <code>python3 -m http.server</code>.</p></div>'; return; }

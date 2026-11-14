@@ -11,9 +11,12 @@ const fmt = d3.format(",.0f");
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // the big JSON files come from Cloudflare R2 (through the Worker) when it is configured, otherwise from this site
+let r2Ready;
 async function getData(name) {
   if (EXPLAIN_URL) {
     try {
+      r2Ready ||= fetch(`${EXPLAIN_URL.replace(/\/$/, "")}/api/health`).then((r) => r.json()).then((j) => !!j.r2).catch(() => false);
+      if (!(await r2Ready)) throw new Error("R2 not enabled");
       const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
       const r = await fetch(`${EXPLAIN_URL.replace(/\/$/, "")}/data/${name}.json`, { signal: ctl.signal }); clearTimeout(t);
       if (r.ok) return await r.json();
