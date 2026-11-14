@@ -88,21 +88,17 @@ jobs:
     needs: changes
     if: needs.changes.outputs.token == 'true' && needs.changes.outputs.data == 'true'
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - name: Upload JSON files to R2
-        uses: cloudflare/wrangler-action@v3
+      - uses: actions/setup-node@v4
         with:
-          apiToken: ${{ secrets.CF_GITHUB_TOKEN }}
-          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: worker
-          command: |
-            r2 object put ember-signal-data/explore.json --file ../web/explore/data.json --content-type application/json --remote
-      - name: Upload the rest
+          node-version: 22
+      - name: Upload the JSON files to R2
+        working-directory: worker
         run: |
-          cd worker
+          npx --yes wrangler@4 r2 object put ember-signal-data/explore.json --file ../web/explore/data.json --content-type application/json --remote
           for f in timeline analysis terrain land; do
-            npx --yes wrangler r2 object put "ember-signal-data/$f.json" --file "../web/data/$f.json" --content-type application/json --remote
+            npx --yes wrangler@4 r2 object put "ember-signal-data/$f.json" --file "../web/data/$f.json" --content-type application/json --remote
           done
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_GITHUB_TOKEN }}
