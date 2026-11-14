@@ -1,0 +1,19 @@
+# raw downloads (272 MB, re-created by analysis/01_fetch_data.py)
+data/raw/
+
+# third-party prototype used only as a reference while building web/explore
+reference_artifact/
+
+# local tooling / secrets
+.vercel/
+**/.vercel/
+.wrangler/
+node_modules/
+.env
+.env.*
+*.pem
+
+# python / os
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jejak Api · Explore the Islands</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #070b10;
+    --glass: rgba(14, 17, 20, 0.82);
+    --glass-2: rgba(28, 31, 33, 0.9);
+    --line: rgba(255, 255, 255, 0.10);
+    --text: #f0efec;
+    --text-2: #c3c2b7;
+    --muted: #8d8c84;
+    --fire: #ff7a3d;
+    --clue: #fab219;
+    --A: #f2b33d; --B: #e0689a; --C: #c9a26b; --D: #5fa8ff;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 14px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: #86b6ef; }
+  #scene { position: fixed; inset: 0; }
+  #scene canvas { display: block; outline: none; }
+  .glass { background: var(--glass); border: 1px solid var(--line); border-radius: 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+  /* top-left brand + layers */
+  .leftcol { position: fixed; top: 14px; left: 14px; width: 330px; z-index: 5; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 28px); overflow-y: auto; }
+  .brand { padding: 12px 14px; }
+  .brand h1 { margin: 0; font-size: 20px; letter-spacing: .2px; }
+  .brand h1 span { color: var(--fire); }
+  .brand p { margin: 3px 0 0; font-size: 12.5px; color: var(--text-2); line-height: 1.45; }
+  .proto { display: inline-block; margin-top: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--clue);
+    border: 1px dashed rgba(250,178,25,.6); border-radius: 4px; padding: 2px 6px; }
+  .proto.real { color: #8fd18f; border: 1px solid rgba(12,163,12,.55); background: rgba(12,163,12,.08); }
+  .pending { color: var(--muted); font-style: italic; }
+  .layers { padding: 8px; display: grid; gap: 4px; }
+  .layer { display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid transparent;
+    background: transparent; border-radius: 10px; padding: 7px 8px; }
+  .layer:hover { background: rgba(255,255,255,.04); }
+  .layer[aria-pressed="true"] { background: rgba(255,255,255,.07); border-color: var(--line); }
+  .layer .k { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #111; flex: none; }
+  .layer .t { display: block; font-size: 13.5px; }
+  .layer .d { display: block; font-size: 11.5px; color: var(--muted); }
+  .layer .lit { margin-left: auto; font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+  .lit.on { color: var(--clue); border: 1px solid rgba(250,178,25,.5); background: rgba(250,178,25,.10); }
+  .lit.off { color: var(--muted); border: 1px solid var(--line); }
+  .legend { padding: 8px 10px 4px; font-size: 11.5px; color: var(--text-2); border-top: 1px solid var(--line); margin-top: 4px; }
+  .legend .bar { height: 8px; border-radius: 3px; margin: 6px 0 3px; }
+  .legend .ends { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+  /* headline */
+  .headline { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); padding: 10px 18px; z-index: 4; text-align: center; pointer-events: none; min-width: 360px; }
+  .headline .m { font-size: 24px; font-weight: 700; }
+  .headline .s { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+  .headline .s b { color: var(--fire); }
+
+  /* time bar */
+  .timebar { position: fixed; left: 358px; right: 434px; bottom: 14px; padding: 10px 14px 8px; z-index: 5; }
+  .tb-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .tb-top .now { font-size: 15px; font-weight: 700; min-width: 140px; }
+  .pill { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+  .pill.play { background: var(--fire); color: #1c0d04; border: 0; font-weight: 700; }
+  .pill[aria-pressed="true"] { border-color: var(--fire); color: var(--fire); }
+  .spacer { flex: 1; }
+  #tl { width: 100%; height: 64px; display: block; cursor: pointer; }
+
+  /* right panel: case file */
+  .panel { position: fixed; top: 14px; right: 14px; bottom: 14px; width: 406px; z-index: 6; overflow-y: auto; padding: 16px; }
+  .panel h2 { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin: 18px 0 8px; font-weight: 500; }
+  .place { font-size: 24px; font-weight: 700; line-height: 1.15; }
+  .placesub { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin: 6px 4px 0 0; border: 1px solid var(--line); color: var(--text-2); }
+  .close { float: right; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 3px 9px; color: var(--muted); }
+  .nowbox { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--glass-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .stat .v { font-family: var(--mono); font-size: 22px; }
+  .stat .l { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .risk { grid-column: span 2; display: flex; align-items: center; gap: 10px; }
+  .riskbar { flex: 1; height: 8px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .riskbar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6b2626, #ff7b66, #ffd0c4); }
+  .clue { background: var(--glass-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px 6px; margin-bottom: 6px; }
+  .clue .row { display: flex; align-items: center; gap: 8px; }
+  .clue .k { width: 20px; height: 20px; border-radius: 5px; display: grid; place-items: center; font-weight: 700; font-size: 11px; color: #111; flex: none; }
+  .clue .n { font-size: 13px; }
+  .clue .v { margin-left: auto; font-family: var(--mono); font-size: 15px; }
+  .clue .v small { font-size: 10.5px; color: var(--muted); }
+  .clue .meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .chip { font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+  .chip.on { color: var(--clue); border: 1px solid rgba(250,178,25,.5); background: rgba(250,178,25,.1); }
+  .chip.off { color: var(--muted); border: 1px solid var(--line); }
+  .chip.na { color: var(--muted); border: 1px dashed var(--line); }
+  svg.spark { width: 100%; height: 40px; display: block; margin-top: 4px; }
+  svg.hist { width: 100%; height: 96px; display: block; }
+  table.proof { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.proof th { text-align: left; font-weight: 500; color: var(--muted); font-size: 10.5px; padding: 4px 4px; border-bottom: 1px solid var(--line); }
+  table.proof td { padding: 6px 4px; border-bottom: 1px solid var(--line); font-family: var(--mono); }
+  table.proof tr.y { cursor: pointer; }
+  table.proof tr.y:hover td { background: rgba(255,255,255,.04); }
+  table.proof tr.now td { color: var(--fire); }
+  .verdict { margin-top: 10px; background: linear-gradient(135deg, rgba(90,40,18,.55), rgba(28,31,33,.9)); border: 1px solid rgba(255,122,61,.35);
+    border-radius: 10px; padding: 11px 12px; font-size: 13px; line-height: 1.55; }
+  .verdict b { color: var(--fire); }
+  .src { font-size: 10.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .src a { color: var(--muted); }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .intro p { color: var(--text-2); line-height: 1.55; font-size: 13.5px; }
+  .hint { position: fixed; bottom: 128px; left: 50%; transform: translateX(-50%); font-size: 12px; color: var(--text-2);
+    padding: 6px 12px; z-index: 4; pointer-events: none; transition: opacity .6s; }
+
+  /* labels */
+  .lbl { position: fixed; z-index: 3; pointer-events: none; font-size: 11px; color: rgba(240,239,236,.82); white-space: nowrap;
+    transform: translate(-50%, -130%); text-shadow: 0 1px 3px #000, 0 0 6px #000; }
+  .lbl::after { content: ''; position: absolute; left: 50%; top: 100%; width: 4px; height: 4px; margin: 3px 0 0 -2px; border-radius: 50%; background: rgba(240,239,236,.75); }
+  .lbl.sel { font-size: 13px; font-weight: 700; color: #fff; background: rgba(255,122,61,.9); padding: 3px 8px; border-radius: 6px; text-shadow: none; transform: translate(-50%, -100%); margin-top: -72px; }
+  .lbl.sel::after { display: none; }
+  .tip { position: fixed; pointer-events: none; z-index: 20; background: #0b0b0b; border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 9px; font-size: 12px; line-height: 1.5; display: none; max-width: 240px; }
+  .pintip { z-index: 5; max-width: 290px; border-color: rgba(255,122,61,.7); box-shadow: 0 6px 24px #000a; }
+  .clue.hl { border-color: var(--fire); box-shadow: inset 0 0 0 1px var(--fire); }
+  .clue.hl .n::after { content: ' · matters for your question'; color: var(--fire); font-size: 10.5px; }
+  .layer.rel { border-color: rgba(255,122,61,.55); }
+  .qbanner { position: fixed; top: 92px; left: 50%; transform: translateX(-50%); z-index: 6; max-width: min(640px, calc(100vw - 32px)); padding: 9px 38px 9px 14px; font-size: 12.5px; line-height: 1.5; text-align: center;
+    background: rgba(14,17,20,.94); border: 1px solid rgba(255,122,61,.7); border-radius: 12px; box-shadow: 0 6px 24px #0009; display: none; }
+  .qbanner { max-height: calc(100vh - 120px); overflow: auto; }
+  .qbanner b { color: var(--fire); } .qbanner .k { color: var(--muted); }
+  .qbanner .qa { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px; }
+  .qbanner .qa button, .qbanner form button { position: static; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  .qbanner .qa button:hover, .qbanner form button:hover { border-color: var(--fire); }
+  .qbanner .ans { text-align: left; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .qbanner .ans ul { margin: 4px 0 6px 16px; padding: 0; } .qbanner .ans li { margin: 1px 0; }
+  .qbanner form { display: flex; gap: 6px; margin-top: 8px; }
+  .qbanner input { flex: 1; min-width: 0; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--text); font: inherit; font-size: 12px; }
+  .qbanner .qx { position: absolute; top: 4px; right: 8px; border: 0; background: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+  .tip .k { color: var(--muted); } .tip .mono { font-family: var(--mono); }
+  .ev { position: fixed; z-index: 4; transform: translate(-50%, -100%); background: rgba(14,17,20,.92); border: 1px solid rgba(255,255,255,.28);
+    border-radius: 999px; padding: 3px 9px 3px 4px; font-size: 11.5px; cursor: pointer; white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+  .ev:hover { border-color: var(--fire); }
+  .ev .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #ff7a3d; font-size: 12px; }
+  .ev.space .ic { background: #b39ddb; }
+  .evphoto img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 10px; display: block; }
+  .evph { aspect-ratio: 16/6; display: grid; place-items: center; text-align: center; color: var(--muted); font-size: 12.5px; padding: 16px; border: 1px dashed rgba(255,255,255,.2); border-radius: 10px; background: rgba(255,255,255,.03); line-height: 1.5; }
+  .story { border-left: 3px solid var(--fire); padding: 7px 10px; margin: 8px 0; background: rgba(255,255,255,.03); border-radius: 0 8px 8px 0; font-size: 12.8px; line-height: 1.5; color: var(--text-2); }
+  .story b { color: var(--text); }
+  .evdlg { max-width: 560px; }
+  .tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .ycard { background: var(--glass-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12.8px; }
+  .ycard ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-2); line-height: 1.6; }
+  .ycard ul b { color: var(--text); }
+  .yhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 11.5px; }
+  .yout { margin-top: 4px; color: var(--text); }
+  .chance { font-family: var(--mono); font-size: 10.5px; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .chance.hi { color: #ff9c7a; background: rgba(255,122,61,.14); border: 1px solid rgba(255,122,61,.5); }
+  .chance.mid { color: var(--clue); background: rgba(250,178,25,.1); border: 1px solid rgba(250,178,25,.45); }
+  .chance.lo { color: #8fd18f; background: rgba(12,163,12,.1); border: 1px solid rgba(12,163,12,.45); }
+  .dot.on { color: var(--clue); } .dot.off { color: #5c5b55; } .dot.na { color: #5c5b55; }
+  .atmsub { display: flex; gap: 4px; margin: 6px 0 2px; }
+  dialog { background: #15181b; color: var(--text); border: 1px solid var(--line); border-radius: 12px; max-width: 760px; padding: 22px 24px; }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  dialog td, dialog th { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  dialog th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  dialog p { color: var(--text-2); line-height: 1.55; font-size: 13px; }
+
+  @media (max-width: 1180px) {
+    .leftcol { width: 300px; max-height: calc(100vh - 150px); }
+    .timebar { left: 14px; right: 434px; }
+    .headline { display: none; }
+  }
+  @media (max-width: 860px) {
+    .panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 52vh; }
+    .timebar { left: 8px; right: 8px; bottom: calc(52vh + 14px); }
+    .layers { display: none; } .leftcol { width: auto; right: 8px; left: 8px; top: 8px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<div class="leftcol"><div class="brand glass">
+  <h1>Jejak <span>Api</span> · Explore the Islands</h1>
+  <p>Fly over Sumatra and Kalimantan on real terrain. Click any place to open its case file: the clues A–E measured from orbit, the fires, and the same spot in past fire years.</p>
+  <span class="proto real">REAL DATA · NASA FIRMS · NASA POWER · NOAA · GFW</span>
+  <button class="pill" id="aboutBtn" style="margin-left:6px">Data &amp; sources</button>
+</div>
+
+<div class="layers glass" id="layers"></div></div>
+
+<div class="headline glass"><div class="m" id="hM"></div><div class="s" id="hS"></div></div>
+
+<div class="hint glass" id="hint">Drag to rotate · right-drag to pan · scroll to zoom · <b>click a place to investigate</b></div>
+
+<div class="timebar glass">
+  <div class="tb-top">
+    <button class="pill play" id="playBtn">▶ Play</button>
+    <span class="now" id="nowLbl"></span>
+    <button class="pill" id="contourBtn" aria-pressed="true" title="Show or hide elevation contour lines">⛰ Contours</button> <button class="pill" id="spaceBtn" title="Fly up to look down like a satellite">🛰 Space view</button><span class="spacer"></span>
+    <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:3px;background:#5fa8ff;vertical-align:middle"></span> D lit &nbsp; <span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
+    <span id="jumps"></span>
+  </div>
+  <svg id="tl" role="img" aria-label="Monthly fire detections across Sumatra and Kalimantan, 2003 to 2026"></svg>
+</div>
+
+<aside class="panel glass" id="panel"></aside>
+<div class="tip" id="tip"></div>
+<div class="qbanner" id="qbanner"></div>
+<dialog id="evDlg" class="evdlg"></dialog>
+<div id="labels"></div>
+
+<dialog id="about">
+  <h3 style="margin-top:0">How it works &amp; where the data comes from</h3>
+  <p><b>The idea.</b> A fire is the effect. Before it, clues appear: <b>D</b> the ocean (El Niño / Indian Ocean Dipole) shifts, <b>A</b> the rain stops, <b>B</b> the soil and peat dry out, on land already weakened by <b>C</b> forest loss. Click a place and see whether those clues appeared before every big fire year, and whether they are lit again now.</p>
+  <p style="color:#8fd18f"><b>Every number on this map is measured.</b> Each 0.5° cell carries monthly data from Jan 2003 to Oct 2026. The fire archive (NASA FIRMS) is published through Dec 2025; 2026 fire months are marked "not yet archived". Tree-cover loss statistics run through <span id="lossLastLbl">2020</span>.</p>
+  <table>
+    <tr><th>Layer</th><th>Data used (per 0.5° cell, monthly)</th><th>Danger line (source)</th></tr>
+    <tr><td>🔥 Fires</td><td>NASA FIRMS MODIS C6.1 (Terra + Aqua) vegetation-fire detections, confidence ≥ 30</td><td>Fire month = ≥ 10 detections</td></tr>
+    <tr><td>A · Rainfall</td><td>NASA POWER PRECTOTCORR (MERRA-2, bias-corrected), regional 0.5° grid</td><td>&lt; 4 mm/day (Field et al. 2016)</td></tr>
+    <tr><td>B · Dryness</td><td>NASA POWER GWETROOT root-zone soil wetness (MERRA-2); peat extent from PEATMAP (Xu et al. 2018)</td><td>wetness &lt; <span id="thrBLbl"></span>: fitted on 2003–2025 peat cells (best split of fire vs no-fire months)</td></tr>
+    <tr><td>C · Forest loss</td><td>Hansen/UMD tree-cover loss (&gt;30% canopy) per regency, Global Forest Watch statistics</td><td>Heavily disturbed at 35%+</td></tr>
+    <tr><td>D · Ocean</td><td>NOAA CPC Oceanic Niño Index; NOAA PSL Dipole Mode Index (HadISST)</td><td>ONI ≥ +0.5 or DMI ≥ +0.4 (Field 2016; Iskandar 2022)</td></tr>
+    <tr><td>E · Smoke</td><td>NASA POWER AOD_55: MERRA-2 aerosol optical depth at 550 nm</td><td>AOD &gt; 1: hazy brown sky</td></tr>
+    <tr><td>Terrain</td><td>AWS Terrain Tiles (SRTM / GMTED-derived elevation)</td><td>—</td></tr>
+    <tr><td>Chance &amp; risk</td><td>Logistic regressions fitted on all cells 2003–2025, tested leave-one-year-out</td><td id="modelLbl"></td></tr>
+  </table>
+  <p>Sources:
+    <a href="https://www.pnas.org/doi/10.1073/pnas.1524888113" target="_blank" rel="noopener">Field et al. 2016</a> ·
+    <a href="https://science.nasa.gov/earth/natural-disasters/wildfires/el-nino-a-key-player-in-severe-indonesia-fires/" target="_blank" rel="noopener">NASA: El Niño a key player</a> ·
+    <a href="https://doi.org/10.1016/j.agrformet.2021.108738" target="_blank" rel="noopener">Taufik et al. 2022</a> ·
+    <a href="https://doi.org/10.3390/su142215155" target="_blank" rel="noopener">Iskandar et al. 2022</a> ·
+    <a href="https://eprints.whiterose.ac.uk/id/eprint/225066/" target="_blank" rel="noopener">Salmayenti et al. 2025</a> ·
+    <a href="https://rri.co.id/en/national/2679048/indonesia-battles-202000-hectares-of-forest-fires-amid-strong-el-nino" target="_blank" rel="noopener">RRI: 2026 fire season</a></p>
+  <p><button class="pill" id="aboutClose">Close</button></p>
+</dialog>
+
+<script>
+let DATA = /*__DATA__*/null;
+(async () => {
+  if (!DATA) {
+    try { DATA = await (await fetch('data.json')).json(); }
+    catch (e) { document.body.innerHTML = '<div style="padding:40px;color:#f0efec;font-family:sans-serif;max-width:640px;line-height:1.6"><h2>No data loaded</h2><p>Run <code>python3 build.py</code> and open the built HTML, or serve this folder with <code>python3 -m http.server</code>.</p></div>'; return; }
+  }
+  if (typeof THREE === 'undefined' || !THREE.OrbitControls) { document.body.innerHTML = '<div style="padding:40px;color:#f0efec;font-family:sans-serif"><h2>3D library did not load</h2><p>Check your internet connection (three.js loads from cdnjs / jsdelivr).</p></div>'; return; }
+  main();
+})();
+
+function main() {
+// ================= data & helpers =================
+const MONTHS = DATA.months, T = MONTHS.length, cells = DATA.cells;
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MNF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const mlab = i => { const [y, m] = MONTHS[i].split('-'); return `${MNF[+m-1]} ${y}`; };
+const mshort = i => { const [y, m] = MONTHS[i].split('-'); return `${MN[+m-1]} ${y}`; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const $ = id => document.getElementById(id);
+const hex = h => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255];
+function ramp(stops, t) { t = clamp(t, 0, 1); const p = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(p)), f = p - i;
+  const a = stops[i], b = stops[i+1]; return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f]; }
+const mix = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+let seed = 7; const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
+
+const CASE_YEARS = ['2015', '2019', '2023', '2026'];
+const NOW = T - 1;
+const FIRST_YEAR = +MONTHS[0].slice(0, 4), NOW_YEAR = +MONTHS[NOW].slice(0, 4);
+const state = { t: NOW, layer: 'fire', sel: null, playing: false, rel: [] };
+// which clues matter for each guided question (set from the landing page)
+const REL = { fire: ['A', 'B'], drought: ['A', 'B', 'D'], smoke: ['E', 'fire'], forest: ['C'], ocean: ['D'], wildlife: ['fire', 'C'] };
+const hl = k => state.rel.includes(k) ? ' hl' : '';
+
+// ---- real-data plumbing ----
+const FL = DATA.fireLast;                       // last month in the NASA FIRMS archive
+const fireOK = t => t <= FL;
+const THR_B = DATA.thrB;                        // root-zone wetness danger line (fitted)
+cells.forEach(c => {
+  c.s.fire = c.s.fire.map(v => Math.max(0, v)); // -1 = not yet archived → handled via fireOK()
+  const fill = a => { let last = null; return a.map(v => (v == null ? last : (last = v))); };
+  c.s.rain = fill(c.s.rain); c.s.soil = fill(c.s.soil);
+  c.kabInfo = DATA.kabs[String(c.kab)] || null;
+});
+const soilOf = (c, t) => c.s.soil[t] / 1000;
+const lossOf = (c, t) => (c.s.loss[t] == null ? null : c.s.loss[t] / 10);
+const aodOf = (c, t) => (c.s.aod[t] == null ? null : c.s.aod[t] / 1000);
+const dmiOf = t => DATA.dmi[t];
+const fmtIdx = v => (v == null ? 'n/a' : (v >= 0 ? '+' : '') + v.toFixed(1));
+const sigm = z => 1 / (1 + Math.exp(-z));
+const logit = (M, x) => sigm(M.b + x.reduce((s, v, i) => s + M.coef[i] * (v - M.mu[i]) / M.sd[i], 0));
+const fireTxt = (c, t) => (fireOK(t) ? String(c.s.fire[t]) : 'n/a');
+
+// cell lookup on the 0.5° grid
+const cellKey = (lon, lat) => `${Math.round((lon - 95.25) / 0.5)},${Math.round((lat + 5.75) / 0.5)}`;
+const cellMap = new Map(); cells.forEach((c, i) => { c.i = i; cellMap.set(cellKey(c.lon, c.lat), c); });
+function nearestCell(lon, lat) {
+  let best = null, bd = 1e9;
+  for (const c of cells) { const d = (c.lon - lon) ** 2 + (c.lat - lat) ** 2; if (d < bd) { bd = d; best = c; } }
+  return bd <= 0.5 ? best : null;
+}
+const dangerD = t => (DATA.oni[t] ?? -9) >= 0.5 || (DATA.dmi[t] ?? -9) >= 0.4;
+// monthly fire-risk: logistic regression fitted on 2003–2025 cell-months (P of ≥10 detections)
+const burnedBefore = (c, t) => { for (let k = 0; k < t && k <= FL; k++) if (c.s.fire[k] >= 10) return 1; return 0; };
+const riskOf = (c, t) => Math.round(100 * logit(DATA.riskModel, [c.s.rain[t] / 10, soilOf(c, t), DATA.oni[t] ?? 0, c.peatFrac, (lossOf(c, t) ?? 17) / 100, burnedBefore(c, t)]));
+
+const TOWNS = [
+  ['Banda Aceh',95.32,5.55,1],['Meulaboh',96.13,4.14,0],['Medan',98.67,3.59,1],['Sibolga',98.78,1.74,0],['Padang',100.35,-0.95,1],
+  ['Pekanbaru',101.45,0.51,1],['Dumai',101.45,1.67,1],['Siak',102.05,0.8,0],['Bengkalis',102.1,1.47,0],['Rengat',102.55,-0.38,0],
+  ['Tembilahan',103.15,-0.32,0],['Jambi',103.61,-1.61,1],['Muara Sabak',103.83,-1.12,0],['Bengkulu',102.26,-3.8,0],['Palembang',104.75,-2.98,1],
+  ['Kayu Agung (OKI)',104.83,-3.39,0],['Bandar Lampung',105.26,-5.43,1],['Pangkal Pinang',106.11,-2.13,0],['Pontianak',109.33,-0.03,1],
+  ['Ketapang',109.98,-1.85,1],['Sintang',111.5,0.07,0],['Putussibau',112.93,0.84,0],['Pangkalan Bun',111.63,-2.68,0],['Sampit',112.95,-2.53,1],
+  ['Palangka Raya',113.92,-2.21,1],['Pulang Pisau',114.25,-2.75,0],['Kuala Kapuas',114.39,-3.0,0],['Banjarmasin',114.59,-3.32,1],
+  ['Muara Teweh',114.89,-0.95,0],['Samarinda',117.15,-0.5,1],['Balikpapan',116.83,-1.27,1],['Tanjung Selor',117.37,2.84,0]
+];
+function nearestTown(lon, lat) {
+  let best = TOWNS[0], bd = 1e9;
+  for (const t of TOWNS) { const d = (t[1] - lon) ** 2 + (t[2] - lat) ** 2; if (d < bd) { bd = d; best = t; } }
+  return { name: best[0], km: Math.round(Math.sqrt(bd) * 111) };
+}
+
+// ================= layers =================
+const RAMPS = {
+  rain: ['#d95926', '#e8913a', '#6a6a63', '#3f7fc9', '#86b6ef'].map(hex),          // dry → wet (diverging, gray midpoint)
+  peat: ['#2a2026', '#5e2440', '#c5426f', '#ee8ab0', '#ffd1e3'].map(hex),
+  loss: ['#26301f', '#5e4a14', '#a8781c', '#e0a94a', '#ffe3a1'].map(hex),
+  ocean: ['#0d2233', '#0f3550', '#1c5a8a', '#3f8fd6', '#9fd0ff'].map(hex)
+};
+const LAYERS = {
+  fire: { k: '🔥', name: 'Fires & smoke (the effect)', d: 'Active fires glow, smoke rises, burn scars darken', color: '#ff7a3d',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#1c1a18,#7a2e12,#ff8c42,#ffd27a)"></div><div class="ends"><span>no fire</span><span>many detections</span></div>Charcoal ground = burned in the last 6 months.` },
+  A: { k: 'A', name: 'Rainfall', d: 'Danger when below 4 mm/day', color: '#f2b33d',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#d95926,#e8913a,#6a6a63,#3f7fc9,#86b6ef)"></div><div class="ends"><span>0 dry</span><span>4</span><span>7</span><span>12+ mm/day wet</span></div>` },
+  B: { k: 'B', name: 'Soil & peat dryness', d: `Danger when root-zone wetness < ${THR_B.toFixed(2)}`, color: '#e0689a',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#2a2026,#5e2440,#c5426f,#ee8ab0,#ffd1e3)"></div><div class="ends"><span>0.95 wet</span><span>${THR_B.toFixed(2)}</span><span>0.60 dry</span></div>NASA POWER root-zone soil wetness (MERRA-2). Peat swamps (PEATMAP) are coloured strongest.` },
+  C: { k: 'C', name: 'Forest loss', d: 'Tree cover lost since 2001 (Hansen/GFW)', color: '#c9a26b',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#26301f,#5e4a14,#a8781c,#e0a94a,#ffe3a1)"></div><div class="ends"><span>0%</span><span>35%</span><span>80%+</span></div>Regency statistics, canopy &gt;30%, through ${DATA.lossLast}.` },
+  E: { k: 'E', name: 'Smoke from space', d: 'Aerosol optical depth (NASA MERRA-2)', color: '#b39ddb',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,${ATM.aod.ramp.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',')})"></div>
+      <div class="ends"><span>0.1 clear</span><span>1.0</span><span>2.0+ AOD</span></div>
+      <b>${ATM.aod.name}</b> on a sheet above the islands. ${ATM.aod.note}<br><span style="color:var(--muted)">${ATM.aod.inst}</span>` },
+  D: { k: 'D', name: 'Ocean: El Niño & IOD', d: 'Cooler seas around Indonesia = less rain', color: '#5fa8ff',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#0d2233,#0f3550,#1c5a8a,#3f8fd6,#9fd0ff)"></div><div class="ends"><span>normal</span><span>strong drought pressure</span></div>Brighter sea = El Niño / positive IOD pulling rain away.` }
+};
+const layerLit = (k, t) => {
+  const zone = cells.filter(c => c.s.fire[NOW] >= 0); // all
+  if (k === 'fire') return null;
+  if (k === 'D') return dangerD(t);
+  if (k === 'E') { const m = atmMaxNow(); return m.p == null ? null : m.p > 1.0; }
+  const share = f => zone.filter(f).length / zone.length;
+  if (k === 'A') return share(c => c.s.rain[t] < 40) > 0.25;
+  if (k === 'B') { const p = zone.filter(c => c.peat); return p.filter(c => soilOf(c, t) < THR_B).length / p.length > 0.3; }
+  if (k === 'C') return share(c => (lossOf(c, t) ?? 0) >= 35) > 0.3;
+};
+
+// ================= three.js scene =================
+const W0 = window.innerWidth, H0 = window.innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+renderer.setSize(W0, H0);
+
+$('scene').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const BG = new THREE.Color('#070b10');
+scene.background = BG;
+scene.fog = new THREE.Fog(BG, 16, 42);
+const camera = new THREE.PerspectiveCamera(42, W0 / H0, 0.05, 200);
+camera.position.set(0, 26, 20);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(0.5, 0, 0.4);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.maxPolarAngle = 1.32; controls.minDistance = 0.35; controls.zoomSpeed = 1.2; controls.maxDistance = 34;
+controls.screenSpacePanning = false;
+
+scene.add(new THREE.HemisphereLight(0xbfd8ff, 0x1a1208, 0.95));
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.35); sun.position.set(-6, 9, 5); scene.add(sun);
+const rim = new THREE.DirectionalLight(0x6a8cff, 0.25); rim.position.set(8, 3, -8); scene.add(rim);
+
+const LON0 = 94.4, LON1 = 119.8, LAT0 = -8.4, LAT1 = 7.4, RES = 0.03, XC = 107.1;
+const NX = Math.round((LON1 - LON0) / RES) + 1, NY = Math.round((LAT1 - LAT0) / RES) + 1;
+const toX = lon => lon - XC, toZ = lat => -lat;
+const VZ = 1.7; // vertical exaggeration multiplier
+
+// --- land mask from country polygons ---
+const mcan = document.createElement('canvas'); mcan.width = NX; mcan.height = NY;
+const mctx = mcan.getContext('2d'); mctx.fillStyle = '#fff';
+for (const f of DATA.land.features) {
+  const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+  for (const poly of polys) { mctx.beginPath();
+    for (const ring of poly) ring.forEach(([lon, lat], k) => { const x = (lon - LON0) / RES, y = (LAT1 - lat) / RES; k ? mctx.lineTo(x, y) : mctx.moveTo(x, y); });
+    mctx.fill('evenodd'); }
+}
+const mpx = mctx.getImageData(0, 0, NX, NY).data;
+const N = NX * NY, mask = new Float32Array(N);
+for (let i = 0; i < N; i++) mask[i] = mpx[i * 4 + 3] / 255;
+function blur(src, r, passes) {
+  let a = Float32Array.from(src), b = new Float32Array(N);
+  for (let p = 0; p < passes; p++) {
+    for (let y = 0; y < NY; y++) { let acc = 0; const row = y * NX;
+      for (let x = -r; x <= r; x++) acc += a[row + clamp(x, 0, NX - 1)];
+      for (let x = 0; x < NX; x++) { b[row + x] = acc / (2 * r + 1); acc += a[row + clamp(x + r + 1, 0, NX - 1)] - a[row + clamp(x - r, 0, NX - 1)]; } }
+    for (let x = 0; x < NX; x++) { let acc = 0;
+      for (let y = -r; y <= r; y++) acc += b[clamp(y, 0, NY - 1) * NX + x];
+      for (let y = 0; y < NY; y++) { a[y * NX + x] = acc / (2 * r + 1); acc += b[clamp(y + r + 1, 0, NY - 1) * NX + x] - b[clamp(y - r, 0, NY - 1) * NX + x]; } }
+  }
+  return a;
+}
+const inland = blur(mask, 10, 3);
+
+// --- value noise ---
+const perm = new Uint8Array(512); for (let i = 0; i < 256; i++) perm[i] = i;
+for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+for (let i = 0; i < 256; i++) perm[i + 256] = perm[i];
+const vh = (x, y) => perm[(perm[x & 255] + y) & 255] / 255;
+function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = vh(xi, yi), b = vh(xi + 1, yi), c = vh(xi, yi + 1), d = vh(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+const fbm = (x, y) => { let s = 0, a = 0.5, f = 1; for (let o = 0; o < 5; o++) { s += a * vnoise(x * f, y * f); f *= 2.1; a *= 0.5; } return s; };
+
+// --- real elevation grid (same lon/lat grid as the mesh) ---
+const ELEV = (() => { const bin = atob(DATA.dem.b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new Int16Array(u8.buffer); })();
+// DEM is stored at 0.06 deg; resample bilinearly onto the finer 0.03 deg mesh so slopes are smooth when zoomed in
+const DEM = DATA.dem;
+function elevAt(i, j) {
+  const gx = clamp(i * RES / DEM.res, 0, DEM.nx - 1.001), gy = clamp(j * RES / DEM.res, 0, DEM.ny - 1.001);
+  const x0 = Math.floor(gx), y0 = Math.floor(gy), fx = gx - x0, fy = gy - y0, e = (x, y) => ELEV[y * DEM.nx + x];
+  return (e(x0, y0) * (1 - fx) + e(x0 + 1, y0) * fx) * (1 - fy) + (e(x0, y0 + 1) * (1 - fx) + e(x0 + 1, y0 + 1) * fx) * fy;
+}
+// --- cell interpolation grid (for draped layers) ---
+const peatCell = new Map(); cells.forEach(c => peatCell.set(c.i, c.peatFrac));
+const heights = new Float32Array(N), elevM = new Float32Array(N);
+const vCell = new Int32Array(N * 4).fill(-1), vW = new Float32Array(N * 4);
+const baseCol = new Float32Array(N * 3), isData = new Uint8Array(N), peatW = new Float32Array(N);
+for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+  const k = j * NX + i, lon = LON0 + i * RES, lat = LAT1 - j * RES;
+  // interpolation weights
+  const gx = (lon - 95.25) / 0.5, gy = (lat + 5.75) / 0.5, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = gx - x0, fy = gy - y0;
+  let ws = 0, pw = 0; const quad = [[x0, y0, (1 - fx) * (1 - fy)], [x0 + 1, y0, fx * (1 - fy)], [x0, y0 + 1, (1 - fx) * fy], [x0 + 1, y0 + 1, fx * fy]];
+  quad.forEach(([cx, cy, w], q) => { const c = cellMap.get(`${cx},${cy}`); if (c && w > 0) { vCell[k * 4 + q] = c.i; vW[k * 4 + q] = w; ws += w; pw += w * c.peatFrac; } });
+  if (ws > 0) { for (let q = 0; q < 4; q++) vW[k * 4 + q] /= ws; isData[k] = mask[k] > 0.5 ? 1 : 0; peatW[k] = pw / ws; }
+  // height: real elevation (AWS Terrain Tiles, SRTM/GMTED-derived), ~110x vertical exaggeration
+  const em = Math.max(0, elevAt(i, j));
+  const h = mask[k] < 0.5 ? -0.09 : 0.012 + em * 0.00011;
+  heights[k] = h * VZ; elevM[k] = mask[k] < 0.5 ? 0 : em;
+  // natural colour by real elevation (metres)
+  let c;
+  if (mask[k] < 0.5) c = hex('#0c1c28');
+  else if (em < 100) c = mix(hex('#2c4a2a'), hex('#2f5c33'), em / 100);
+  else if (em < 1200) c = mix(hex('#2f5c33'), hex('#4f5e3c'), (em - 100) / 1100);
+  else c = mix(hex('#4f5e3c'), hex('#8c8678'), clamp((em - 1200) / 2000, 0, 1));
+  if (peatW[k] > 0) c = mix(c, hex('#3a3a22'), 0.55 * peatW[k]);
+  if (mask[k] >= 0.5 && !isData[k]) c = mix(c, hex('#30352f'), 0.55); // land outside the study area
+  const g = 0.95 + 0.1 * fbm(lon * 9, lat * 9); // subtle texture only (shading, not data)
+  baseCol[k * 3] = c[0] * g; baseCol[k * 3 + 1] = c[1] * g; baseCol[k * 3 + 2] = c[2] * g;
+}
+function heightAt(lon, lat) {
+  const gx = (lon - LON0) / RES, gy = (LAT1 - lat) / RES; const i = clamp(Math.floor(gx), 0, NX - 2), j = clamp(Math.floor(gy), 0, NY - 2), fx = gx - i, fy = gy - j;
+  const h = (a, b) => heights[b * NX + a];
+  return (h(i, j) * (1 - fx) + h(i + 1, j) * fx) * (1 - fy) + (h(i, j + 1) * (1 - fx) + h(i + 1, j + 1) * fx) * fy;
+}
+
+// --- terrain mesh ---
+const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const k = j * NX + i;
+  pos[k * 3] = toX(LON0 + i * RES); pos[k * 3 + 1] = heights[k]; pos[k * 3 + 2] = toZ(LAT1 - j * RES); }
+const idx = [];
+for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
+  const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1;
+  if (mask[a] + mask[b] + mask[c] + mask[d] < 0.2) continue;
+  idx.push(a, c, b, b, c, d);
+}
+const tgeo = new THREE.BufferGeometry();
+tgeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+const colAttr = new THREE.BufferAttribute(col, 3); tgeo.setAttribute('color', colAttr);
+tgeo.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+tgeo.computeVertexNormals();
+const terrain = new THREE.Mesh(tgeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0.0 }));
+scene.add(terrain);
+
+// --- elevation contours (marching squares) ---
+function buildContours(levels) {
+  const out = [];
+  const P = (i, j, k) => [pos[k * 3], pos[k * 3 + 1] + 0.006, pos[k * 3 + 2]];
+  for (const L of levels) {
+    for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
+      const k0 = j * NX + i, k1 = k0 + 1, k2 = k0 + NX + 1, k3 = k0 + NX; // TL TR BR BL
+      if (mask[k0] < 0.5 || mask[k1] < 0.5 || mask[k2] < 0.5 || mask[k3] < 0.5) continue;
+      const v = [elevM[k0], elevM[k1], elevM[k2], elevM[k3]], ks = [k0, k1, k2, k3];
+      let m = 0; for (let q = 0; q < 4; q++) if (v[q] >= L) m |= 1 << q;
+      if (m === 0 || m === 15) continue;
+      const pts = [];
+      for (let q = 0; q < 4; q++) { const a = q, b = (q + 1) % 4; if ((v[a] >= L) !== (v[b] >= L)) {
+        const t = (L - v[a]) / (v[b] - v[a]), pa = P(0, 0, ks[a]), pb = P(0, 0, ks[b]);
+        pts.push([pa[0] + (pb[0] - pa[0]) * t, pa[1] + (pb[1] - pa[1]) * t, pa[2] + (pb[2] - pa[2]) * t]); } }
+      for (let q = 0; q + 1 < pts.length; q += 2) out.push(...pts[q], ...pts[q + 1]);
+    }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return g;
+}
+const contourMinor = new THREE.LineSegments(buildContours([100, 200, 300, 400, 600, 700, 800, 900, 1200, 1400, 1600, 1800, 2200, 2400, 2600, 2800, 3200, 3400, 3600]),
+  new THREE.LineBasicMaterial({ color: 0xe8dcc0, transparent: true, opacity: 0.16, depthWrite: false }));
+const contourMajor = new THREE.LineSegments(buildContours([500, 1000, 1500, 2000, 2500, 3000, 3500]),
+  new THREE.LineBasicMaterial({ color: 0xf6ecd2, transparent: true, opacity: 0.42, depthWrite: false }));
+scene.add(contourMinor, contourMajor);
+
+// --- ocean ---
+const OW = 70, OD = 46, OSX = 140, OSZ = 92;
+const ogeo = new THREE.PlaneGeometry(OW, OD, OSX, OSZ); ogeo.rotateX(-Math.PI / 2);
+const ocol = new Float32Array(ogeo.attributes.position.count * 3); ogeo.setAttribute('color', new THREE.BufferAttribute(ocol, 3));
+const ocean = new THREE.Mesh(ogeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.25 }));
+ocean.position.y = -0.005; scene.add(ocean);
+// faint lat/lon grid
+const grid = []; for (let lon = 95; lon <= 120; lon += 5) grid.push(toX(lon), 0.002, toZ(-9), toX(lon), 0.002, toZ(8));
+for (let lat = -5; lat <= 5; lat += 5) grid.push(toX(93), 0.002, toZ(lat), toX(121), 0.002, toZ(lat));
+const ggeo = new THREE.BufferGeometry(); ggeo.setAttribute('position', new THREE.Float32BufferAttribute(grid, 3));
+scene.add(new THREE.LineSegments(ggeo, new THREE.LineBasicMaterial({ color: 0x2a4a63, transparent: true, opacity: 0.35 })));
+// coastline
+const coast = [];
+for (const f of DATA.land.features) { const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+  for (const poly of polys) for (const ring of poly) for (let k = 0; k < ring.length - 1; k++) { const [a, b] = [ring[k], ring[k + 1]];
+    if (a[0] < LON0 || a[0] > LON1 || a[1] < LAT0 || a[1] > LAT1) continue;
+    coast.push(toX(a[0]), 0.012, toZ(a[1]), toX(b[0]), 0.012, toZ(b[1])); } }
+const cgeo = new THREE.BufferGeometry(); cgeo.setAttribute('position', new THREE.Float32BufferAttribute(coast, 3));
+scene.add(new THREE.LineSegments(cgeo, new THREE.LineBasicMaterial({ color: 0x9fd0ff, transparent: true, opacity: 0.45 })));
+
+// --- fire & smoke particles ---
+const fireMat = new THREE.ShaderMaterial({
+  uniforms: { time: { value: 0 }, dim: { value: 1 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: `attribute float size; attribute float phase; uniform float time; uniform float dim; varying float vF; varying float vH;
+    void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); float fl = 0.65 + 0.35*sin(time*7.0 + phase*31.0) * sin(time*3.1 + phase*11.0);
+      vF = fl * dim; vH = phase; gl_PointSize = min(14.0, size * fl * (34.0 / -mv.z)); gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying float vF; varying float vH; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard;
+      float a = smoothstep(0.5, 0.0, d); vec3 c = mix(vec3(1.0,0.35,0.08), vec3(1.0,0.86,0.45), smoothstep(0.25,0.0,d) * (0.5+0.5*vH));
+      gl_FragColor = vec4(c, a * vF); }`
+});
+const smokeMat = new THREE.ShaderMaterial({
+  uniforms: { time: { value: 0 }, dim: { value: 1 } }, transparent: true, depthWrite: false,
+  vertexShader: `attribute float size; attribute float phase; uniform float time; varying float vA;
+    void main(){ float t = fract(time*0.06 + phase); vec3 p = position; p.y += t*0.9; p.x += t*0.55 + sin(phase*20.0+time*0.4)*0.05; p.z += t*-0.18;
+      vec4 mv = modelViewMatrix * vec4(p,1.0); vA = smoothstep(0.0,0.15,t) * (1.0 - t); gl_PointSize = min(70.0, size * (0.4 + t*1.6) * (55.0 / -mv.z)); gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `uniform float dim; varying float vA; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard;
+      float a = smoothstep(0.5, 0.0, d) * 0.11 * vA * dim; gl_FragColor = vec4(vec3(0.62,0.6,0.56), a); }`
+});
+let firePts = null, smokePts = null;
+function buildFire(t) {
+  [firePts, smokePts].forEach(o => { if (o) { scene.remove(o); o.geometry.dispose(); } });
+  seed = 1000 + t;
+  const fp = [], fs = [], fph = [], sp = [], ss = [], sph = [];
+  for (const c of cells) { const f = c.s.fire[t]; if (f <= 0) continue;
+    const n = Math.min(70, Math.round(Math.sqrt(f) * 2.4) + 1);
+    for (let q = 0; q < n; q++) { const lon = c.lon + (rnd() - 0.5) * 0.48, lat = c.lat + (rnd() - 0.5) * 0.48; const h = heightAt(lon, lat); if (h < 0) continue;
+      fp.push(toX(lon), h + 0.012, toZ(lat)); fs.push(2.5 + rnd() * 4 + Math.min(4, f / 60)); fph.push(rnd()); }
+    const ns = f > 25 ? Math.min(10, Math.round(Math.sqrt(f) * 0.45)) : 0;
+    for (let q = 0; q < ns; q++) { const lon = c.lon + (rnd() - 0.5) * 0.45, lat = c.lat + (rnd() - 0.5) * 0.45;
+      sp.push(toX(lon), Math.max(0, heightAt(lon, lat)) + 0.05, toZ(lat)); ss.push(22 + rnd() * 26); sph.push(rnd()); }
+  }
+  const mk = (p, s, ph, mat) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+    g.setAttribute('size', new THREE.Float32BufferAttribute(s, 1)); g.setAttribute('phase', new THREE.Float32BufferAttribute(ph, 1));
+    const o = new THREE.Points(g, mat); o.frustumCulled = false; scene.add(o); return o; };
+  firePts = mk(fp, fs, fph, fireMat); smokePts = mk(sp, ss, sph, smokeMat);
+}
+
+// --- colour the terrain & ocean for the current layer/month ---
+const cellVal = new Float32Array(cells.length);
+function paint() {
+  const t = state.t, L = state.layer;
+  // per-cell scalar for the active layer
+  cells.forEach((c, i) => {
+    if (L === 'A') cellVal[i] = c.s.rain[t] / 10;
+    else if (L === 'B') cellVal[i] = soilOf(c, t);
+    else if (L === 'C') cellVal[i] = c.s.loss[t] / 10;
+    else { let s = 0; for (let k = Math.max(0, t - 5); k <= t; k++) s += c.s.fire[k]; cellVal[i] = s; }
+  });
+  const lossC = new Float32Array(cells.length); cells.forEach((c, i) => lossC[i] = c.s.loss[t] / 10);
+  const charcoal = hex('#17140f'), tan = hex('#6e5d40');
+  for (let k = 0; k < N; k++) {
+    let r = baseCol[k * 3], g = baseCol[k * 3 + 1], b = baseCol[k * 3 + 2];
+    if (isData[k]) {
+      let v = 0, lv = 0;
+      for (let q = 0; q < 4; q++) { const ci = vCell[k * 4 + q]; if (ci >= 0) { v += cellVal[ci] * vW[k * 4 + q]; lv += lossC[ci] * vW[k * 4 + q]; } }
+      let c = [r, g, b];
+      if (L !== 'C') c = mix(c, tan, clamp(lv / 90, 0, 1) * 0.42);   // cleared land always looks paler
+      if (L === 'fire') c = mix(c, charcoal, clamp(Math.sqrt(v) / 16, 0, 0.85));
+      else if (L === 'A') c = mix(c, ramp(RAMPS.rain, v <= 4 ? v / 4 * 0.5 : v <= 7 ? 0.5 + (v - 4) / 3 * 0.15 : 0.65 + (v - 7) / 5 * 0.35), 0.85);
+      else if (L === 'B') { const dry = clamp((0.95 - v) / 0.35, 0, 1); c = mix(c, ramp(RAMPS.peat, dry), 0.45 + 0.45 * Math.min(1, peatW[k] * 2.5)); }
+      else if (L === 'C') c = mix(c, ramp(RAMPS.loss, v / 80), 0.85);
+      else if (L === 'D') c = mix(c, hex('#2b2f2b'), 0.55);
+      else if (L === 'E') c = mix(c, hex('#1d211d'), 0.35);
+      r = c[0]; g = c[1]; b = c[2];
+    } else if (L === 'D' || L === 'B' || L === 'A' || L === 'C') { r *= 0.7; g *= 0.7; b *= 0.7; }
+    col[k * 3] = r; col[k * 3 + 1] = g; col[k * 3 + 2] = b;
+  }
+  colAttr.needsUpdate = true;
+  // ocean
+  const op = ogeo.attributes.position.array, oni = DATA.oni[t] ?? 0, dmi = DATA.dmi[t] ?? 0;
+  for (let v = 0; v < op.length / 3; v++) { const lon = op[v * 3] + XC, lat = -op[v * 3 + 2];
+    const wave = 0.04 * fbm(lon * 0.6, lat * 0.6);
+    let c;
+    if (L === 'D') { const west = clamp((104 - lon) / 8 + (lat < 2 ? 0.3 : 0), 0, 1);
+      const p = clamp(0.32 * Math.max(0, oni) + 0.55 * Math.max(0, dmi) * west + wave, 0, 1); c = ramp(RAMPS.ocean, p); }
+    else c = mix(hex('#0a1823'), hex('#10273a'), clamp(0.5 + wave * 6 - Math.hypot(lon - 107, lat) / 30, 0, 1));
+    ocol[v * 3] = c[0]; ocol[v * 3 + 1] = c[1]; ocol[v * 3 + 2] = c[2]; }
+  ogeo.attributes.color.needsUpdate = true;
+  paintAtm();
+  fireMat.uniforms.dim.value = L === 'fire' ? 1 : 0.55; smokeMat.uniforms.dim.value = L === 'fire' ? 1 : 0.4;
+}
+
+// --- selection pin ---
+const pin = new THREE.Group();
+const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 1.1, 8), new THREE.MeshBasicMaterial({ color: 0xff7a3d, transparent: true, opacity: 0.9 }));
+beam.position.y = 0.55; pin.add(beam);
+const ring = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.2, 48), new THREE.MeshBasicMaterial({ color: 0xff7a3d, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
+ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; pin.add(ring);
+const cellBox = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(0.5, 0.001, 0.5)), new THREE.LineBasicMaterial({ color: 0xffd27a }));
+cellBox.position.y = 0.02; pin.add(cellBox);
+pin.visible = false; scene.add(pin);
+
+// --- labels ---
+const labelsEl = $('labels');
+const townEls = TOWNS.map(t => { const el = document.createElement('div'); el.className = 'lbl'; el.textContent = t[0]; labelsEl.appendChild(el);
+  return { el, v: new THREE.Vector3(toX(t[1]), heightAt(t[1], t[2]) + 0.02, toZ(t[2])), major: t[3] }; });
+const selLbl = document.createElement('div'); selLbl.className = 'lbl sel'; selLbl.style.display = 'none'; labelsEl.appendChild(selLbl);
+const tmpV = new THREE.Vector3();
+function updateLabels() {
+  const dist = camera.position.distanceTo(controls.target);
+  for (const t of townEls) {
+    tmpV.copy(t.v).project(camera);
+    const show = tmpV.z < 1 && (t.major || dist < 9) && Math.abs(tmpV.x) < 1.05 && Math.abs(tmpV.y) < 1.05;
+    if (!show) { t.el.style.display = 'none'; continue; }
+    t.el.style.display = 'block'; t.el.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px'; t.el.style.top = ((1 - tmpV.y) / 2 * innerHeight) + 'px';
+    t.el.style.opacity = dist > 22 ? 0.55 : 0.9;
+  }
+  if (pin.visible) { tmpV.set(pin.position.x, pin.position.y + 1.1, pin.position.z).project(camera);
+    selLbl.style.display = tmpV.z < 1 ? 'block' : 'none'; selLbl.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px'; selLbl.style.top = ((1 - tmpV.y) / 2 * innerHeight + 72) + 'px';
+    if (state.sel) { tmpV.set(pin.position.x, pin.position.y, pin.position.z).project(camera);
+      const w = pinTip.offsetWidth, hh = pinTip.offsetHeight, sx = (tmpV.x + 1) / 2 * innerWidth, sy = (1 - tmpV.y) / 2 * innerHeight;
+      pinTip.style.display = tmpV.z < 1 ? 'block' : 'none';
+      pinTip.style.left = clamp(sx + 22, 8, innerWidth - w - 8) + 'px'; pinTip.style.top = clamp(sy + 14, 8, innerHeight - hh - 8) + 'px'; } }
+}
+
+// --- picking (ray against the height field) ---
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(ev) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const o = ray.ray.origin, d = ray.ray.direction; if (d.y >= 0) return null;
+  let h = 0, p;
+  for (let it = 0; it < 4; it++) { const s = (h - o.y) / d.y; p = { x: o.x + d.x * s, z: o.z + d.z * s }; h = Math.max(0, heightAt(p.x + XC, -p.z)); }
+  return { lon: p.x + XC, lat: -p.z };
+}
+const tip = $('tip');
+function showTip(html, x, y) { tip.innerHTML = html; tip.style.display = 'block'; const w = tip.offsetWidth, hh = tip.offsetHeight;
+  tip.style.left = Math.min(innerWidth - w - 8, x + 14) + 'px'; tip.style.top = Math.min(innerHeight - hh - 8, y + 14) + 'px'; }
+const hideTip = () => tip.style.display = 'none';
+const pinTip = document.createElement('div'); pinTip.className = 'tip pintip'; document.body.appendChild(pinTip);
+function tipHtml(g, c, t, hint) {
+  const town = nearestTown(g.lon, g.lat), ao = aodOf(c, t), el = Math.round(Math.max(0, elevAt(Math.round((g.lon - LON0) / RES), Math.round((LAT1 - g.lat) / RES))));
+  return `<b>near ${town.name}</b><div class="k">${c.kabInfo ? c.kabInfo.name + ' · ' : ''}${c.peat ? 'Peat swamp' : 'Mineral soil'} · ${mshort(t)} · ${el.toLocaleString()}&nbsp;m</div>
+    <div>🔥 <span class="mono">${fireTxt(c, t)}</span> fires${fireOK(t) ? '' : ' <span class="k">(not yet archived)</span>'} · 🛰 AOD <span class="mono">${ao == null ? 'n/a' : ao.toFixed(2)}</span></div><div>A <span class="mono">${(c.s.rain[t]/10).toFixed(1)}</span> mm/d · B <span class="mono">${soilOf(c, t).toFixed(2)}</span> wetness</div><div class="k">${hint}</div>`;
+}
+function refreshPinTip() { if (!state.sel) { pinTip.style.display = 'none'; return; }
+  pinTip.innerHTML = tipHtml({ lon: state.sel.lon, lat: state.sel.lat }, state.sel.c, state.t, 'Case file open in the side panel →'); pinTip.style.display = 'block'; }
+let down = null, lastHover = 0;
+renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return; down = null;
+  const g = pick(e); if (!g) return; const c = nearestCell(g.lon, g.lat);
+  if (c) select(c, g); else showTip('<b>No data here</b><div class="k">Click on Sumatra or Kalimantan</div>', e.clientX, e.clientY);
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (e.buttons) { hideTip(); return; } const now = performance.now(); if (now - lastHover < 60) return; lastHover = now;
+  const g = pick(e); const c = g && nearestCell(g.lon, g.lat);
+  if (!c) { hideTip(); renderer.domElement.style.cursor = 'grab'; return; }
+  renderer.domElement.style.cursor = 'pointer';
+  showTip(tipHtml(g, c, state.t, 'Click to open the case file'), e.clientX, e.clientY);
+});
+renderer.domElement.addEventListener('pointerleave', hideTip);
+
+// --- camera fly ---
+let fly = null;
+function flyTo(tx, tz, dist, height) {
+  const from = { p: camera.position.clone(), t: controls.target.clone() };
+  const tgt = new THREE.Vector3(tx, 0, tz);
+  const off = camera.position.clone().sub(controls.target);
+  const curD = Math.hypot(off.x, off.z), curH = camera.position.y;
+  const dir = off.setY(0).normalize();
+  const to = tgt.clone().add(dir.multiplyScalar(Math.min(dist, curD))).setY(Math.min(height, curH)); // keep the zoom level if already closer
+  fly = { from, to: { p: to, t: tgt }, start: performance.now(), dur: 1500 };
+}
+
+// ================= UI =================
+function renderLayers() {
+  $('layers').innerHTML = Object.entries(LAYERS).map(([k, L]) => { const lit = layerLit(k, state.t);
+    return `<button class="layer${state.rel.includes(k) ? ' rel' : ''}" data-k="${k}" aria-pressed="${state.layer === k}"><span class="k" style="background:${L.color}">${L.k}</span><span><span class="t">${L.name}</span><span class="d">${L.d}</span></span>${lit == null ? '' : `<span class="lit ${lit ? 'on' : 'off'}">${lit ? '● LIT' : '○ off'}</span>`}</button>`; }).join('')
+    + `<div class="legend"><b style="color:var(--text)">${LAYERS[state.layer].name}</b>${LAYERS[state.layer].legend()}</div>`;
+  $('layers').querySelectorAll('.layer').forEach(b => b.onclick = () => { state.layer = b.dataset.k; paint(); renderLayers(); renderHeadline(); });
+}
+function renderHeadline() {
+  const t = state.t, f = cells.reduce((s, c) => s + c.s.fire[t], 0);
+  const lit = ['D', 'A', 'B', 'C', 'E'].filter(k => layerLit(k, t));
+  $('hM').textContent = mlab(t) + (t === NOW ? ' · latest' : '');
+  const am = atmMaxNow();
+  $('hS').innerHTML = `${fireOK(t) ? `<b>${f.toLocaleString()}</b> fire detections` : '<span class="pending">fire archive not yet published (NASA FIRMS)</span>'} · clues lit: ${lit.length ? lit.map(k => `<b style="color:var(--clue)">${k}</b>`).join(' ') : 'none'} · 🛰 AOD peak <b style="color:#c9b6ff">${am.p == null ? 'n/a' : am.p.toFixed(2)}</b>`;
+  $('nowLbl').textContent = mlab(t);
+}
+function renderTimeline() {
+  const svg = $('tl'), W = svg.clientWidth || 700, H = 64; svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const f = MONTHS.map((_, i) => cells.reduce((s, c) => s + c.s.fire[i], 0)), max = Math.max(...f);
+  const bw = W / T, base = 46; let s = '';
+  const step = W < 700 ? 4 : 2;
+  for (let y = FIRST_YEAR; y <= NOW_YEAR; y++) { const x = MONTHS.indexOf(`${y}-01`) * bw;
+    s += `<line x1="${x}" x2="${x}" y1="2" y2="${base}" stroke="rgba(255,255,255,.06)"/>` + ((y - FIRST_YEAR) % step === 0 || y === NOW_YEAR ? `<text x="${x + 2}" y="${H - 4}" fill="#8d8c84" font-size="10" font-family="IBM Plex Mono">${y}</text>` : ''); }
+  s += `<rect x="${(FL + 1) * bw}" y="2" width="${(T - FL - 1) * bw}" height="${base - 2}" fill="rgba(255,255,255,.04)"/>` + ((T - FL - 1) * bw > 90 ? `<text x="${(FL + 1.5) * bw}" y="14" fill="#8d8c84" font-size="9" font-family="IBM Plex Mono">fires not yet archived</text>` : '');
+  f.forEach((v, i) => { const h = (v / max) * (base - 4); s += `<rect x="${i * bw + 0.4}" y="${base - h}" width="${Math.max(1, bw - 0.8)}" height="${h}" rx="1" fill="${i === state.t ? '#ffffff' : '#ff7a3d'}" opacity="${i === state.t ? 1 : 0.75}"/>`;
+    if (dangerD(i)) s += `<rect x="${i * bw}" y="${base + 2}" width="${bw}" height="3" fill="#5fa8ff" opacity=".7"/>`; });
+  s += `<line x1="${state.t * bw + bw / 2}" x2="${state.t * bw + bw / 2}" y1="0" y2="${base + 5}" stroke="#fff" stroke-width="1.5"/>`;
+  svg.innerHTML = s;
+  const at = ev => { const r = svg.getBoundingClientRect(); return clamp(Math.floor((ev.clientX - r.left) / r.width * T), 0, T - 1); };
+  svg.onmousemove = ev => { const i = at(ev); showTip(`<b>${mlab(i)}</b><div>${fireOK(i) ? `<span class="mono">${f[i].toLocaleString()}</span> fire detections` : 'Fire archive not yet published'}</div><div class="k">ONI ${fmtIdx(DATA.oni[i])} · DMI ${fmtIdx(DATA.dmi[i])} · Click to travel here</div>`, ev.clientX, ev.clientY - 60); };
+  svg.onmouseleave = hideTip;
+  svg.onclick = ev => setTime(at(ev));
+  if (svg.dataset.drag !== '1') { svg.dataset.drag = '1'; svg.addEventListener('pointermove', ev => { if (ev.buttons === 1) setTime(at(ev)); }); }
+}
+$('jumps').innerHTML = CASE_YEARS.map(y => `<button class="pill" data-y="${y}" style="margin-left:4px">${y === '2026' ? 'Now' : y}</button>`).join('');
+$('jumps').querySelectorAll('.pill').forEach(b => b.onclick = () => { const y = b.dataset.y;
+  if (y === '2026') return setTime(NOW);
+  let bi = 0, bv = -1; MONTHS.forEach((m, i) => { if (m.startsWith(y)) { const v = cells.reduce((s, c) => s + c.s.fire[i], 0); if (v > bv) { bv = v; bi = i; } } }); setTime(bi); });
+
+let playTimer = null;
+$('playBtn').onclick = () => {
+  if (playTimer) { clearInterval(playTimer); playTimer = null; $('playBtn').textContent = '▶ Play'; return; }
+  if (state.t >= NOW) state.t = Math.max(0, NOW - 36);
+  $('playBtn').textContent = '⏸ Pause';
+  playTimer = setInterval(() => { if (state.t >= NOW) { clearInterval(playTimer); playTimer = null; $('playBtn').textContent = '▶ Play'; return; } setTime(state.t + 1); }, 650);
+};
+
+function setTime(t) { state.t = clamp(t, 0, NOW); buildFire(state.t); paint(); renderLayers(); renderHeadline(); renderTimeline(); if (state.sel) { renderPanel(); refreshPinTip(); } }
+
+// ================= case file panel =================
+function leadMonths(P, isDanger) { // months before P the clue first lit (allowing a 1-month gap)
+  let lead = -1, gap = 0;
+  for (let o = 0; o <= 10; o++) { const i = P - o; if (i < 0) break;
+    if (isDanger(i)) { lead = o; gap = 0; } else if (++gap > 1) break; }
+  return lead;
+}
+function caseRows(c) {
+  return CASE_YEARS.map(y => {
+    let P = -1, pv = -1; MONTHS.forEach((m, i) => { if (m.startsWith(y) && c.s.fire[i] > pv) { pv = c.s.fire[i]; P = i; } });
+    const big = pv >= 5;
+    return { y, P, fires: pv, big,
+      D: big ? leadMonths(P, dangerD) : null,
+      A: big ? leadMonths(P, i => c.s.rain[i] < 40) : null,
+      B: big ? leadMonths(P, i => soilOf(c, i) < THR_B) : null,
+      C: big ? ((lossOf(c, P) ?? 0) >= 35) : null,
+      firstLit: big ? Math.max(0, P - Math.max(leadMonths(P, dangerD), leadMonths(P, i => c.s.rain[i] < 40), leadMonths(P, i => soilOf(c, i) < THR_B))) : null };
+  });
+}
+function spark(id, vals, { color, thr, dir, lo, hi, fmt, unit }) {
+  const W = 360, H = 40, n = vals.length, x = i => i / (n - 1) * W;
+  const y = v => H - 3 - (clamp(v, lo, hi) - lo) / (hi - lo) * (H - 8);
+  let s = `<svg class="spark" id="${id}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  CASE_YEARS.forEach(yy => { const i0 = MONTHS.indexOf(`${yy}-07`); if (i0 >= 0) s += `<rect x="${x(i0)}" y="0" width="${x(4) - x(0)}" height="${H}" fill="rgba(255,122,61,.10)"/>`; });
+  if (thr != null) { const ty = y(thr); s += dir === 'below' ? `<rect x="0" y="${ty}" width="${W}" height="${H - ty}" fill="rgba(250,178,25,.08)"/>` : `<rect x="0" y="0" width="${W}" height="${ty}" fill="rgba(250,178,25,.08)"/>`;
+    s += `<line x1="0" x2="${W}" y1="${ty}" y2="${ty}" stroke="#fab219" stroke-dasharray="3 3" stroke-width="1" vector-effect="non-scaling-stroke"/>`; }
+  s += `<path d="${vals.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1)).join('')}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+  s += `<line x1="${x(state.t)}" x2="${x(state.t)}" y1="0" y2="${H}" stroke="#fff" stroke-width="1" vector-effect="non-scaling-stroke" opacity=".7"/>`;
+  s += `</svg>`;
+  sparkData[id] = { vals, fmt, unit };
+  return s;
+}
+const sparkData = {};
+function attachSparks() {
+  document.querySelectorAll('svg.spark').forEach(svg => { const d = sparkData[svg.id]; if (!d) return;
+    const at = ev => { const r = svg.getBoundingClientRect(); return clamp(Math.round((ev.clientX - r.left) / r.width * (d.vals.length - 1)), 0, d.vals.length - 1); };
+    svg.onmousemove = ev => { const i = at(ev); showTip(`<b>${mlab(i)}</b><div><span class="mono">${d.fmt(d.vals[i])}</span> ${d.unit}</div><div class="k">Click to travel here</div>`, ev.clientX, ev.clientY); };
+    svg.onmouseleave = hideTip; svg.onclick = ev => setTime(at(ev)); svg.style.cursor = 'pointer'; });
+}
+
+function select(c, g) {
+  state.sel = { c, lon: g ? g.lon : c.lon, lat: g ? g.lat : c.lat };
+  const h = Math.max(0, heightAt(c.lon, c.lat));
+  pin.position.set(toX(c.lon), h, toZ(c.lat)); pin.visible = true;
+  selLbl.textContent = nearestTown(state.sel.lon, state.sel.lat).name;
+  flyTo(toX(c.lon), toZ(c.lat), 3.2, 2.6);
+  $('hint').style.opacity = 0;
+  hideTip(); refreshPinTip();
+  renderPanel();
+}
+
+// ================= atmosphere (seen from space): real MERRA-2 aerosol optical depth per cell =================
+const AG = { lon0: 95.25, lat1: 6.25, nx: 49, ny: 26, res: 0.5 };
+const aodGrid = new Map(); cells.forEach(c => aodGrid.set(`${Math.round((c.lon - AG.lon0) / AG.res)},${Math.round((AG.lat1 - c.lat) / AG.res)}`, c));
+const atmCache = new Map();
+function atmField(t) {
+  if (atmCache.has(t)) return atmCache.get(t);
+  const F = new Float32Array(AG.nx * AG.ny).fill(NaN);
+  for (let j = 0; j < AG.ny; j++) for (let i = 0; i < AG.nx; i++) { const c = aodGrid.get(`${i},${j}`); if (c) { const v = aodOf(c, t); if (v != null) F[j * AG.nx + i] = v; } }
+  atmCache.set(t, F); return F;
+}
+const ATM = {
+  aod: { name: 'Smoke (aerosol optical depth, 550 nm)', unit: 'AOD', inst: 'NASA POWER · MERRA-2 AOD_55 (monthly)', f: v => v, fmt: v => v.toFixed(2), norm: v => v / 2,
+         ramp: ['#1e1b18', '#4a4038', '#8a7a68', '#c9b9a3', '#f4ece0'].map(hex), note: 'Above ~1 the sky turns hazy brown; smoke this thick blocks the sun.' }
+};
+state.atm = 'aod';
+const atmVal = (k, v) => v;
+const acan = document.createElement('canvas'); acan.width = AG.nx; acan.height = AG.ny;
+const actx = acan.getContext('2d'); const aimg = actx.createImageData(AG.nx, AG.ny);
+const atex = new THREE.CanvasTexture(acan); atex.magFilter = THREE.LinearFilter; atex.minFilter = THREE.LinearFilter;
+const sheet = new THREE.Mesh(new THREE.PlaneGeometry(AG.nx * AG.res, AG.ny * AG.res),
+  new THREE.MeshBasicMaterial({ map: atex, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+sheet.rotation.x = -Math.PI / 2;
+sheet.position.set(toX(AG.lon0 - AG.res / 2 + AG.nx * AG.res / 2), 1.55, toZ(AG.lat1 + AG.res / 2 - AG.ny * AG.res / 2));
+sheet.visible = false; scene.add(sheet);
+const frame = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(AG.nx * AG.res, 0.001, AG.ny * AG.res)),
+  new THREE.LineBasicMaterial({ color: 0xb39ddb, transparent: true, opacity: 0.5 }));
+frame.position.copy(sheet.position); frame.visible = false; scene.add(frame);
+function paintAtm() {
+  const F = atmField(state.t), A = ATM.aod;
+  for (let k = 0; k < F.length; k++) { const raw = F[k], v = isNaN(raw) ? 0 : clamp(A.norm(raw), 0, 1); const c = ramp(A.ramp, v);
+    aimg.data[k * 4] = c[0] * 255; aimg.data[k * 4 + 1] = c[1] * 255; aimg.data[k * 4 + 2] = c[2] * 255; aimg.data[k * 4 + 3] = isNaN(raw) ? 0 : (0.15 + 0.8 * Math.min(1, v * 1.6)) * 255; }
+  actx.putImageData(aimg, 0, 0); atex.needsUpdate = true;
+  sheet.visible = frame.visible = state.layer === 'E';
+}
+function atmMaxNow() { let m = null, best = null; for (const c of cells) { const v = aodOf(c, state.t); if (v != null && (m == null || v > m)) { m = v; best = c; } }
+  return { p: m, lon: best?.lon, lat: best?.lat }; }
+
+// ================= field evidence (real stories; photos from local media/ folder) =================
+const EVIDENCE = [
+  { id: 'ketapang', icon: '🦧', name: 'Ketapang · orangutan rescues', lon: 110.05, lat: -1.75, photo: 'media/orangutan-ketapang.jpg',
+    stories: [
+      { y: '2026', t: 'On 19 August 2026, IAR Indonesia and local authorities rescued three orangutans found in a community plantation after fire swept through the nearby forest that was their home range.', src: 'The Star, 31 Aug 2026', url: 'https://www.thestar.com.my/aseanplus/aseanplus-news/2026/08/31/burning-kalimantan-forests-put-orangutans-at-risk' },
+      { y: '2019', t: 'Ketapang recorded the highest number of fire hotspots of any district in 2019. In late November an orangutan later named Epen was found foraging on a farm after fires destroyed her forest.', src: 'Mongabay, Feb 2020', url: 'https://news.mongabay.com/2020/02/burning-and-bullets-forest-fires-push-bornean-orangutans-into-harms-way/' }
+    ] },
+  { id: 'nyaru', icon: '🦧', name: 'Nyaru Menteng · haze-sick orangutans', lon: 113.85, lat: -2.1, photo: 'media/orangutan-nyaru-menteng.jpg',
+    stories: [
+      { y: '2019', t: 'Orangutans at the BOS Foundation rehabilitation centre near Palangka Raya showed signs of respiratory illness from the toxic haze.', src: 'AFP via Phys.org, Sep 2019', url: 'https://phys.org/news/2019-09-indonesia-toxic-haze-affecting-borneo.html' },
+      { y: '2015', t: 'Baby orangutans at the same centre suffered respiratory problems from thick haze; rescued wild orangutans were malnourished and dehydrated.', src: 'AFP via Phys.org, Oct 2015', url: 'https://phys.org/news/2015-10-sick-hungry-orangutans-fall-victim.html' }
+    ] },
+  { id: 'sampit', icon: '🦧', name: 'Sampit · driven out by fire', lon: 112.95, lat: -2.53, photo: 'media/orangutan-sampit.jpg',
+    stories: [
+      { y: '2015', t: 'With fires across the Sampit area and Central Kalimantan, orangutans that lost their habitat moved close to people in search of food, and rescue teams had to translocate them to safe forest.', src: 'BOS Foundation, 2015', url: 'https://orangutan.or.id/emergency-rescues-from-the-devastating-fires' }
+    ] },
+  { id: 'space', icon: '🛰', name: 'Seen from space · 2015 smoke', lon: 111.6, lat: 0.6, photo: 'media/nasa-smoke-2015.jpg', space: true,
+    stories: [
+      { y: '2015', t: 'NASA\'s MOPITT sensor measured carbon monoxide near the surface of up to nearly 1,300 ppb over parts of Borneo, against a usual ~100 ppb. Burning peat released especially large amounts.', src: 'NASA Earth Observatory', url: 'https://earthobservatory.nasa.gov/images/87119' },
+      { y: '2015–17', t: 'The pollution did not stay low: carbon monoxide from the 2015 fires was carried into the upper troposphere and on into the stratosphere, where it stayed high until the end of 2016.', src: 'Park et al. 2021, JGR (NASA MLS)', url: 'https://doi.org/10.1029/2020JD033474' }
+    ] }
+];
+const evEls = EVIDENCE.map(e => { const el = document.createElement('div'); el.className = 'ev' + (e.space ? ' space' : '');
+  el.innerHTML = `<span class="ic">${e.icon}</span>${e.name.split(' · ')[0]}`; el.title = e.name; el.onclick = () => openEvidence(e.id); labelsEl.appendChild(el);
+  const h = e.space ? 1.62 : heightAt(e.lon, e.lat) + 0.03; return { e, el, v: new THREE.Vector3(toX(e.lon), h, toZ(e.lat)) }; });
+function updateEvPins() { for (const p of evEls) { tmpV.copy(p.v).project(camera);
+  const show = tmpV.z < 1 && Math.abs(tmpV.x) < 1.02 && Math.abs(tmpV.y) < 1.02 && (!p.e.space || state.layer === 'E' || camera.position.y > 6);
+  p.el.style.display = show ? 'flex' : 'none'; if (show) { p.el.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px'; p.el.style.top = ((1 - tmpV.y) / 2 * innerHeight) + 'px'; } } }
+function photoHtml(e) {
+  return `<div class="evphoto"><img src="${e.photo}" alt="${e.name}" onerror="this.parentNode.innerHTML='<div class=&quot;evph&quot;>📷 Real photo slot<br><span style=&quot;font-size:11px&quot;>Save a photo you are allowed to use as <code>${e.photo}</code> (with credit) and it appears here. The real photos are in the linked stories.</span></div>'"></div>`;
+}
+function evidenceHtml(e, compact) {
+  return `${photoHtml(e)}${e.stories.map(s => `<div class="story"><b>${s.y}</b> · ${s.t}<div class="src"><a href="${s.url}" target="_blank" rel="noopener">${s.src}</a></div></div>`).join('')}`;
+}
+function openEvidence(id) { const e = EVIDENCE.find(x => x.id === id);
+  $('evDlg').innerHTML = `<button class="close" onclick="this.closest('dialog').close()">✕</button><h2 style="margin-top:0">Field evidence</h2><div class="place" style="margin-bottom:10px">${e.icon} ${e.name}</div>${evidenceHtml(e)}`;
+  $('evDlg').showModal(); }
+
+// ================= year check: could we have seen it coming? =================
+function yearCheck(c, y) {
+  const iJul = MONTHS.indexOf(`${y}-07`); if (iJul < 0) return null; const iJun = iJul - 1;
+  if (!c._clim) { const r = [], w = []; for (let yy = FIRST_YEAR; yy <= NOW_YEAR; yy++) { const i = MONTHS.indexOf(`${yy}-07`); if (i < 0 || yy > 2025) continue;
+      r.push((c.s.rain[i - 1] + c.s.rain[i]) / 20); w.push((soilOf(c, i - 1) + soilOf(c, i)) / 2); }
+    const ws = [...w].sort((a, b) => a - b), mean = w.reduce((a, b) => a + b) / w.length;
+    c._clim = { rain: r.reduce((a, b) => a + b) / r.length, soilQ25: ws[Math.floor(0.25 * (ws.length - 1))], soilMean: mean,
+      soilSd: Math.sqrt(w.reduce((a, b) => a + (b - mean) ** 2, 0) / w.length) }; }
+  const D = dangerD(iJul) || dangerD(iJun);
+  const rain = (c.s.rain[iJun] + c.s.rain[iJul]) / 20, rainNorm = c._clim.rain, A = rain < 0.75 * rainNorm;
+  const soil = (soilOf(c, iJun) + soilOf(c, iJul)) / 2, B = soil <= c._clim.soilQ25;
+  const loss = lossOf(c, iJul), C = loss != null && loss >= 35;
+  const H = !!c.peat || c.s.fire.slice(0, iJun).some(v => v >= 10);
+  // chance = logistic model fitted on every cell and July 2003–2025 (leave-one-year-out AUC in DATA.julyModel)
+  const oniJJ = ((DATA.oni[iJun] ?? 0) + (DATA.oni[iJul] ?? 0)) / 2;
+  const p = logit(DATA.julyModel, [oniJJ, rain / rainNorm, (soil - c._clim.soilMean) / (c._clim.soilSd || 1), c.peatFrac, (loss ?? 17) / 100, H ? 1 : 0]);
+  const chance = Math.round(100 * p), cut = Math.round(100 * DATA.julyModel.cut);
+  const pending = iJul + 4 > FL;
+  let peak = 0, pi = iJul; for (let k = iJul + 1; k <= Math.min(FL, iJul + 4); k++) if (c.s.fire[k] > peak) { peak = c.s.fire[k]; pi = k; }
+  const cellMax = Math.max(...c.s.fire), big = !pending && peak >= Math.max(10, cellMax * 0.25);
+  const level = chance >= 2 * cut ? 'Very high' : chance >= cut ? 'High' : chance >= cut / 2 ? 'Medium' : 'Low';
+  let co = null; for (let k = iJul + 1; k <= Math.min(T - 1, iJul + 4); k++) { const v = aodOf(c, k); if (v != null) co = Math.max(co ?? 0, v); }
+  const lead = f => { let l = -1, gap = 0; for (let o = 0; o <= 10; o++) { const i = pi - o; if (i < 0) break; if (f(i)) { l = o; gap = 0; } else if (++gap > 1) break; } return l; };
+  return { y, iJul, D, A, B, C, H, rainNorm, rain, soil, loss, oni: DATA.oni[iJul], dmi: DATA.dmi[iJul], chance, cut, level, peak, pi, big, pending,
+    correct: pending ? null : (chance >= cut) === big, co,
+    leadD: big ? lead(dangerD) : -1, leadA: big ? lead(i => c.s.rain[i] < 40) : -1, leadB: big ? lead(i => soilOf(c, i) < THR_B) : -1 };
+}
+function yearStory(c, r) {
+  const why = [];
+  why.push(r.D ? `<b>D</b> the ocean was in drought mode (ONI ${fmtIdx(r.oni)}, IOD ${fmtIdx(r.dmi)})` : `<b>D</b> the ocean was calm (ONI ${fmtIdx(r.oni)})`);
+  why.push(r.A ? `<b>A</b> rain was only ${r.rain.toFixed(1)} mm/day, ${Math.round((1 - r.rain / r.rainNorm) * 100)}% below normal for June–July` : `<b>A</b> rain was normal (${r.rain.toFixed(1)} mm/day vs ${r.rainNorm.toFixed(1)} usual)`);
+  why.push(r.B ? `<b>B</b> the root zone was drier than in 3 of 4 years (wetness ${r.soil.toFixed(2)})` : `<b>B</b> the soil was still moist (wetness ${r.soil.toFixed(2)})`);
+  why.push(r.loss == null ? `<b>C</b> no forest-loss statistics for this regency` : r.C ? `<b>C</b> ${r.loss.toFixed(0)}% of the tree cover was already gone` : `<b>C</b> most tree cover still stood (${r.loss.toFixed(0)}% lost)`);
+  why.push(r.H ? `<b>H</b> this land burns easily (${c.peat ? 'peat swamp' : 'it has burned before'})` : `<b>H</b> no history of big fires here`);
+  const out = r.pending ? `<span class="pending">NASA FIRMS has not yet published the ${r.y} fire archive, so the outcome is still open.</span>`
+    : r.big ? `🔥 <b>${r.peak}</b> fire detections at the peak (${mshort(r.pi)})${r.co != null ? `, smoke (AOD) up to <b>${r.co.toFixed(2)}</b>` : ''}`
+    : (r.peak >= 10 ? `Fires stayed moderate: ${r.peak} detections at most` : `Only ${r.peak} fire detection${r.peak === 1 ? '' : 's'} at most`) + (r.co != null ? (r.co > 1 ? `, though smoke drifting in pushed AOD to ${r.co.toFixed(2)}` : `; the air stayed fairly clear (AOD ${r.co.toFixed(2)})`) : '');
+  const leads = r.big ? [['D', r.leadD], ['A', r.leadA], ['B', r.leadB]].filter(([, v]) => v >= 0).map(([k, v]) => `${k} ${v} mo`).join(' · ') : '';
+  return { why, out, leads };
+}
+const LAST_YEAR = String(+MONTHS[NOW].slice(0, 4) - 1);
+state.cmpYear = '2019';
+
+function renderPanel() {
+  const P = $('panel');
+  const JM = DATA.julyModel, RM = DATA.riskModel;
+  if (!state.sel) {
+    const oniNow = [...DATA.oni].reverse().find(v => v != null), iO = DATA.oni.lastIndexOf(oniNow);
+    const peatNow = cells.filter(c => c.peat), dryNow = peatNow.filter(c => soilOf(c, NOW) < THR_B).length;
+    P.innerHTML = `<div class="intro"><h2 style="margin-top:0">Case file</h2><div class="place">Pick a place to investigate</div>
+      <p>Every 0.5° cell (~55 km) of Sumatra and Kalimantan carries 23 years of satellite measurements. Click anywhere to see:</p>
+      <p>🔥 <b>The effect:</b> NASA FIRMS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil &amp; peat dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
+      <h2>Or start with a fire hotspot</h2><div class="quick">${['Palangka Raya','Pekanbaru','Kayu Agung (OKI)','Pontianak','Jambi','Ketapang'].map(n => `<button class="pill" data-town="${n}">${n}</button>`).join('')}</div>
+      <h2>Field evidence on the map</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
+      <h2>What's happening in 2026</h2><p style="font-size:12.5px">The ocean clue is at a record: NOAA's Niño 3.4 anomaly reached <b>+${DATA.nino34Oct2026.toFixed(2)} °C</b> in October 2026, the highest since satellite SSTs began in 1982, and the ONI hit <b>${fmtIdx(oniNow)}</b> (${mshort(iO)}). In ${mshort(NOW)}, <b>${dryNow} of ${peatNow.length}</b> peat cells were below the dryness line. NASA FIRMS has not yet published the 2026 fire archive, so this year's fire months are shown as "not yet archived".</p></div>`;
+    P.querySelectorAll('[data-town]').forEach(b => b.onclick = () => { const t = TOWNS.find(x => x[0] === b.dataset.town);
+      const c = cells.filter(c => Math.hypot(c.lon - t[1], c.lat - t[2]) < 0.75).sort((a, b2) => (b2.peat - a.peat) || (Math.hypot(a.lon - t[1], a.lat - t[2]) - Math.hypot(b2.lon - t[1], b2.lat - t[2])))[0] || nearestCell(t[1], t[2]);
+      if (c) select(c, { lon: t[1], lat: t[2] }); });
+    P.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => openEvidence(b.dataset.ev));
+    return;
+  }
+  const { c } = state.sel, t = state.t, town = nearestTown(state.sel.lon, state.sel.lat);
+  const rain = c.s.rain[t] / 10, soil = soilOf(c, t), loss = lossOf(c, t), oni = DATA.oni[t], dmi = DATA.dmi[t], ao = aodOf(c, t);
+  let season = 0; const y = MONTHS[t].slice(0, 4); MONTHS.forEach((m, i) => { if (m.startsWith(y) && i <= t) season += c.s.fire[i]; });
+  const risk = riskOf(c, t);
+  const clue = (k, color, name, val, unit, lit, thrText, sparkHtml, na) => `<div class="clue${hl(k)}"><div class="row"><span class="k" style="background:${color}">${k}</span><span class="n">${name}</span><span class="v">${val} <small>${unit}</small></span></div>
+    <div class="meta"><span>${thrText}</span><span class="chip ${na ? 'na' : lit ? 'on' : 'off'}">${na ? 'N/A' : lit ? '● LIT' : '○ off'}</span></div>${sparkHtml}</div>`;
+  const years = []; for (let yy = FIRST_YEAR; yy <= NOW_YEAR; yy++) years.push(yearCheck(c, String(yy)));
+  const done = years.filter(r => r && !r.pending), hits = done.filter(r => r.correct).length;
+  const cmpYears = [[LAST_YEAR, `Last year (${LAST_YEAR})`], ['2019', '2019'], ['2015', '2015'], ['2006', '2006'], [String(NOW_YEAR), `${NOW_YEAR} (now)`]];
+  if (!cmpYears.some(([k]) => k === state.cmpYear)) { if (/^\d{4}$/.test(state.cmpYear) && yearCheck(c, state.cmpYear)) cmpYears.push([state.cmpYear, state.cmpYear]); else state.cmpYear = '2019'; }
+  const Y = years.find(r => r.y === state.cmpYear);
+  const dot = (v, na) => na ? '<span class="dot na">·</span>' : v ? '<span class="dot on">●</span>' : '<span class="dot off">○</span>';
+  const ycard = r => {
+    const { why, out, leads } = yearStory(c, r);
+    return `<div class="ycard"><div class="yhead"><span>In July ${r.y} the clues said:</span><span class="chance ${r.chance >= r.cut * 2 ? 'hi' : r.chance >= r.cut ? 'mid' : 'lo'}">${r.level} chance of fire · ${r.chance}%</span></div>
+      <ul>${why.map(w => `<li>${w}</li>`).join('')}</ul>
+      <div class="yhead" style="margin-top:8px"><span>What actually happened (Aug–Nov):</span>${r.pending ? '<span class="chip na">pending</span>' : `<span class="chip ${r.correct ? 'on' : 'off'}">${r.correct ? '✓ clues were right' : r.big ? '✗ clues missed it' : '✗ false alarm'}</span>`}</div>
+      <div class="yout">${out}</div>${leads ? `<div class="src">Warning time before the peak: ${leads}</div>` : ''}
+      <button class="pill" data-go="${r.big ? r.pi : r.iJul}" style="margin-top:8px">⏪ Fly back to ${mshort(r.big ? r.pi : r.iJul)}</button></div>`;
+  };
+  const near = EVIDENCE.filter(e => Math.hypot(e.lon - c.lon, e.lat - c.lat) < 1.3);
+  const nowCheck = years[years.length - 1];
+  const pastBig = done.filter(r => r.big);
+  let verdict = pastBig.length
+    ? `Here, big fires came in <b>${pastBig.map(r => r.y).join(', ')}</b>. Checking the clues each July, the fitted model called it right in <b>${hits} of ${done.length} years</b>, including the quiet years.`
+    : `Fires here stayed small in every year since ${FIRST_YEAR}, and the model called it right in <b>${hits} of ${done.length} years</b>. <b>Lower-priority area.</b>`;
+  verdict += nowCheck.pending
+    ? `<br><br><b>${nowCheck.y}:</b> in July the clues said <b>${nowCheck.level.toLowerCase()} chance (${nowCheck.chance}%)</b>${nowCheck.chance >= nowCheck.cut ? ', above the warning line' : ''}. The fire record for ${nowCheck.y} is not yet archived.`
+    : nowCheck.big ? `<br><br><b>${nowCheck.y}:</b> the clues said ${nowCheck.level.toLowerCase()} chance (${nowCheck.chance}%), and fires peaked in <b>${mshort(nowCheck.pi)}</b>.` : '';
+  const K = c.kabInfo;
+  const aodSeries = c.s.aod.map(v => (v == null ? NaN : v / 1000));
+
+  P.innerHTML = `<button class="close" id="closeSel">✕</button>
+    <h2 style="margin-top:0">Case file</h2>
+    <div class="place">near ${town.name}</div>
+    <div class="placesub">${c.lat.toFixed(2)}°, ${c.lon.toFixed(2)}°E · ${K ? `${K.name}, ` : ''}${c.region} · ${town.km} km from town</div>
+    <span class="tag">${c.peat ? `🟫 Peat swamp (${Math.round(c.peatFrac * 100)}% of cell)` : c.peatFrac > 0 ? `⛰ Mostly mineral soil (${Math.round(c.peatFrac * 100)}% peat)` : '⛰ Mineral soil'}</span><span class="tag">${loss == null ? 'no loss stats' : loss.toFixed(0) + '% tree cover lost since 2001'}</span>
+    ${K ? `<span class="tag">Regency #${K.rank} of 519 by fires · trend ${K.pct_dec == null ? '—' : (K.pct_dec > 0 ? '+' : '') + K.pct_dec + '%/decade'}${K.sig ? ' (significant)' : ''}</span>` : ''}
+
+    <h2>The effect · ${mlab(t)}</h2>
+    <div class="nowbox">
+      <div class="stat"><div class="v" style="color:${fireOK(t) && c.s.fire[t] > 20 ? 'var(--fire)' : 'var(--text)'}">${fireTxt(c, t)}</div><div class="l">${fireOK(t) ? 'fire detections this month' : 'fires: not yet archived'}</div></div>
+      <div class="stat"><div class="v">${fireOK(t) ? season : 'n/a'}</div><div class="l">detections in ${y} so far</div></div>
+      <div class="stat risk"><span style="font-size:12px;color:var(--text-2);white-space:nowrap">Risk this month</span><span class="riskbar"><i style="width:${risk}%"></i></span><span style="font-family:var(--mono)">${risk}%</span></div>
+    </div>
+    <div class="src">Risk = probability of ≥${RM.event} detections in a month, from a logistic model of rain, soil wetness, ONI, peat, forest loss and fire history (fitted on ${RM.n.toLocaleString()} cell-months, leave-one-year-out AUC ${RM.auc_loyo}).</div>
+
+    <h2>The clues · ${FIRST_YEAR} → ${NOW_YEAR}</h2>
+    ${clue('D', '#5fa8ff', 'Ocean: El Niño / IOD', `${fmtIdx(oni)} / ${fmtIdx(dmi)}`, 'ONI / DMI', dangerD(t), 'ONI ≥ +0.5 or DMI ≥ +0.4',
+      spark('spD', MONTHS.map((_, i) => Math.max(DATA.oni[i] ?? -9, (DATA.dmi[i] ?? -9) * 1.25)), { color: '#5fa8ff', thr: 0.5, dir: 'above', lo: -1.5, hi: 2.8, fmt: v => v.toFixed(2), unit: 'index (max of ONI, DMI×1.25)' }))}
+    ${clue('A', '#f2b33d', 'Rainfall', rain.toFixed(1), 'mm/day', rain < 4, 'Danger below 4 mm/day',
+      spark('spA', c.s.rain.map(v => v / 10), { color: '#f2b33d', thr: 4, dir: 'below', lo: 0, hi: 15, fmt: v => v.toFixed(1), unit: 'mm/day' }))}
+    ${clue('B', '#e0689a', 'Root-zone soil wetness', soil.toFixed(2), '0–1', soil < THR_B, `Danger below ${THR_B.toFixed(2)} (fitted)`,
+      spark('spB', c.s.soil.map(v => v / 1000), { color: '#e0689a', thr: THR_B, dir: 'below', lo: 0.55, hi: 1, fmt: v => v.toFixed(3), unit: 'root-zone wetness' }))}
+    ${clue('C', '#c9a26b', 'Tree cover lost since 2001', loss == null ? '—' : loss.toFixed(0), loss == null ? '' : '%', (loss ?? 0) >= 35, `Heavily disturbed at 35%+ · stats through ${DATA.lossLast}`,
+      loss == null ? '' : spark('spC', c.s.loss.map(v => (v ?? 0) / 10), { color: '#c9a26b', thr: 35, dir: 'above', lo: 0, hi: 90, fmt: v => v.toFixed(0), unit: '% lost' }), loss == null)}
+    <div class="src">Orange bands = fire seasons of 2015, 2019, 2023, 2026. Dashed line = danger line. Click any line to travel to that month.</div>
+
+    <h2>🛰 The air above · seen from space</h2>
+    <div class="clue${hl('E')}"><div class="row"><span class="k" style="background:#b39ddb">E</span><span class="n">Smoke (aerosol optical depth)</span><span class="v">${ao == null ? 'n/a' : ao.toFixed(2)} <small>AOD</small></span></div>
+      <div class="meta"><span>NASA MERRA-2 · above ~1 the sky turns hazy brown</span><span class="chip ${ao == null ? 'na' : ao > 1 ? 'on' : 'off'}">${ao == null ? 'N/A' : ao > 1 ? '● SMOKY' : '○ clear-ish'}</span></div>
+      ${spark('spE', aodSeries.map(v => (isNaN(v) ? 0 : v)), { color: '#b39ddb', thr: 1, dir: 'above', lo: 0, hi: Math.max(1.5, ...aodSeries.filter(v => !isNaN(v))), fmt: v => v.toFixed(2), unit: 'AOD (550 nm)' })}</div>
+
+    <h2>⏪ Compare years · could we have seen it coming?</h2>
+    <div class="tabs">${cmpYears.map(([k, lab]) => `<button class="pill" data-y="${k}" aria-pressed="${k === state.cmpYear}">${lab}</button>`).join('')}</div>
+    ${Y ? ycard(Y) : ''}
+
+    <h2>Every year at this spot · July check vs. what happened</h2>
+    <table class="proof"><tr><th>Year</th><th title="Ocean">D</th><th title="Rain">A</th><th title="Dryness">B</th><th title="Forest loss">C</th><th title="Peat or burned before">H</th><th>Chance</th><th>🔥 peak</th><th></th></tr>
+      ${years.map(r => `<tr class="y ${r.y === nowCheck.y ? 'now' : ''}" data-y="${r.y}"><td>${r.y}</td><td>${dot(r.D)}</td><td>${dot(r.A)}</td><td>${dot(r.B)}</td><td>${dot(r.C, r.loss == null)}</td><td>${dot(r.H)}</td><td>${r.chance}%</td><td style="color:${r.big ? 'var(--fire)' : 'var(--muted)'}">${r.pending ? '…' : r.peak}</td><td>${r.pending ? '<span class="pending">pending</span>' : r.correct ? '✓' : '<span style="color:#ff8a8a">✗</span>'}</td></tr>`).join('')}
+    </table>
+    <div class="src">● = clue lit in June–July (A = rain 25%+ below normal, B = soil drier than this spot's 25th percentile, H = peat or burned before). Chance comes from a logistic model fitted on all ${JM.n.toLocaleString()} cell-Julys 2003–2025 (leave-one-year-out AUC ${JM.auc_loyo}; it flags ${Math.round(JM.hit_rate * 100)}% of big fire seasons, with a ${Math.round(JM.false_alarm * 100)}% false-alarm rate). ✓ = the call (≥ ${Math.round(JM.cut * 100)}% means "fire likely") matched what happened. Click a row to open that year.</div>
+
+    ${near.length ? `<h2>📷 Field evidence near here</h2>${near.map(e => `<div class="place" style="font-size:15px;margin:6px 0">${e.icon} ${e.name}</div>${evidenceHtml(e, true)}`).join('')}` : ''}
+
+    <h2>Verdict</h2>
+    <div class="verdict">${verdict}</div>
+    <div class="src">Data: NASA FIRMS MODIS · NASA POWER (MERRA-2) rain, root-zone wetness &amp; AOD · Hansen/UMD tree-cover loss via Global Forest Watch · PEATMAP · NOAA ONI &amp; DMI. Thresholds: A <a href="https://www.pnas.org/doi/10.1073/pnas.1524888113" target="_blank" rel="noopener">Field 2016</a> · D <a href="https://doi.org/10.3390/su142215155" target="_blank" rel="noopener">Iskandar 2022</a> · B fitted on this data.</div>`;
+  $('closeSel').onclick = () => { state.sel = null; pin.visible = false; selLbl.style.display = 'none'; renderPanel(); flyTo(0.5, 0.4, 14, 10); };
+  P.querySelectorAll('.tabs [data-y]').forEach(b => b.onclick = () => { state.cmpYear = b.dataset.y; renderPanel(); });
+  P.querySelectorAll('tr.y').forEach(tr => tr.onclick = () => { state.cmpYear = tr.dataset.y; renderPanel();
+    const tabs = P.querySelector('.tabs'); if (tabs) tabs.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  P.querySelectorAll('[data-go]').forEach(b => b.onclick = () => setTime(+b.dataset.go));
+  attachSparks();
+}
+
+// ================= loop =================
+$('aboutBtn').onclick = () => $('about').showModal();
+$('contourBtn').onclick = () => { const on = !contourMajor.visible; contourMajor.visible = contourMinor.visible = on; $('contourBtn').setAttribute('aria-pressed', on); };
+$('spaceBtn').onclick = () => { fly = { from: { p: camera.position.clone(), t: controls.target.clone() }, to: { p: new THREE.Vector3(0.6, 24, 1.2), t: new THREE.Vector3(0.6, 0, 0.2) }, start: performance.now(), dur: 1800 }; if (state.layer !== 'E') { state.layer = 'E'; paint(); renderLayers(); renderHeadline(); } };
+$('aboutClose').onclick = () => $('about').close();
+window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); renderTimeline(); });
+
+// intro fly-in
+fly = { from: { p: camera.position.clone(), t: controls.target.clone() }, to: { p: new THREE.Vector3(-0.5, 9.5, 11.5), t: new THREE.Vector3(0.5, 0, 0.6) }, start: performance.now() + 200, dur: 2600 };
+const clock = new THREE.Clock();
+function loop() {
+  requestAnimationFrame(loop);
+  const now = performance.now();
+  if (fly) { const k = clamp((now - fly.start) / fly.dur, 0, 1), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    camera.position.lerpVectors(fly.from.p, fly.to.p, e); controls.target.lerpVectors(fly.from.t, fly.to.t, e); if (k >= 1) fly = null; }
+  const et = clock.getElapsedTime();
+  fireMat.uniforms.time.value = et; smokeMat.uniforms.time.value = et;
+  if (pin.visible) { const s = 1 + 0.35 * ((et * 0.8) % 1); ring.scale.set(s, s, s); ring.material.opacity = 0.8 * (1 - (et * 0.8) % 1); }
+  controls.update(); renderer.render(scene, camera); updateLabels(); updateEvPins();
+}
+$('thrBLbl').textContent = THR_B.toFixed(2); $('lossLastLbl').textContent = DATA.lossLast;
+$('modelLbl').textContent = `Monthly risk AUC ${DATA.riskModel.auc_loyo} · July check AUC ${DATA.julyModel.auc_loyo}`;
+setTime(NOW); renderPanel(); loop();
+
+// ================= guided question from the landing page: ?layer=&where=&year= =================
+(function applyGuide() {
+  const q = new URLSearchParams(location.search), what = q.get('layer');
+  const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D', wildlife: 'fire' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind', wildlife: 'Wildlife impacts' };
+  if (!GL[what]) return;
+  const where = q.get('where') || 'Kalimantan', yr = q.get('year') || 'now';
+  const town = TOWNS.find(x => x[0] === where), cellOf = town && nearestCell(town[1], town[2]);
+  const group = cellOf ? [cellOf] : cells.filter(c => where === 'Sumatra' ? c.lon < 107.5 : c.lon >= 107.5);
+  const mean = (f) => { let s = 0, n = 0; for (const c of group) { const v = f(c); if (v != null) { s += v; n++; } } return n ? s / n : null; };
+  const sum = (f) => group.reduce((s, c) => s + f(c), 0);
+  const score = i => what === 'ocean' ? (DATA.oni[i] ?? -9) : what === 'drought' ? -(mean(c => soilOf(c, i)) ?? 9) : what === 'smoke' ? (mean(c => aodOf(c, i)) ?? 0) : sum(c => c.s.fire[i]);
+  let t = NOW;
+  if (yr !== 'now' && +yr < NOW_YEAR) {
+    let best = -1, bv = -Infinity; MONTHS.forEach((m, i) => { if (m.startsWith(yr)) { const v = score(i); if (v > bv) { bv = v; best = i; } } });
+    if (best >= 0) t = best;
+  }
+  if (what === 'smoke') while (t > 0 && mean(c => aodOf(c, t)) == null) t--; // newest month that has smoke data
+  state.layer = GL[what]; state.rel = (REL[what] || []).slice();
+  setTime(t);
+  if (cellOf) select(cellOf, { lon: town[1], lat: town[2] });
+  else { const c = where === 'Sumatra' ? [101.5, -0.5] : [114, 0]; flyTo(toX(c[0]), toZ(c[1]), 8, what === 'smoke' ? 11 : 7.5); $('hint').style.opacity = 0; }
+  // one-line answer
+  const f1 = v => v == null ? 'n/a' : v.toFixed(2);
+  const answer = what === 'ocean' ? `Niño 3.4 anomaly <b>${fmtIdx(DATA.oni[t])}</b> °C · Indian Ocean Dipole <b>${fmtIdx(DATA.dmi[t])}</b> · ${dangerD(t) ? 'drought-mode pattern (warm Pacific / warm-west Indian Ocean)' : 'no drought-mode signal this month'}`
+    : what === 'wildlife' ? (() => {
+        const Y0 = MONTHS[t].slice(0, 4), evs = EVIDENCE.filter(e => town ? Math.hypot(e.lon - town[1], e.lat - town[2]) < 3 : where === 'Sumatra' ? e.lon < 107.5 : e.lon >= 107.5);
+        const hit = evs.flatMap(e => e.stories.filter(s => s.y === Y0).map(s => ({ e, s })))[0];
+        const fires = fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire detections in ${mshort(t)}` : 'fire archive for this month is not yet published';
+        return hit ? `${fires}<br>🦧 <b>${hit.e.name.split(' · ')[0]}</b>: ${hit.s.t.length > 170 ? hit.s.t.slice(0, 170) + '…' : hit.s.t} <button class="qa-ev" data-ev="${hit.e.id}" type="button">Read the field report</button>`
+          : `${fires}<br>No orangutan field report on the map for ${Y0}${evs.length ? '' : ' in this area'}. Reports exist for ${[...new Set(EVIDENCE.flatMap(e => e.stories.map(s => s.y)))].sort().join(', ')}.`;
+      })()
+    : what === 'fire' ? (fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire detections` : 'fire archive for this month is not yet published by NASA FIRMS')
+    : what === 'drought' ? `root-zone wetness <b>${f1(mean(c => soilOf(c, t)))}</b> (danger below ${THR_B.toFixed(2)}) · rain <b>${f1(mean(c => c.s.rain[t] / 10))}</b> mm/day`
+    : what === 'smoke' ? `smoke (aerosol optical depth) <b>${f1(mean(c => aodOf(c, t)))}</b> (above ~1 the sky turns hazy)`
+    : `<b>${(mean(c => lossOf(c, t)) ?? 0).toFixed(0)}%</b> of the tree cover lost since 2001`;
+  const bn = $('qbanner'), Y = MONTHS[t].slice(0, 4), EX = /^https:\/\//.test(q.get('ex') || '') ? q.get('ex') : '';
+  // the cell the story is about: the chosen place, or the worst-hit cell of the region that year
+  const yearFire = c => { let v = 0; MONTHS.forEach((m, i) => { if (m.startsWith(Y)) v += c.s.fire[i]; }); return v; };
+  const rc = cellOf || group.reduce((b, c) => yearFire(c) > yearFire(b) ? c : b, group[0]);
+  const rtown = nearestTown(rc.lon, rc.lat).name, rY = yearCheck(rc, Y);
+  const where_ = cellOf ? `near ${rtown}` : `the worst-hit area of ${where}, near ${rtown}`;
+  const story = r => { const st = yearStory(rc, r); return `<ul>${st.why.map(w => `<li>${w}</li>`).join('')}</ul>${st.out}`; };
+  const openCase = `<div style="margin-top:6px"><button class="qa-open" type="button">Open the full case file →</button></div>`;
+  const ANS = {
+    why: () => rY ? `<b>Why ${Y}?</b> <span class="k">${where_}, in July ${Y}</span>${story(rY)}${openCase}` : `No July ${Y} data.`,
+    warn: () => { if (!rY) return 'No July data for this year.'; const L = [['D', rY.leadD], ['A', rY.leadA], ['B', rY.leadB]].filter(([, v]) => v >= 0).map(([k, v]) => `${k} lit ${v} month${v === 1 ? '' : 's'} before the peak`).join(' · ');
+      return `<b>Did the clues warn us?</b> <span class="k">${where_}</span><br>In July ${Y} the clues gave a <b>${rY.level} chance (${rY.chance}%)</b> of a big fire season. ${rY.pending ? 'The outcome is not archived yet.' : rY.correct ? '✓ The warning was right.' : '✗ The clues got this one wrong.'}${L ? `<br><span class="k">${L}</span>` : ''}${openCase}`; },
+    cmp: () => { const ys = [...new Set([Y, '2006', '2015', '2019', '2023', LAST_YEAR])].sort(); const rows = ys.map(y => { const r = yearCheck(rc, y); if (!r) return ''; return `<li>${y === Y ? '<b>' + y + '</b>' : y} · ${r.level} chance (${r.chance}%) → ${r.pending ? 'outcome pending' : `🔥 ${r.peak} at peak ${r.correct ? '✓' : '✗'}`}</li>`; }).join('');
+      return `<b>Compared with other years</b> <span class="k">${where_}</span><ul>${rows}</ul>${openCase}`; },
+  };
+  const ans = () => bn.querySelector('.ans');
+  const show = html => { const a = ans(); a.innerHTML = html; a.style.display = 'block'; a.querySelector('.qa-open')?.addEventListener('click', () => { state.cmpYear = Y; select(rc, { lon: rc.lon, lat: rc.lat }); }); };
+  bn.innerHTML = `<button class="qx" aria-label="Close">×</button><b>Your question</b> · ${GN[what]} · ${town ? town[0] : where} · ${mshort(t)}<br><span class="k">${answer}</span>
+    <div class="qa"><button data-q="why">Why ${Y}?</button><button data-q="warn">Did the clues warn us?</button><button data-q="cmp">Compare with other years</button></div>
+    <div class="ans" style="display:none"></div>
+    <form><input maxlength="160" placeholder="Ask about ${Y}, e.g. why was it so dry?" aria-label="Ask a question"><button>Ask</button></form>`;
+  bn.style.display = 'block';
+  bn.querySelectorAll('.qa-ev').forEach(b => b.onclick = () => openEvidence(b.dataset.ev));
+  bn.querySelector('.qx').onclick = () => { bn.style.display = 'none'; state.rel = []; renderLayers(); if (state.sel) renderPanel(); };
+  bn.querySelectorAll('[data-q]').forEach(b => b.onclick = () => show(ANS[b.dataset.q]()));
+  bn.querySelector('form').onsubmit = async (e) => {
+    e.preventDefault(); const inp = bn.querySelector('input'), text = inp.value.trim(); if (!text) return;
+    if (!EX) return show(`Free-text answers need the Gemini explainer, which is not connected on this site yet. Try one of the suggested questions above.`);
+    show('<span class="k">✨ Asking Gemini…</span>');
+    try {
+      const f = rY ? { oni: rY.oni, dmi: rY.dmi, rain_mm_day: +rY.rain.toFixed(2), rain_normal: +rY.rainNorm.toFixed(2), soil_wetness: +rY.soil.toFixed(2), tree_loss_pct: rY.loss == null ? null : Math.round(rY.loss), chance_pct: rY.chance, peak_fires: rY.pending ? null : rY.peak } : {};
+      const r = await fetch(EX, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'ask', question: text, place: rtown, lat: +rc.lat.toFixed(2), lon: +rc.lon.toFixed(2), year: +Y, facts: f, lang: 'en' }) });
+      const j = await r.json(); if (!r.ok) throw 0;
+      show(`<b>${text.replace(/[<>&]/g, '')}</b><br>${j.text.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}<div class="k">AI answer · Gemini · based on the numbers for ${where_}</div>`);
+    } catch { show('Could not reach the explainer. Try again, or use a suggested question.'); }
+  };
+})();
+window.__app = { select, setTime, cells, state, pickTown: n => document.querySelector(`[data-town="${n}"]`)?.click(), setLayer: k => { state.layer = k; paint(); renderLayers(); } };
+}
+</script>
+</body>
+</html>

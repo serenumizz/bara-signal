@@ -1,0 +1,10 @@
+name = "ember-signal-explain"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
+# comma-separated list of sites allowed to call this Worker (CORS)
+ALLOWED_ORIGINS = "https://web-zeta-six-76.vercel.app,http://localhost:8000"
+
+# Secret (never commit): npx wrangler secret put GEMINI_API_KEY

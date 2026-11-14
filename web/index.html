@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ember Signal</title>
+<meta name="description" content="An Earth System Trend Detective: how ocean heat, rain, soil moisture, fire and haze connect over Indonesia's peatlands, 2000–2030. Built on NASA FIRMS, NASA POWER (MERRA-2) and NOAA climate indices.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2c2 6 9 9 9 17a9 9 0 0 1-18 0c0-5 3-7 4-11 1 3 2 4 4 5-1-4 0-8 1-11z' fill='%23ff7a2f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+  "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm"
+} }
+</script>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a href="#top" class="brand"><span class="flame"></span>Ember Signal</a>
+  <div class="nav-links">
+    <a href="#question">Question</a>
+    <a href="#timeline">2000–2025</a>
+    <a href="#explore">Explore</a>
+    <a href="#evidence">Evidence</a>
+    <a href="#sim2026">2026 Simulator</a>
+    <a href="#future">2027–2030</a>
+    <a href="#methods">Methods</a>
+  </div>
+</nav>
+
+<!-- ============================================================ HERO -->
+<header class="hero" id="top">
+  <div class="scene" id="heroScene" aria-hidden="true"></div>
+  <div class="hero-shade"></div>
+  <div class="hero-copy">
+    <p class="kicker">NASA Space Apps 2026 · Earth System Trend Detective</p>
+    <h1>
+      <span class="line">The Pacific just broke its fever record.</span>
+      <span class="line accent" id="heroStat">Niño 3.4 hit +3.25 °C in October 2026.</span>
+    </h1>
+    <p class="hero-sub" id="heroSub">The last time the ocean ran this hot, in 2015, satellites counted <b>105,106 fires</b> across Sumatra and Kalimantan in just four months, and the haze crossed borders.</p>
+    <div class="rq-card">
+      <span class="rq-label">Research question</span>
+      <p class="rq">Has a decade of peat-fire governance broken the chain that turns <em>ocean heat</em> into <em>drought</em>, drought into <em>fire</em>, and fire into <em>haze</em>, and what will the record 2026 El Niño, and the years after it, do?</p>
+    </div>
+    <div class="hero-cta">
+      <a class="btn primary" href="#timeline">Follow the evidence</a>
+      <a class="btn" href="#sim2026">Jump to the simulator</a>
+      <button class="btn" type="button" id="heroOpen">🔎 Investigate it yourself</button>
+    </div>
+  </div>
+  <div class="hero-foot">
+    <span class="live-dot"></span><span id="liveLine">Live: MODIS detections in the study area over the last 7 days</span>
+  </div>
+</header>
+
+<!-- ============================================================ GUIDED QUESTIONS -->
+<section class="guide" id="guide" aria-labelledby="guideH">
+  <div class="wrap">
+    <p class="eyebrow">Start here · the full map</p>
+    <h2 id="guideH">Investigate it yourself</h2>
+    <p class="lede">Explore Sumatra and Kalimantan below, or start a guided investigation: pick a topic, a place and a year, and the map jumps to exactly what you asked about with the clues that matter highlighted.</p>
+    <p><button class="btn primary" type="button" id="gqOpen">🔎 New investigate</button></p>
+    <div class="gq-result" id="gqResult">
+      <div class="gq-result-head">
+        <b id="gqResultTitle">The full map · explore freely</b>
+        <span><a id="gqFull" href="explore/" target="_blank" rel="noopener">Open full screen ↗</a><button type="button" id="gqClose" aria-label="Reset the map">Reset map</button></span>
+      </div>
+      <iframe id="gqFrame" title="Jejak Api: explore the islands in 3D" src="explore/" loading="lazy" allow="fullscreen"></iframe>
+      <p class="note">Drag to rotate · right-drag to pan · scroll to zoom · click any place for its case file. ▶ Play animates the months, 🛰 Space view looks down at the smoke, and ⛰ Contours toggles elevation lines. After you answer the questions above, the chips at the top of the map explain why that year happened, whether the clues warned us, and how it compares with other years.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ INVESTIGATE POPUP -->
+<dialog class="gqdlg" id="gqDlg" aria-labelledby="gqDlgH">
+  <button class="gqx" type="button" id="gqDlgClose" aria-label="Close">✕</button>
+  <p class="eyebrow">New investigation · 3 questions</p>
+  <h2 id="gqDlgH">What case do you want to open?</h2>
+    <form class="gq" id="gq">
+      <fieldset>
+        <legend><span class="num">1</span>What do you want to investigate?</legend>
+        <div class="qcards">
+          <label class="qcard"><input type="radio" name="what" value="fire" checked><div class="qc"><i aria-hidden="true">🔥</i><b>Fires &amp; haze</b><small>NASA FIRMS (MODIS) · MERRA-2 smoke</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="drought"><div class="qc"><i aria-hidden="true">🌧️</i><b>Drought &amp; rain</b><small>NASA POWER (MERRA-2) rain · root-zone wetness</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="forest"><div class="qc"><i aria-hidden="true">🌳</i><b>Forests</b><small>Hansen / Landsat tree-cover loss</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="smoke"><div class="qc"><i aria-hidden="true">🛰️</i><b>Air from space</b><small>MERRA-2 aerosol optical depth</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="ocean"><div class="qc"><i aria-hidden="true">🌊</i><b>Ocean &amp; wind</b><small>NOAA ONI (El Niño) · Dipole Mode Index</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="wildlife"><div class="qc"><i aria-hidden="true">🦧</i><b>Wildlife impacts</b><small>Fire detections · orangutan field reports</small></div></label>
+        </div>
+        <div class="gq-ask">
+          <input id="gqText" type="text" maxlength="160" autocomplete="off" aria-label="Ask in your own words" placeholder="…or ask in your own words, e.g. “Is Riau getting drier?” / “Apakah asap di Palangka Raya makin parah?”">
+          <button class="btn primary" type="button" id="gqGo">Go</button>
+        </div>
+        <p class="gq-hint" id="gqHint" aria-live="polite"></p>
+      </fieldset>
+      <fieldset>
+        <legend><span class="num">2</span>Where?</legend>
+        <div class="opts">
+          <label><input type="radio" name="where" value="Sumatra"><span>Sumatra</span></label>
+          <label><input type="radio" name="where" value="Kalimantan" checked><span>Kalimantan</span></label>
+          <label><input type="radio" name="where" value="place"><span>A place</span></label>
+          <select id="gqPlace" aria-label="Choose a place"><option>Banda Aceh</option><option>Meulaboh</option><option>Medan</option><option>Sibolga</option><option>Padang</option><option>Pekanbaru</option><option>Dumai</option><option>Siak</option><option>Bengkalis</option><option>Rengat</option><option>Tembilahan</option><option>Jambi</option><option>Muara Sabak</option><option>Bengkulu</option><option>Palembang</option><option>Kayu Agung (OKI)</option><option>Bandar Lampung</option><option>Pangkal Pinang</option><option>Pontianak</option><option>Ketapang</option><option>Sintang</option><option>Putussibau</option><option>Pangkalan Bun</option><option>Sampit</option><option>Palangka Raya</option><option>Pulang Pisau</option><option>Kuala Kapuas</option><option>Banjarmasin</option><option>Muara Teweh</option><option>Samarinda</option><option>Balikpapan</option><option>Tanjung Selor</option></select>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend><span class="num">3</span><label for="gqYear">When?</label></legend>
+        <div class="opts"><select id="gqYear" aria-label="Choose a year"><option value="now">2026 · now (latest data Oct 2026)</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015" selected>2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option><option value="2009">2009</option><option value="2008">2008</option><option value="2007">2007</option><option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option></select></div>
+      </fieldset>
+      <div class="gq-go">
+        <button class="btn primary" type="submit">Investigate →</button>
+        <span class="gq-sum" id="gqSum" aria-live="polite"></span>
+      </div>
+    </form>
+</dialog>
+
+<!-- ============================================================ TAB BAR -->
+<div class="tabbar" id="tabbar" role="tablist" aria-label="Sections">
+  <div class="tabbar-inner">
+    <button role="tab" data-tab="question"><span>01</span>The case</button>
+    <button role="tab" data-tab="timeline"><span>02</span>2000–2025</button>
+    <button role="tab" data-tab="explore"><span>03</span>Explore map</button>
+    <button role="tab" data-tab="evidence"><span>04</span>Evidence</button>
+    <button role="tab" data-tab="sim2026"><span>05</span>2026 Simulator</button>
+    <button role="tab" data-tab="future"><span>06</span>2027–2030</button>
+    <button role="tab" data-tab="methods"><span>07</span>Methods</button>
+  </div>
+</div>
+<main id="panels">
+
+<!-- ============================================================ QUESTION -->
+<section class="section tabpanel" id="question" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">01 · The case</p>
+    <h2>One process, five Earth-system components</h2>
+    <p class="lede">Indonesia holds one of the largest tropical peat carbon stocks on Earth. When it's wet, peat doesn't burn. When it dries out, it can smoulder for weeks. Every link in that chain can be measured from orbit, so we treat it as a detective case: <b>what</b> is changing, <b>where</b>, <b>by how much</b>, and <b>is it significant</b>?</p>
+
+    <div class="chain" id="chainDiagram">
+      <div class="node" data-k="oni"><span class="sphere">Ocean</span><b>ENSO / IOD</b><small>NOAA ONI, DMI</small></div>
+      <div class="arrow"><span id="arr0">r = −0.79</span></div>
+      <div class="node" data-k="rain"><span class="sphere">Atmosphere</span><b>Dry-season rain</b><small>NASA POWER (MERRA-2)</small></div>
+      <div class="arrow"><span id="arr1">r = +0.93</span></div>
+      <div class="node" data-k="soil"><span class="sphere">Land / hydrosphere</span><b>Root-zone soil wetness</b><small>NASA POWER GWETROOT</small></div>
+      <div class="arrow"><span id="arr2">r = −0.86</span></div>
+      <div class="node" data-k="fire"><span class="sphere">Biosphere</span><b>Fire hotspots</b><small>NASA FIRMS MODIS</small></div>
+      <div class="arrow"><span id="arr3">r = +0.75</span></div>
+      <div class="node" data-k="aod"><span class="sphere">Atmosphere</span><b>Haze (aerosol)</b><small>MERRA-2 AOD 550 nm</small></div>
+    </div>
+    <p class="note">Correlations are across fire seasons (Jul–Oct) 2003–2025, n = 23. Each arrow is fitted and cross-validated in the <a href="#methods">Methods</a> section.</p>
+
+    <div class="grid3 why">
+      <div><h3>Why it matters</h3><p>Peat fires are among the largest single carbon pulses on the planet in El Niño years, and the haze reaches tens of millions of people in Indonesia, Malaysia and Singapore.</p></div>
+      <div><h3>Experiment site</h3><p>Sumatra and Indonesian Kalimantan (95–119° E, 6.5° S–6° N), with climate sampled at 10 peat-dome hotspots in Riau, Jambi, South Sumatra and West, Central and South Kalimantan.</p></div>
+      <div><h3>What we compare</h3><p>Before vs after the 2016 regime shift, El Niño vs neutral years, and 2027–2030 futures under different ocean pathways and governance levels.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TIMELINE -->
+<section class="section tabpanel dark" id="timeline" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">02 · The record, 2000–2025</p>
+    <h2>Twenty-six fire seasons, seen from orbit</h2>
+    <p class="lede">Real terrain, real fires: every glowing point cluster is a 0.25° cell (about 28 km) with MODIS fire detections that year. More points mean more fires, and ground turns charcoal where it burned. Press play, or drag the year slider, and watch the ocean, the land and the fires respond together. Hover anywhere for the numbers.</p>
+  </div>
+  <div class="stage">
+    <div class="scene tall" id="tlScene"></div>
+    <div class="hud tl-hud">
+      <div class="hud-year" id="tlYear">2015</div>
+      <div class="hud-tag" id="tlTag"></div>
+      <div class="hud-big"><span id="tlFires">—</span><small>fire detections (Jul–Oct)</small></div>
+      <div class="hud-row"><span>Sumatra</span><b id="tlSum">—</b></div>
+      <div class="hud-row"><span>Kalimantan</span><b id="tlKal">—</b></div>
+    </div>
+    <div class="legend3d">
+      <div class="lg-row"><i class="lg-fire"></i>Fire detections (denser = more)</div>
+      <div class="lg-row"><i class="lg-scar"></i>Burned ground (charcoal)</div>
+      <div class="lg-row"><i class="lg-dry"></i>Parched land = dry soil (NASA POWER)</div>
+      <div class="lg-row"><i class="lg-sea"></i>Brighter Pacific = El Niño (ONI)</div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="scrub">
+      <button class="play" id="tlPlay" aria-label="Play timeline">▶</button>
+      <input type="range" id="tlSlider" min="2000" max="2025" value="2015" step="1" aria-label="Year">
+      <div class="scrub-ticks" id="tlTicks"></div>
+    </div>
+    <div class="indicators" id="tlIndicators"></div>
+    <p class="note">2000–2002 are Terra-only (Aqua's fire record begins in July 2002), so they are shown but not used in the trend tests. Smoke density follows the observed MERRA-2 aerosol optical depth for that year. Drag to rotate the map, click any place for its description. Contour lines show terrain elevation.</p>
+  </div>
+</section>
+
+<!-- ============================================================ EXPLORE -->
+<section class="section tabpanel dark" id="explore" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">03 · Explore the islands</p>
+    <h2>Every place has a case file</h2>
+    <p class="lede">Fly over Sumatra and Kalimantan on real terrain. Each 0.5° cell carries monthly measurements from 2003 to Oct 2026: fires, rain, root-zone dryness, tree-cover loss, smoke and the ocean indices. Click any place to see whether the clues lit up before every big fire year, and whether they are lit again now.</p>
+  </div>
+  <div class="explore-frame">
+    <iframe id="exploreFrame" title="Jejak Api: explore the islands in 3D" loading="lazy" data-src="explore/" allow="fullscreen"></iframe>
+  </div>
+  <div class="wrap">
+    <p class="note explore-note">Drag to rotate · right-drag to pan · scroll inside the map to zoom · <a href="explore/" target="_blank" rel="noopener">open full screen ↗</a>. Sources: NASA FIRMS (MODIS), NASA POWER (MERRA-2 rain, root-zone wetness, aerosol), Hansen/UMD tree-cover loss via Global Forest Watch, PEATMAP (Univ. Leeds), NOAA ONI/DMI, AWS Terrain Tiles. The 2026 fire archive is not yet published by NASA FIRMS, so 2026 fire months show as "not yet archived".</p>
+  </div>
+</section>
+
+<!-- ============================================================ EVIDENCE -->
+<section class="section tabpanel" id="evidence" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">04 · The evidence board</p>
+    <h2>What changed, where, how much, and is it real?</h2>
+
+    <div class="verdicts" id="verdicts"></div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>What is changing: every trend, tested</h3>
+        <p>Mann–Kendall test with Hamed–Rao autocorrelation correction. Slope is Sen's estimator. ● = significant at p &lt; 0.05.</p>
+      </div>
+      <div class="table-wrap"><table class="ttable" id="trendTable"></table></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head">
+          <h3>Where: the fire map is moving, not just shrinking</h3>
+          <p>Sen's slope of yearly detections per 0.5° cell, 2003–2025. Solid cells pass the Benjamini–Hochberg false-discovery test (field significance, α = 0.05).</p>
+        </div>
+        <div id="trendMap" class="chart map"></div>
+        <div class="div-legend" id="trendMapLegend"></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Why: the climate explains the swings, but not the drop</h3>
+          <p>Observed detections vs what soil wetness alone predicts under the <b>pre-2016</b> fire regime. The gap after 2016 is the change-point effect.</p>
+        </div>
+        <div id="gapChart" class="chart"></div>
+        <div class="legend" id="gapLegend"></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head">
+          <h3>How fast the dominoes fall</h3>
+          <p>Monthly anomaly correlation at 0–6 month lags, 2003–2025 (n ≈ 276 months). The tallest bar shows when each link responds.</p>
+        </div>
+        <div id="lagChart" class="chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Can the model see a year it never saw?</h3>
+          <p>Leave-one-year-out cross-validation: each year is predicted by a model fitted without it.</p>
+        </div>
+        <div id="hindChart" class="chart"></div>
+        <div class="legend" id="hindLegend"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SIM 2026 -->
+<section class="section tabpanel dark" id="sim2026" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">05 · 2026, the running year</p>
+    <h2>Simulate the 2026 fire season</h2>
+    <p class="lede">The defaults are what satellites and stations actually measured in 2026 up to 10 November. Change any domino and the chain recomputes downstream using the coefficients fitted to 2003–2025.</p>
+  </div>
+  <div class="sim-layout">
+    <aside class="controls" id="simControls">
+      <div class="ctl-group">
+        <h4>Ocean</h4>
+        <label>ENSO: ONI, Jul–Sep <output id="o_oni"></output>
+          <input type="range" id="c_oni" min="-2" max="3" step="0.05"></label>
+        <label>Indian Ocean Dipole: DMI, Aug–Oct <output id="o_dmi"></output>
+          <input type="range" id="c_dmi" min="-1" max="1.5" step="0.05"></label>
+      </div>
+      <div class="ctl-group">
+        <h4>Land <span class="mini-toggle"><input type="checkbox" id="c_useObs" checked> use 2026 observations</span></h4>
+        <label>Dry-season rain, mm/day <output id="o_rain"></output>
+          <input type="range" id="c_rain" min="1.5" max="10" step="0.05"></label>
+        <label>Root-zone soil wetness <output id="o_soil"></output>
+          <input type="range" id="c_soil" min="0.55" max="0.95" step="0.005"></label>
+      </div>
+      <div class="ctl-group">
+        <h4>People</h4>
+        <label>Fire governance level <output id="o_gov"></output>
+          <input type="range" id="c_gov" min="0" max="2" step="0.05"></label>
+        <p class="hint">0 = pre-2016 regime · 1 = post-2016 regime (observed) · above 1 = extrapolated stronger effort</p>
+      </div>
+      <div class="presets">
+        <button data-preset="obs" class="on">2026 observed</button>
+        <button data-preset="2015">Replay 2015</button>
+        <button data-preset="relapse">Governance relapse</button>
+        <button data-preset="lanina">If it were La Niña</button>
+      </div>
+    </aside>
+    <div class="sim-stage">
+      <div class="scene tall" id="simScene"></div>
+      <div class="hud sim-hud">
+        <div class="hud-year" id="simMonth">Sep 2026</div>
+        <div class="hud-big"><span id="simFiresLive">—</span><small>detections so far this year</small></div>
+        <div class="monthbar" id="simMonthBar"></div>
+      </div>
+      <div class="sim-play"><button class="play" id="simPlay" aria-label="Replay season">↻</button><span>Replay the season month by month</span></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="tiles" id="simTiles"></div>
+    <div class="grid2">
+      <div class="card dark-card">
+        <div class="card-head"><h3>2026 against the record</h3><p>Fire-season detections (Jul–Oct). 2026 is the simulated central estimate, with the whisker spanning the 10–90% range.</p></div>
+        <div id="simHistChart" class="chart"></div>
+      </div>
+      <div class="card dark-card">
+        <div class="card-head"><h3>The chain, right now</h3><p>Each domino, from your inputs to the haze. Values in brackets are the 2003–2025 range.</p></div>
+        <div id="simChain" class="simchain"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FUTURE -->
+<section class="section tabpanel dark2" id="future" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">06 · 2027–2030</p>
+    <h2>What comes after a record El Niño?</h2>
+    <p class="lede">We don't know next year's ocean, but history shows what followed every El Niño with Jul–Sep ONI ≥ 1.0 since 1950 (1957, 1965, 1972, 1982, 1987, 1997, 2015). We replay those real ocean sequences through the fitted chain 4,000 times, with re-sampled model errors, to build a range of futures.</p>
+  </div>
+  <div class="sim-layout">
+    <aside class="controls">
+      <div class="ctl-group">
+        <h4>Ocean pathway</h4>
+        <select id="f_path">
+          <option value="analog">Post-El Niño analogs (1957–2015)</option>
+          <option value="clim">Any year, 1950–2025 climatology</option>
+          <option value="nino">Back-to-back El Niño (stress test)</option>
+        </select>
+      </div>
+      <div class="ctl-group">
+        <h4>Climate shift</h4>
+        <label>Dry-season rainfall change <output id="o_shift"></output>
+          <input type="range" id="f_shift" min="-30" max="20" step="1" value="0"></label>
+        <p class="hint">An optional what-if. The observed 2001–2025 rainfall trend is not significant (p = 0.20).</p>
+      </div>
+      <div class="ctl-group">
+        <h4>Governance, 2027–2030</h4>
+        <label>Level <output id="o_fgov"></output>
+          <input type="range" id="f_gov" min="0" max="2" step="0.05" value="1"></label>
+        <div class="presets">
+          <button data-fgov="0">Relapse</button>
+          <button data-fgov="1" class="on">Hold</button>
+          <button data-fgov="1.5">Strengthen</button>
+        </div>
+      </div>
+    </aside>
+    <div class="sim-stage">
+      <div class="scene tall" id="futScene"></div>
+      <div class="hud sim-hud">
+        <div class="hud-year" id="futYear">2027</div>
+        <div class="hud-big"><span id="futFires">—</span><small>median fire-season detections</small></div>
+        <div class="hud-row"><span>Chance of a year worse than 2019</span><b id="futRisk">—</b></div>
+      </div>
+      <div class="year-pills" id="futPills"></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card dark-card">
+      <div class="card-head"><h3>Fire-season detections: observed, then simulated</h3><p>Bars show observations (2003–2025). The band is the 10–90% range of 4,000 simulations and the line is the median. Log scale, because fire is multiplicative.</p></div>
+      <div id="fanChart" class="chart wide"></div>
+      <div class="legend" id="fanLegend"></div>
+    </div>
+    <div class="tiles" id="futTiles"></div>
+  </div>
+</section>
+
+<!-- ============================================================ METHODS -->
+<section class="section tabpanel methods" id="methods" role="tabpanel">
+  <div class="wrap">
+    <p class="eyebrow">07 · Research, data, analysis &amp; methods</p>
+    <h2>How we know what we claim</h2>
+    <div class="mtabs" role="tablist">
+      <button role="tab" class="on" data-tab="m-research">Research design</button>
+      <button role="tab" data-tab="m-data">Data</button>
+      <button role="tab" data-tab="m-analysis">Analysis</button>
+      <button role="tab" data-tab="m-model">Model &amp; simulation</button>
+      <button role="tab" data-tab="m-limits">Limitations</button>
+    </div>
+
+    <div class="mpanel on" id="m-research">
+      <div class="grid2 text">
+        <div>
+          <h3>Research question</h3>
+          <p>Has a decade of peat-fire governance broken the ocean → drought → fire → haze chain over Sumatra and Kalimantan, and what does the record 2026 El Niño imply for 2026–2030?</p>
+          <h3>Hypotheses</h3>
+          <ol>
+            <li><b>H1 (trend):</b> fire-season detections show a significant monotonic trend over 2003–2025.</li>
+            <li><b>H2 (mechanism):</b> year-to-year variability is explained by a measurable chain: ENSO/IOD → rainfall → root-zone soil wetness → fire → aerosol.</li>
+            <li><b>H3 (regime):</b> after removing the climate signal, fire shows a structural break consistent with the post-2015 policy response (peat restoration agency, moratoria, stronger enforcement).</li>
+            <li><b>H4 (geography):</b> the trend is not uniform. Some regions decline while others hold or rise ("same driver, opposite signs").</li>
+          </ol>
+        </div>
+        <div>
+          <h3>Modeling approach</h3>
+          <ul>
+            <li><b>Domain:</b> Indonesian Sumatra + Kalimantan, 95–119° E, 6.5° S–6° N, 0.25° grid for fire and 0.5° grid for trend tests.</li>
+            <li><b>Period:</b> 2000–2025 observed (2003–2025 for statistics, full Terra+Aqua years) and 2026 near-real-time.</li>
+            <li><b>Unit of analysis:</b> the Jul–Oct fire season (about 77% of all detections in the domain).</li>
+            <li><b>Model:</b> a chain of four cross-validated regressions, a structural-break term, and bootstrap Monte Carlo over real ENSO analog sequences.</li>
+            <li><b>Scenarios:</b> 2026 observed vs replay-2015 vs governance relapse vs La Niña, and 2027–2030 ocean pathways × governance × rainfall shift.</li>
+          </ul>
+          <h3>Expected outcomes &amp; key figures</h3>
+          <ol>
+            <li>Trend + significance board, plus the FDR-tested spatial trend map (what, where, how much).</li>
+            <li>Climate-expected vs observed fire (the regime gap) with the Pettitt change point.</li>
+            <li>A 2026 nowcast and a 2027–2030 probabilistic projection.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="mpanel" id="m-data">
+      <div class="table-wrap"><table class="dtable">
+        <thead><tr><th>Variable</th><th>Source / mission</th><th>Resolution</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td>Active fire detections, FRP</td><td>NASA FIRMS · MODIS Collection 6.1 (Terra + Aqua), Indonesia country archive</td><td>1 km pixels, daily, 2000-11 → 2025-12</td><td>Fire counts per season, region and 0.25° cell. Filter: type = 0 (vegetation fire), confidence ≥ 30.</td></tr>
+          <tr><td>Live fires</td><td>NASA FIRMS · MODIS C6.1 NRT, SE Asia 7-day feed</td><td>1 km, near-real-time</td><td>Live layer and hero ticker.</td></tr>
+          <tr><td>Precipitation</td><td>NASA POWER · PRECTOTCORR (MERRA-2 bias-corrected)</td><td>0.5°, monthly 2000–2025, daily 2026</td><td>Jul–Oct mean, mm/day, averaged over 10 hotspot points.</td></tr>
+          <tr><td>Root-zone / surface soil wetness</td><td>NASA POWER · GWETROOT, GWETTOP (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Main fire driver (fraction 0–1).</td></tr>
+          <tr><td>Aerosol optical depth 550 nm</td><td>NASA POWER · AOD_55 (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Haze response (Aug–Oct).</td></tr>
+          <tr><td>Tmax, RH, wind</td><td>NASA POWER · T2M_MAX, RH2M, WS2M</td><td>0.5°</td><td>Trend tests and context.</td></tr>
+          <tr><td>ENSO</td><td>NOAA CPC · Oceanic Niño Index (ERSSTv5) and Niño 3.4 (OISST)</td><td>monthly, 1950 → Oct 2026</td><td>Upstream driver and 2026 record.</td></tr>
+          <tr><td>Indian Ocean Dipole</td><td>NOAA PSL · DMI (HadISST)</td><td>monthly, 1870 → May 2026</td><td>Upstream driver.</td></tr>
+          <tr><td>Coastlines</td><td>Natural Earth 10 m land</td><td>vector</td><td>3D terrain base.</td></tr>
+          <tr><td>Regency boundaries</td><td>geoBoundaries IDN ADM1 (34) / ADM2 (519)</td><td>vector</td><td>Every fire point joined to its province and regency; per-regency Mann–Kendall trends with FDR.</td></tr>
+          <tr><td>Tree-cover loss</td><td>Hansen/UMD Global Forest Change via Global Forest Watch regency statistics (canopy &gt; 30%)</td><td>annual, 2001–2020</td><td>Explore map, clue C.</td></tr>
+          <tr><td>Peat extent</td><td>PEATMAP, South-East Asia layer (Xu et al. 2018, Univ. Leeds)</td><td>vector</td><td>Peat fraction per 0.5° cell.</td></tr>
+          <tr><td>Elevation</td><td>AWS Terrain Tiles (SRTM/GMTED-derived, Terrarium)</td><td>~2 km (z6)</td><td>Real relief in the explore map.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Hotspot sampling points: Bengkalis and Pelalawan (Riau), Muaro Jambi, OKI and Banyuasin (South Sumatra), Kubu Raya (West Kalimantan), Palangka Raya, Pulang Pisau and Katingan (Central Kalimantan), Barito (South Kalimantan). All on the peat domes that dominate Indonesian fire emissions. Every number on this page comes from these files. Nothing is synthetic.</p>
+    </div>
+
+    <div class="mpanel" id="m-analysis">
+      <div class="grid2 text">
+        <div>
+          <h3>1 · Trend detection</h3>
+          <p><b>Mann–Kendall</b> statistic <span class="eq">S = Σ<sub>i&lt;j</sub> sgn(x<sub>j</sub> − x<sub>i</sub>)</span>, with tie-corrected variance and the <b>Hamed–Rao (1998)</b> effective-sample-size correction for autocorrelated series. The magnitude is <b>Sen's slope</b> <span class="eq">β = median((x<sub>j</sub> − x<sub>i</sub>)/(j − i))</span>, reported per year and as % of the mean per decade. As a sensor check, the trend is repeated on Aqua-only and Terra-only counts.</p>
+          <h3>2 · Where: field significance</h3>
+          <p>Each 0.5° cell with ≥ 50 detections gets its own Mann–Kendall test. Hundreds of tests produce false positives by chance, so p-values are controlled with the <b>Benjamini–Hochberg false-discovery rate</b> (Wilks 2016), α = 0.05.</p>
+          <h3>3 · Change point</h3>
+          <p><b>Pettitt (1979)</b> test, on raw detections and on residuals of ln(fire) regressed on soil wetness. Testing the residual asks whether fire dropped <i>beyond</i> what weather explains.</p>
+        </div>
+        <div>
+          <h3>4 · Lagged links</h3>
+          <p>Monthly values are de-seasonalised (each month minus its 2003–2025 mean). We then compute Pearson correlations at 0–6 month lags along the chain.</p>
+          <h3>Key results</h3>
+          <ul id="keyResults"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mpanel" id="m-model">
+      <div class="grid2 text">
+        <div>
+          <h3>The fitted chain (2003–2025, n = 23)</h3>
+          <div class="table-wrap"><table class="ctable" id="coefTable"></table></div>
+          <p class="note">LOO R² = leave-one-year-out cross-validated skill. Fire is modelled in logs because it responds multiplicatively to drying. The regime term is a 0/1 indicator from the Pettitt break year; the slider's "governance level" scales it.</p>
+        </div>
+        <div>
+          <h3>2026 simulator</h3>
+          <p>Inputs propagate downstream: <span class="eq">rain = a + b·ONI + c·DMI</span> → <span class="eq">soil = d + e·rain</span> → <span class="eq">ln F = f + g·soil + h·G</span> → <span class="eq">AOD = i + j·ln F</span>. With "use 2026 observations" on, rain and soil wetness are the measured Jul–Oct 2026 values. Uncertainty is the 10–90% range of the fire residual. The map distributes the total over 0.25° cells using the observed spatial pattern of high- or low-fire years (2003–2025), weighted toward the post-2016 pattern by the governance level. The monthly animation uses the observed month profile.</p>
+          <h3>2027–2030 Monte Carlo</h3>
+          <p>4,000 runs. Each run draws one real ocean sequence (the four years after a historical El Niño, the climatological years, or repeated El Niño years). For every link it adds a residual <b>resampled from that link's actual 2003–2025 residuals</b> (non-parametric bootstrap), so the spread reflects real model error. Outputs are the median, the 10–90% band, and the probability of exceeding the 2019 season.</p>
+          <h3>Reproduce</h3>
+          <p class="mono">python analysis/01_fetch_data.py<br>python analysis/02_process.py<br>python analysis/03_analysis.py</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mpanel" id="m-limits">
+      <div class="grid2 text">
+        <div>
+          <h3>Limitations</h3>
+          <ul>
+            <li><b>Detections ≠ burned area.</b> MODIS counts active fires at overpass time and misses fires under thick smoke or cloud, and smouldering peat with low radiative power. Treat counts as an index.</li>
+            <li><b>Orbit drift.</b> Terra and Aqua have drifted from their nominal overpass times since about 2020–2022. The Aqua-only trend (−52%/decade, p = 0.008) agrees with the combined one, but part of the late decline could be observational.</li>
+            <li><b>Reanalysis climate.</b> MERRA-2 rainfall and soil wetness are model-assimilated fields at 0.5°, sampled at 10 points, not in-situ peat water tables.</li>
+            <li><b>Small n.</b> 23 seasons. Coefficients are robust in cross-validation, but extreme inputs (e.g. ONI &gt; 2) are near or beyond the fitted range.</li>
+            <li><b>Regime = attribution by elimination.</b> The post-2016 drop is what remains after climate. It is consistent with policy, but could also include land-use change (already-burned or converted peat).</li>
+          </ul>
+        </div>
+        <div>
+          <h3>What would make it stronger</h3>
+          <ul>
+            <li>MODIS MCD64A1 burned area and GFED5 emissions (Earthdata login) for hectares and CO₂.</li>
+            <li>SMAP L4 soil moisture and GRACE-FO water storage for a second, independent dryness signal.</li>
+            <li>TROPOMI CO and OMPS aerosol index for a smoke check independent of MERRA-2.</li>
+            <li>A peat-depth mask (e.g. national peat map) to separate peat from mineral-soil fire.</li>
+            <li>VIIRS 375 m fires (2012+) for small-fire sensitivity.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><b>Ember Signal</b>, built for the NASA Space Apps Challenge 2026 ("Be an Earth System Trend Detective").</p>
+    <p class="note">Data: NASA FIRMS (LANCE / MODIS C6.1), NASA POWER (MERRA-2), NOAA CPC, NOAA PSL, Natural Earth. Analysis generated <span id="genTime"></span>.</p>
+  </div>
+</footer>
+
+<div class="tooltip" id="tip" role="status"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
