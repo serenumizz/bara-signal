@@ -256,6 +256,11 @@ setNavH(); window.addEventListener("resize", setNavH);
     $("#gqResultTitle").textContent = summary(a);
     box.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
+  // the Trend Lab (inside the map frame) asks the page to pop the frame out while it is open, and to put it back
+  const setLabPopup = (open) => { box.classList.toggle("lab-popup", open); document.body.classList.toggle("lab-open", open); };
+  window.addEventListener("message", (e) => { if (e.source === frame.contentWindow && e.data && e.data.type === "lab") setLabPopup(!!e.data.open); });
+  box.addEventListener("click", (e) => { if (e.target === box && box.classList.contains("lab-popup")) frame.contentWindow.postMessage({ type: "close-lab" }, "*"); }); // dimmed backdrop
+  frame.addEventListener("load", () => setLabPopup(false));
   $("#gqClose").addEventListener("click", () => { frame.src = "explore/"; $("#gqFull").href = "explore/"; $("#gqResultTitle").textContent = "The full map · explore freely"; });
   sync();
 })();

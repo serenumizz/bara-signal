@@ -126,7 +126,14 @@
     padding: 7px 9px; font-size: 12px; line-height: 1.5; display: none; max-width: 240px; }
   .pintip { z-index: 5; max-width: 290px; border-color: rgba(255,122,61,.7); box-shadow: 0 6px 24px #000a; }
   /* ---- Trend Lab ---- */
-  .lab { position: fixed; inset: 0; z-index: 40; background: #0a0c0f; overflow: auto; padding: 22px clamp(14px, 3vw, 44px) 40px; color: var(--text); }
+  .lab { position: fixed; inset: 0; z-index: 40; background: rgba(4,6,9,.72); backdrop-filter: blur(5px); overflow: auto; display: flex; justify-content: center; padding: 18px; color: var(--text); }
+  .lab-box { width: min(1240px, 100%); height: fit-content; margin: auto; background: #0a0c0f; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 30px 90px #000c; padding: 0 clamp(16px, 2.4vw, 34px) 34px; }
+  .lab-top { position: sticky; top: 0; z-index: 3; background: #0a0c0f; padding: 18px 0 12px; margin-bottom: 14px; border-bottom: 1px solid var(--line); border-radius: 18px 18px 0 0; }
+  .lab .lbtn.lclose { background: var(--fire); color: #1c0d04; border-color: var(--fire); font-weight: 700; padding: 7px 16px; }
+  .lab .lbtn.lclose:hover { filter: brightness(1.1); border-color: var(--fire); }
+  .lab.embed { padding: 0; background: #0a0c0f; backdrop-filter: none; } /* inside the page's pop-out frame: the frame is the pop-up */
+  .lab.embed .lab-box { width: 100%; min-height: 100%; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .lab.embed .lab-top { border-radius: 0; }
   .lab[hidden] { display: none; }
   .lab h1 { font-size: clamp(24px, 3vw, 36px); margin: 2px 0 14px; letter-spacing: -0.02em; }
   .lab .eyebrow { font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fire); }
@@ -1143,7 +1150,9 @@ setTime(NOW); renderPanel(); loop();
 })();
 // ================= Trend Lab: is it really changing? (Mann-Kendall, Sen's slope, regression t-test, 95% CI) =================
 (function trendLab() {
-  const lab = $('lab'); let R = null; // regional.json, loaded when the lab first opens
+  const lab = $('lab'); let R = null;
+  // embedded in the main page: ask the page to pop this frame out over the page while the lab is open, and back
+  const EMBED = window.parent !== window, tell = open => { if (EMBED) try { window.parent.postMessage({ type: 'lab', open }, '*'); } catch { /* cross-origin parent: nothing to do */ } }; // regional.json, loaded when the lab first opens
   // ---- statistics
   const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
   const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
@@ -1224,8 +1233,8 @@ setTime(NOW); renderPanel(); loop();
   function build() {
     const groups = {}; Object.entries(VARS).forEach(([k, V]) => (groups[V.g] ||= []).push(k));
     const icon = { 'Fires & haze': '🔥', 'Drought & rain': '🌧️', 'Heat': '🌡️', 'Forests': '🌳', 'Ocean & wind': '🌊' };
-    lab.innerHTML = `<div class="lab-top"><div><div class="eyebrow">📈 Trend Lab · the statistics</div><h1>Is it really changing?</h1></div>
-      <div class="btns"><button class="lbtn" id="labMap">🗺️ Show on map</button><button class="lbtn" id="labX" aria-label="Close">✕</button></div></div>
+    lab.innerHTML = `<div class="lab-box"><div class="lab-top"><div><div class="eyebrow">📈 Trend Lab · the statistics</div><h1>Is it really changing?</h1></div>
+      <div class="btns"><button class="lbtn" id="labMap">🗺️ Show on map</button><button class="lbtn lclose" id="labX" aria-label="Close the Trend Lab and go back to the map">✕ Close</button></div></div>
       <div class="lab-steps">
         <div class="lab-card"><div class="st"><span class="n">1</span><div style="flex:1"><div class="k">Pick a place</div>
           <select id="labPlace" aria-label="Place">${PLACES.filter(([, p]) => p.length).map(([isl, p]) => `<optgroup label="${esc(isl)}">${p.map(x => `<option>${esc(x)}</option>`).join('')}</optgroup>`).join('')}
@@ -1237,7 +1246,7 @@ setTime(NOW); renderPanel(); loop();
       </div>
       <div class="lab-main"><div class="lab-vars"><div class="k" style="font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center"><span class="n" style="width:26px;height:26px;border-radius:50%;background:var(--fire);color:#1c0d04;display:grid;place-items:center;font-weight:700">3</span>Pick a variable</div>
         ${Object.entries(groups).map(([g, ks]) => `<div class="grp">${icon[g]} ${g}</div>${ks.map(k => `<button class="v" data-v="${k}"><b>${VARS[k].name}</b><small>${VARS[k].sub}</small></button>`).join('')}`).join('')}</div>
-        <div class="lab-res" id="labRes"></div></div>`;
+        <div class="lab-res" id="labRes"></div></div></div>`;
     $('labPlace').value = S.place; $('labFrom').value = S.from;
     $('labX').onclick = close; $('labMap').onclick = showOnMap;
     $('labPlace').onchange = e => { S.place = e.target.value; render(); };
@@ -1308,14 +1317,16 @@ setTime(NOW); renderPanel(); loop();
       try { const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'stat', place: place, variable: V.name, unit: su(V), from: d.xs[0], to: d.xs[d.xs.length - 1], n: st.n, regional: !!V.regional, per_decade: +per.toFixed(4), pct_since_start: pct == null ? null : +pct.toFixed(1), mk_z: +st.z.toFixed(2), mk_p: +st.mkP.toFixed(4), t: +st.t.toFixed(2), t_p: +st.tp.toFixed(4), ci_lo: +(st.ciLo * 10).toFixed(4), ci_hi: +(st.ciHi * 10).toFixed(4), r2: +st.r2.toFixed(2), question: $('labQ').value.slice(0, 180), lang: 'en' }) });
         const j = await r.json(); if (!r.ok) throw 0; out.innerHTML = `${esc(j.text)}<small>AI explanation · Cloudflare Workers AI · it only rewords the numbers above</small>`; } catch { out.innerHTML = 'Could not reach the AI explainer. The statistics above still stand.'; } };
   }
-  function open() { if (R === null) { R = false; fetch('regional.json').then(r => r.json()).then(j => { R = j; if (!lab.hidden) render(); }).catch(() => { R = {}; }); } lab.hidden = false; document.body.style.overflow = 'hidden'; render(); lab.scrollTop = 0; }
-  function close() { lab.hidden = true; document.body.style.overflow = ''; }
+  function open() { if (R === null) { R = false; fetch('regional.json').then(r => r.json()).then(j => { R = j; if (!lab.hidden) render(); }).catch(() => { R = {}; }); } lab.hidden = false; lab.classList.toggle('embed', EMBED); document.body.style.overflow = 'hidden'; tell(true); render(); lab.scrollTop = 0; $('labX')?.focus(); }
+  function close() { if (lab.hidden) return; lab.hidden = true; document.body.style.overflow = ''; tell(false); $('labBtn').focus({ preventScroll: true }); }
   function showOnMap() {
     const V = VARS[S.v]; close(); state.layer = V.layer; state.rel = []; setTime(V.layer === 'fire' ? FL : NOW);
     const cs = placeCells(V.regional ? 'Whole study area' : S.place); const lon = cs.reduce((a, c) => a + c.lon, 0) / cs.length, lat = cs.reduce((a, c) => a + c.lat, 0) / cs.length;
     flyTo(toX(lon), toZ(lat), cs.length > 100 ? 14 : 7, cs.length > 100 ? 14 : 7); $('hint').style.opacity = 0;
   }
   $('labBtn').onclick = open;
+  lab.addEventListener('mousedown', e => { if (e.target === lab) close(); });                                   // click on the dimmed backdrop
+  window.addEventListener('message', e => { if (e.source === window.parent && e.data && e.data.type === 'close-lab') close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !lab.hidden) close(); });
   if (new URLSearchParams(location.search).get('lab')) { const q = new URLSearchParams(location.search); if (VARS[q.get('lab')]) S.v = q.get('lab'); open(); }
 })();
