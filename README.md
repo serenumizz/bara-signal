@@ -4,6 +4,10 @@ Live: https://web-zeta-six-76.vercel.app
 
 **Research question:** Has a decade of peat-fire governance broken the chain that turns ocean heat (ENSO/IOD) into drought, drought into fire, and fire into haze over Sumatra and Kalimantan? Is the decline significant, and is the record 2026 El Niño (Niño 3.4 = +3.25 °C in Oct 2026) putting it to the test?
 
+## Data status
+
+The pipeline below uses only Resources-tab sources. What has been rebuilt so far: the MERRA-2 tables (`data/processed/drivers_monthly*.csv`, `merra2_grid.npz`), the ocean indices (`indices_monthly.csv`) and `web/explore/regional.json`. Still to run: the AppEEARS downloads (MODIS fire, tree cover, land/water mask, SRTM), then `02`, `03` and `05`. Until then `web/data/*.json` and `web/explore/data.json` still hold the previous build (fire from NASA FIRMS, tree cover from Hansen), so fire, tree-cover and the per-area rain / soil / smoke grids are not yet from the new sources.
+
 ## Data sources
 
 Every dataset comes from a source listed on the challenge
@@ -94,7 +98,7 @@ cd web && vercel deploy --prod
 | Product | What it does here |
 |---|---|
 | **Workers AI** | Plain-language answers (`env.AI.run`, Llama 3.1 8B fp8): explain a map cell, answer a question about a year, suggest variables in the Trend scout, and explain a computed trend. No API key or secret. |
-| **D1** | Fire counts per regency and year plus the FDR-tested cell trends. `GET /api/trend?regency=Pulang Pisau&from=2003&to=2025` computes Mann–Kendall and Sen's slope on the fly. |
+| **D1** | Fire counts per regency and year plus the FDR-tested cell trends (legacy tables, built from NASA FIRMS and geoBoundaries before the switch to the Resources-tab sources; see `worker/scripts/build_seed.py`). `GET /api/trend?regency=Pulang Pisau&from=2003&to=2025` computes Mann–Kendall and Sen's slope on the fly. |
 | **KV** | Caches every AI answer, so the same question is generated once. |
 | **R2** | Serves the big JSON files (`/data/explore.json`, ...) when the bucket is enabled; the site falls back to its own copies. |
 
@@ -102,7 +106,7 @@ The model can only reword numbers that the Worker supplies, and the Trend scout 
 
 ```
 cd worker
-python3 scripts/build_seed.py                          # analysis outputs -> db/seed.sql
+# python3 scripts/build_seed.py                       # legacy: its inputs were removed; db/seed.sql is the last build
 npx wrangler d1 execute ember-signal --remote --file=db/seed.sql
 npx wrangler deploy
 ```
@@ -117,4 +121,4 @@ Local test without Workers AI: `npx wrangler dev -c wrangler.test.toml` (real D1
 
 ### Trend Lab (Explore map, button "📈 Trend Lab")
 
-Pick a place (15 provinces, an island or the whole study area), a way to look at each year (Jul–Oct fire season or whole year), a start year and a variable. The lab draws the yearly values with a trend line and 95% confidence band and runs three tests in the browser: Mann–Kendall (Z, p), a t-test on the regression slope, and the 95% confidence interval of the rate per decade, plus Sen's slope and R². Fires, smoke, rainfall, soil moisture and tree-cover loss are per province; temperature, humidity, wind, ONI and the Dipole index exist only for the whole study area and are labelled so. The "Ask the AI" box sends the computed numbers to the Worker (`mode: "stat"`), which only rewords them.
+Pick a place (15 provinces, an island or the whole study area), a way to look at each year (Jul–Oct fire season or whole year), a start year and a variable. The lab draws the yearly values with a trend line and 95% confidence band and runs three tests in the browser: Mann–Kendall (Z, p), a t-test on the regression slope, and the 95% confidence interval of the rate per decade, plus Sen's slope and R². Fires, smoke (MERRA-2 TOTEXTTAU), rainfall (PRECTOTCORR), soil moisture (GWETROOT) and tree-cover loss (MOD44B) are per area; air temperature (T2M), humidity (RH2M), wind (SPEED), ONI and the Dipole index (ERSSTv5 via KNMI) exist only for the whole study area and are labelled so. The "Ask the AI" box sends the computed numbers to the Worker (`mode: "stat"`), which only rewords them.

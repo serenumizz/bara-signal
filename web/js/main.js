@@ -81,8 +81,8 @@ $("#now2026").innerHTML = [
   `Ocean: Niño 3.4 reached <b>+${O.nino34_max_2026.toFixed(2)} °C</b> in 2026, above the previous record (+${O.nino34_record_before_2026.toFixed(2)} °C in ${O.nino34_record_before_2026_when[0]}). ONI for Jul–Sep: <b>${d3.format("+.2f")(O.oni)}</b>.`,
   `Land: Jul–Oct root-zone soil wetness was <b>${O.soil.toFixed(3)}</b>. ${drierThan26.length ? `Only ${drierThan26.join(", ")} ${drierThan26.length === 1 ? "was" : "were"} drier in 2003–2025.` : "Drier than every season in 2003–2025."}`,
   `Haze: 2026 fire-season aerosol optical depth so far is <b>${O.aod.toFixed(2)}</b> (2003–2025 range ${A.ranges.aod[0].toFixed(2)}–${A.ranges.aod[1].toFixed(2)}).`,
-  `Fire: NASA FIRMS has not yet published the 2026 archive, so the fire count for this season is still open. Live detections for the last 7 days: <b>${A.live.n}</b>.`,
-  `When FIRMS publishes the 2026 archive, the expected-vs-observed chart above will show whether the post-2016 gap survives a record El Niño.`,
+  `Fire: the 2026 fire-season count is still open, because the fire composites do not cover the whole season yet. Latest MODIS composite (${A.live.from} → ${A.live.to}): <b>${A.live.n}</b> fire pixels.`,
+  `When the 2026 composites are complete, the expected-vs-observed chart above will show whether the post-2016 gap survives a record El Niño.`,
 ].map((s) => `<li>${s}</li>`).join("");
 
 // ------------------------------------------------------------------ methods

@@ -1170,21 +1170,21 @@ setTime(NOW); renderPanel(); loop();
   // ---- what can be measured
   const MN = MONTHS, YR0 = FIRST_YEAR, YR1 = NOW_YEAR;
   const VARS = {
-    fire:  { nonneg: true, pl: true, g: 'Fires & haze', name: 'Active fires', sub: 'NASA FIRMS · MODIS', unit: 'detections', agg: 'sum', layer: 'fire', def: 'How many fires the satellites spotted.', dec: 0,
+    fire:  { nonneg: true, pl: true, g: 'Fires & haze', name: 'Fires', sub: 'MODIS MOD14A2 / MYD14A2 · AppEEARS', unit: 'fire pixels', short: 'fire pixels', agg: 'sum', layer: 'fire', def: 'How many fire pixels the MODIS satellites spotted (8-day composites, summed per month).', dec: 0,
       get: (cs, t) => t <= FL ? cs.reduce((s, c) => s + c.s.fire[t], 0) : null },
-    aod:   { nonneg: true, g: 'Fires & haze', name: 'Smoke in the air', sub: 'MERRA-2', unit: 'AOD', agg: 'mean', layer: 'E', def: 'How hazy the sky is (aerosol optical depth). Above about 1 it is visibly brown.', dec: 2,
+    aod:   { nonneg: true, g: 'Fires & haze', name: 'Smoke in the air', sub: 'MERRA-2 TOTEXTTAU · Giovanni', unit: 'AOD', agg: 'mean', layer: 'E', def: 'How hazy the sky is (aerosol optical depth). Above about 1 it is visibly brown.', dec: 2,
       get: (cs, t) => { const v = cs.map(c => aodOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
-    rain:  { nonneg: true, g: 'Drought & rain', name: 'Rainfall', sub: 'NASA POWER · MERRA-2', unit: 'mm/day', agg: 'mean', layer: 'A', def: 'How much rain falls on average each day.', dec: 2,
+    rain:  { nonneg: true, g: 'Drought & rain', name: 'Rainfall', sub: 'MERRA-2 PRECTOTCORR · Giovanni', unit: 'mm/day', agg: 'mean', layer: 'A', def: 'How much rain falls on average each day.', dec: 2,
       get: (cs, t) => cs.reduce((s, c) => s + c.s.rain[t] / 10, 0) / cs.length },
-    soil:  { nonneg: true, g: 'Drought & rain', name: 'Soil moisture', sub: 'NASA POWER · root zone', unit: 'wetness 0–1', agg: 'mean', layer: 'B', def: 'How wet the root zone is, from 0 (dry) to 1 (saturated). Fire danger rises below about 0.87.', dec: 3,
+    soil:  { nonneg: true, g: 'Drought & rain', name: 'Soil moisture', sub: 'MERRA-2 GWETROOT · Giovanni', unit: 'wetness 0–1', agg: 'mean', layer: 'B', def: 'How wet the root zone is, from 0 (dry) to 1 (saturated). Fire danger rises below about 0.87.', dec: 3,
       get: (cs, t) => cs.reduce((s, c) => s + soilOf(c, t), 0) / cs.length },
-    rh:    { nonneg: true, g: 'Drought & rain', name: 'Humidity', sub: 'NASA POWER · whole study area', unit: '%', agg: 'mean', layer: 'B', regional: 'rh', def: 'How much water the air holds. Drier air pulls water from soil and plants.', dec: 1 },
-    tmax:  { noPct: true, g: 'Heat', name: 'Daytime air temperature', sub: 'NASA POWER · whole study area', unit: '°C', agg: 'mean', layer: 'fire', regional: 'tmax', def: 'The hottest the air gets each day, on average.', dec: 2 },
-    loss:  { nonneg: true, noPct: true, g: 'Forests', name: 'Tree-cover loss', sub: 'Hansen/UMD · Landsat (to 2020)', unit: '% of cover lost since 2001', agg: 'mean', layer: 'C', def: 'Share of the original tree cover that has been lost since 2001.', dec: 1,
+    rh:    { nonneg: true, g: 'Drought & rain', name: 'Humidity', sub: 'MERRA-2 RH2M · Giovanni · whole study area', unit: '%', agg: 'mean', layer: 'B', regional: 'rh', def: 'Relative humidity of the air near the ground. Drier air pulls water from soil and plants.', dec: 1 },
+    t2m:   { noPct: true, g: 'Heat', name: 'Air temperature', sub: 'MERRA-2 T2M · Giovanni · whole study area', unit: '°C', agg: 'mean', layer: 'fire', regional: 't2m', def: 'Average temperature of the air 2 m above the ground, day and night.', dec: 2 },
+    loss:  { nonneg: true, noPct: true, g: 'Forests', name: 'Tree-cover loss', sub: 'MODIS MOD44B · AppEEARS (to ' + DATA.lossLast + ')', unit: '% of cover lost since 2001', agg: 'mean', layer: 'C', def: 'Decline of MODIS tree cover since 2001, as a share of the 2001 cover.', dec: 1,
       get: (cs, t) => { if (+MN[t].slice(0, 4) > DATA.lossLast) return null; const v = cs.map(c => lossOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
-    oni:   { g: 'Ocean & wind', name: 'El Niño index (ONI)', sub: 'NOAA · whole study area', unit: '°C', agg: 'mean', layer: 'D', regional: 'oni', def: 'Pacific warmth. Above +0.5 is El Niño, which usually dries Indonesia.', dec: 2, noPct: true },
-    dmi:   { g: 'Ocean & wind', name: 'Indian Ocean Dipole (DMI)', sub: 'NOAA · whole study area', unit: '°C', agg: 'mean', layer: 'D', regional: 'dmi', def: 'Sea-temperature gap across the Indian Ocean. Above +0.4 cuts rain near Sumatra.', dec: 2, noPct: true },
-    wind:  { nonneg: true, g: 'Ocean & wind', name: 'Wind speed', sub: 'NASA POWER · whole study area', unit: 'm/s', agg: 'mean', layer: 'fire', regional: 'wind', def: 'Wind spreads fire and smoke and dries the surface.', dec: 2 },
+    oni:   { g: 'Ocean & wind', name: 'El Niño index (ONI)', sub: 'NOAA ERSSTv5 · KNMI Climate Explorer', unit: '°C', agg: 'mean', layer: 'D', regional: 'oni', def: 'Pacific warmth. Above +0.5 is El Niño, which usually dries Indonesia.', dec: 2, noPct: true },
+    dmi:   { g: 'Ocean & wind', name: 'Indian Ocean Dipole (DMI)', sub: 'NOAA ERSSTv5 · KNMI Climate Explorer', unit: '°C', agg: 'mean', layer: 'D', regional: 'dmi', def: 'Sea-temperature gap across the Indian Ocean. Above +0.4 cuts rain near Sumatra.', dec: 2, noPct: true },
+    wind:  { nonneg: true, g: 'Ocean & wind', name: 'Wind speed', sub: 'MERRA-2 SPEED · Giovanni · whole study area', unit: 'm/s', agg: 'mean', layer: 'fire', regional: 'wind', def: 'Surface wind speed. Wind spreads fire and smoke and dries the surface.', dec: 2 },
   };
   const CAUSE = {
     fire: 'Fires follow drought: in El Niño years peat dries out, and drained or cleared land burns easily. Since 2016, peat restoration, canal blocking and enforcement may have pushed counts down, but one very dry year can still spike them.',
@@ -1192,7 +1192,7 @@ setTime(NOW); renderPanel(); loop();
     rain: 'Rain in Indonesia swings with El Niño and the Indian Ocean Dipole. A 20-year trend can be a slow shift, or just one of these cycles landing near the ends of the record.',
     soil: 'Root-zone wetness follows rain with about a month of delay and falls faster where land is drained or cleared. It is the link between rain and fire.',
     rh: 'Humidity falls when the air warms and rain is scarce. Drier air pulls water out of soil and plants, raising fire danger.',
-    tmax: 'Warmer air dries soil and fuel faster. A regional trend can be part global warming and part natural swings such as El Niño.',
+    t2m: 'Warmer air dries soil and fuel faster. A regional trend can be part global warming and part natural swings such as El Niño.',
     loss: 'Tree cover disappears with logging, plantations and fire. Cleared and drained land is hotter, drier and burns more easily.',
     oni: 'ONI measures how warm the Pacific is. It is not local: the same value applies to every place.',
     dmi: 'A positive Indian Ocean Dipole cools the sea near Sumatra and cuts rain, adding to El Niño dryness.',
@@ -1209,6 +1209,7 @@ setTime(NOW); renderPanel(); loop();
     return { xs, ys, m, win };
   }
   // ---- formatting
+  const su = V => V.short || V.unit.split(' ')[0]; // short unit used in sentences
   const num = (v, d) => { const a = Math.abs(v); return (a >= 1000 ? Math.round(v).toLocaleString() : a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(Math.min(d, 1)) : v.toFixed(Math.max(d, 2))); };
   const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), 2);
   const pTxt = p => p < 0.001 ? '< 0.001' : p.toFixed(3);
@@ -1284,9 +1285,9 @@ setTime(NOW); renderPanel(); loop();
       <div class="lab-tests">
         ${test(st.mkP < 0.05, 'Mann–Kendall test', `Z = ${st.z.toFixed(2)}, p = ${pTxt(st.mkP)}`, 'Do later years keep beating earlier years?', 'Compares every pair of years. Robust to spikes like 2015, so it is the standard test for climate trends.')}
         ${test(st.tp < 0.05, 't-test on the slope', `t = ${st.t.toFixed(2)}, p = ${pTxt(st.tp)}`, 'Is the straight-line slope far enough from zero?', S.v === 'fire' ? 'Fits the best straight line. Fire counts spike in El Niño years, so trust the Mann–Kendall result more here.' : 'Fits the best straight line through the yearly values and asks whether its slope could just be noise.')}
-        ${test(st.ciLo > 0 || st.ciHi < 0, '95% confidence interval', `${sgn(st.ciLo * 10)} to ${sgn(st.ciHi * 10)} ${V.unit.split(' ')[0]}`, 'Range of believable rates per decade', st.ciLo > 0 || st.ciHi < 0 ? 'The whole range is on one side of zero, so the change is real at 95% confidence.' : 'The range includes zero, so we cannot rule out no change.')}
+        ${test(st.ciLo > 0 || st.ciHi < 0, '95% confidence interval', `${sgn(st.ciLo * 10)} to ${sgn(st.ciHi * 10)} ${su(V)}`, 'Range of believable rates per decade', st.ciLo > 0 || st.ciHi < 0 ? 'The whole range is on one side of zero, so the change is real at 95% confidence.' : 'The range includes zero, so we cannot rule out no change.')}
       </div>
-      <div class="lab-robust">Robust rate (Sen's slope): <b>${sgn(st.sen * 10)} ${V.unit.split(' ')[0]}/decade</b> · the straight-line fit explains ${Math.round(st.r2 * 100)}% of the year-to-year change.</div>
+      <div class="lab-robust">Robust rate (Sen's slope): <b>${sgn(st.sen * 10)} ${su(V)}/decade</b> · the straight-line fit explains ${Math.round(st.r2 * 100)}% of the year-to-year change.</div>
       <div class="lab-two"><div class="lab-card"><h3>🔍 What could be causing it?</h3><p>${esc(CAUSE[S.v])}</p></div>
         <div class="lab-card lab-ask"><h3>✨ Ask the AI to explain</h3><textarea id="labQ" maxlength="180" aria-label="Question">Explain this trend in simple words and what it means for people living ${V.regional ? 'here' : 'in ' + esc(place)}.</textarea>
           <button class="lbtn go" id="labAsk">Ask the AI</button><div class="out" id="labOut"></div></div></div>`;
@@ -1295,13 +1296,13 @@ setTime(NOW); renderPanel(); loop();
     svg.onmousemove = ev => { const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * 920; let bi = 0, bd = 1e9;
       d.xs.forEach((y, i) => { const px = 54 + (y + mid - S.from) / (Math.max(...[d.xs[d.xs.length - 1] + 1]) - S.from) * (920 - 54 - 14); const dd = Math.abs(px - x); if (dd < bd) { bd = dd; bi = i; } });
       const c = svg.querySelector(`circle[data-i="${bi}"]`); cur.setAttribute('x1', c.getAttribute('cx')); cur.setAttribute('x2', c.getAttribute('cx')); cur.style.display = '';
-      tip.style.display = 'block'; tip.innerHTML = `<b>${d.xs[bi]}</b> · ${num(d.ys[bi], V.dec)} ${V.unit.split(' ')[0]}`; const cb = c.getBoundingClientRect(), bb = box.getBoundingClientRect(); tip.style.left = Math.min(bb.width - 130, cb.left - bb.left + 10) + 'px'; tip.style.top = (cb.top - bb.top - 34) + 'px'; };
+      tip.style.display = 'block'; tip.innerHTML = `<b>${d.xs[bi]}</b> · ${num(d.ys[bi], V.dec)} ${su(V)}`; const cb = c.getBoundingClientRect(), bb = box.getBoundingClientRect(); tip.style.left = Math.min(bb.width - 130, cb.left - bb.left + 10) + 'px'; tip.style.top = (cb.top - bb.top - 34) + 'px'; };
     svg.onmouseleave = () => { tip.style.display = 'none'; cur.style.display = 'none'; };
     // AI explanation (Cloudflare Workers AI through the Worker)
     $('labAsk').onclick = async () => {
       const out = $('labOut'), API = window.__API; if (!API) { out.innerHTML = 'The AI explainer (Cloudflare Workers AI) is not connected on this site yet.'; return; }
       out.innerHTML = '<span style="color:var(--muted)">✨ Asking the AI…</span>';
-      try { const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'stat', place: place, variable: V.name, unit: V.unit.split(' ')[0], from: d.xs[0], to: d.xs[d.xs.length - 1], n: st.n, regional: !!V.regional, per_decade: +per.toFixed(4), pct_since_start: pct == null ? null : +pct.toFixed(1), mk_z: +st.z.toFixed(2), mk_p: +st.mkP.toFixed(4), t: +st.t.toFixed(2), t_p: +st.tp.toFixed(4), ci_lo: +(st.ciLo * 10).toFixed(4), ci_hi: +(st.ciHi * 10).toFixed(4), r2: +st.r2.toFixed(2), question: $('labQ').value.slice(0, 180), lang: 'en' }) });
+      try { const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'stat', place: place, variable: V.name, unit: su(V), from: d.xs[0], to: d.xs[d.xs.length - 1], n: st.n, regional: !!V.regional, per_decade: +per.toFixed(4), pct_since_start: pct == null ? null : +pct.toFixed(1), mk_z: +st.z.toFixed(2), mk_p: +st.mkP.toFixed(4), t: +st.t.toFixed(2), t_p: +st.tp.toFixed(4), ci_lo: +(st.ciLo * 10).toFixed(4), ci_hi: +(st.ciHi * 10).toFixed(4), r2: +st.r2.toFixed(2), question: $('labQ').value.slice(0, 180), lang: 'en' }) });
         const j = await r.json(); if (!r.ok) throw 0; out.innerHTML = `${esc(j.text)}<small>AI explanation · Cloudflare Workers AI · it only rewords the numbers above</small>`; } catch { out.innerHTML = 'Could not reach the AI explainer. The statistics above still stand.'; } };
   }
   function open() { if (R === null) { R = false; fetch('regional.json').then(r => r.json()).then(j => { R = j; if (!lab.hidden) render(); }).catch(() => { R = {}; }); } lab.hidden = false; document.body.style.overflow = 'hidden'; render(); lab.scrollTop = 0; }
