@@ -385,3 +385,12 @@ dialog.gqdlg .eyebrow { margin: 0; }
 .gqx { position: absolute; top: 16px; right: 18px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-2); background: #ffffff0a; color: var(--text-2); font-size: 15px; cursor: pointer; }
 .gqx:hover { color: var(--text); border-color: var(--text-3); }
 @media (max-width: 600px) { dialog.gqdlg { padding: 22px 18px; border-radius: 18px; } }
+
+/* investigate popup: one step at a time */
+.gq-prog { display: flex; gap: 8px; margin-bottom: 20px; }
+.gq-prog i { width: 72px; height: 5px; border-radius: 3px; background: var(--line-2); transition: background .2s; }
+.gq-prog i.on { background: linear-gradient(90deg, var(--fire-2), var(--fire-3)); }
+.gq-step[hidden] { display: none; }
+.gq-go .btn { cursor: pointer; font-family: inherit; }
+.gq-go .btn:not(.primary) { border: 1px solid var(--line-2); }
+.gq-go .btn[hidden] { display: none; }

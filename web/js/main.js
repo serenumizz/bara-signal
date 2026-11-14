@@ -355,9 +355,19 @@ setNavH(); window.addEventListener("resize", setNavH);
     if (p.where) { if (TOWNS_ALL.includes(p.where)) { form.elements.where.value = "place"; place.value = p.where; } else form.elements.where.value = p.where; }
     if (p.year) year.value = p.year;
     hint.textContent = (p.heat ? "Heat is not a layer on this map yet, so I am showing drought (dry air and soil). " : "") + `Showing: ${summary(read())}` + (p.where ? "" : " (place and year: pick below or I use the defaults)");
-    sync(); form.requestSubmit();
+    sync(); showStep(3); form.requestSubmit();
   };
-  const openDlg = () => { sync(); dlg.showModal(); };
+  // ---- step by step: 1 topic → 2 place → 3 year
+  let step = 1;
+  const showStep = (n) => {
+    step = n;
+    form.querySelectorAll(".gq-step").forEach((f) => (f.hidden = +f.dataset.step !== n));
+    form.querySelectorAll(".gq-prog i").forEach((b, i) => b.classList.toggle("on", i < n));
+    $("#gqBack").hidden = n === 1; $("#gqNext").hidden = n === 3; $("#gqSubmit").hidden = n !== 3;
+  };
+  $("#gqNext").addEventListener("click", () => showStep(Math.min(3, step + 1)));
+  $("#gqBack").addEventListener("click", () => showStep(Math.max(1, step - 1)));
+  const openDlg = () => { showStep(1); sync(); dlg.showModal(); };
   $("#gqOpen").addEventListener("click", openDlg);
   $("#heroOpen").addEventListener("click", openDlg);
   $("#gqDlgClose").addEventListener("click", () => dlg.close());
@@ -366,6 +376,7 @@ setNavH(); window.addEventListener("resize", setNavH);
   $("#gqText").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); askGo(); } });
   form.addEventListener("submit", (e) => {
     e.preventDefault();
+    if (step < 3) { showStep(step + 1); return; } // Enter key moves to the next step
     const a = read();
     const url = `explore/?layer=${a.what}&where=${encodeURIComponent(a.where)}&year=${a.year}` + (EXPLAIN_URL ? `&ex=${encodeURIComponent(EXPLAIN_URL)}` : "");
     frame.src = url; $("#gqFull").href = url;

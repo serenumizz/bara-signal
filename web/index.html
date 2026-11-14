@@ -84,7 +84,8 @@
   <p class="eyebrow">New investigation · 3 questions</p>
   <h2 id="gqDlgH">What case do you want to open?</h2>
     <form class="gq" id="gq">
-      <fieldset>
+      <div class="gq-prog" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+      <fieldset class="gq-step" data-step="1">
         <legend><span class="num">1</span>What do you want to investigate?</legend>
         <div class="qcards">
           <label class="qcard"><input type="radio" name="what" value="fire" checked><div class="qc"><i aria-hidden="true">🔥</i><b>Fires &amp; haze</b><small>NASA FIRMS (MODIS) · MERRA-2 smoke</small></div></label>
@@ -100,7 +101,7 @@
         </div>
         <p class="gq-hint" id="gqHint" aria-live="polite"></p>
       </fieldset>
-      <fieldset>
+      <fieldset class="gq-step" data-step="2" hidden>
         <legend><span class="num">2</span>Where?</legend>
         <div class="opts">
           <label><input type="radio" name="where" value="Sumatra"><span>Sumatra</span></label>
@@ -109,12 +110,14 @@
           <select id="gqPlace" aria-label="Choose a place"><option>Banda Aceh</option><option>Meulaboh</option><option>Medan</option><option>Sibolga</option><option>Padang</option><option>Pekanbaru</option><option>Dumai</option><option>Siak</option><option>Bengkalis</option><option>Rengat</option><option>Tembilahan</option><option>Jambi</option><option>Muara Sabak</option><option>Bengkulu</option><option>Palembang</option><option>Kayu Agung (OKI)</option><option>Bandar Lampung</option><option>Pangkal Pinang</option><option>Pontianak</option><option>Ketapang</option><option>Sintang</option><option>Putussibau</option><option>Pangkalan Bun</option><option>Sampit</option><option>Palangka Raya</option><option>Pulang Pisau</option><option>Kuala Kapuas</option><option>Banjarmasin</option><option>Muara Teweh</option><option>Samarinda</option><option>Balikpapan</option><option>Tanjung Selor</option></select>
         </div>
       </fieldset>
-      <fieldset>
+      <fieldset class="gq-step" data-step="3" hidden>
         <legend><span class="num">3</span><label for="gqYear">When?</label></legend>
         <div class="opts"><select id="gqYear" aria-label="Choose a year"><option value="now">2026 · now (latest data Oct 2026)</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015" selected>2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option><option value="2009">2009</option><option value="2008">2008</option><option value="2007">2007</option><option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option></select></div>
       </fieldset>
       <div class="gq-go">
-        <button class="btn primary" type="submit">Investigate →</button>
+        <button class="btn" type="button" id="gqBack" hidden>← Back</button>
+        <button class="btn primary" type="button" id="gqNext">Next →</button>
+        <button class="btn primary" type="submit" id="gqSubmit" hidden>Investigate →</button>
         <span class="gq-sum" id="gqSum" aria-live="polite"></span>
       </div>
     </form>
