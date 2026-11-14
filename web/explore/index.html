@@ -188,8 +188,8 @@
 
 <div class="leftcol"><div class="brand glass">
   <h1>Jejak <span>Api</span> · Explore the Islands</h1>
-  <p>Fly over Sumatra and Kalimantan on real terrain. Click any place to open its case file: the clues A–E measured from orbit, the fires, and the same spot in past fire years.</p>
-  <span class="proto real">REAL DATA · NASA FIRMS · NASA POWER · NOAA · GFW</span>
+  <p>Fly over Sumatra and Borneo on real terrain. Click any place to open its case file: the clues A–E measured from orbit, the fires, and the same spot in past fire years.</p>
+  <span class="proto real">REAL DATA · NASA AppEEARS · NASA Giovanni · KNMI</span>
   <button class="pill" id="aboutBtn" style="margin-left:6px">Data &amp; sources</button>
 </div>
 
@@ -207,7 +207,7 @@
     <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:3px;background:#5fa8ff;vertical-align:middle"></span> D lit &nbsp; <span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
     <span id="jumps"></span>
   </div>
-  <svg id="tl" role="img" aria-label="Monthly fire detections across Sumatra and Kalimantan, 2003 to 2026"></svg>
+  <svg id="tl" role="img" aria-label="Monthly MODIS fire pixels across Sumatra and Borneo, 2003 to 2026"></svg>
 </div>
 
 <aside class="panel glass" id="panel"></aside>
@@ -218,17 +218,17 @@
 
 <dialog id="about">
   <h3 style="margin-top:0">How it works &amp; where the data comes from</h3>
-  <p><b>The idea.</b> A fire is the effect. Before it, clues appear: <b>D</b> the ocean (El Niño / Indian Ocean Dipole) shifts, <b>A</b> the rain stops, <b>B</b> the soil and peat dry out, on land already weakened by <b>C</b> forest loss. Click a place and see whether those clues appeared before every big fire year, and whether they are lit again now.</p>
-  <p style="color:#8fd18f"><b>Every number on this map is measured.</b> Each 0.5° cell carries monthly data from Jan 2003 to Oct 2026. The fire archive (NASA FIRMS) is published through Dec 2025; 2026 fire months are marked "not yet archived". Tree-cover loss statistics run through <span id="lossLastLbl">2020</span>.</p>
+  <p><b>The idea.</b> A fire is the effect. Before it, clues appear: <b>D</b> the ocean (El Niño / Indian Ocean Dipole) shifts, <b>A</b> the rain stops, <b>B</b> the soil dries out, on land already weakened by <b>C</b> forest loss. Click a place and see whether those clues appeared before every big fire year, and whether they are lit again now.</p>
+  <p style="color:#8fd18f"><b>Every number on this map is measured.</b> Each 0.5° cell carries monthly data from Jan 2003 to <span id="lastLbl"></span>. MODIS fire composites are processed through <span id="fireLastLbl"></span>; later months are marked "not yet available". Tree cover runs through <span id="lossLastLbl"></span>. All data come from the sources listed on the NASA Space Apps 2026 challenge Resources tab.</p>
   <table>
     <tr><th>Layer</th><th>Data used (per 0.5° cell, monthly)</th><th>Danger line (source)</th></tr>
-    <tr><td>🔥 Fires</td><td>NASA FIRMS MODIS C6.1 (Terra + Aqua) vegetation-fire detections, confidence ≥ 30</td><td>Fire month = ≥ 10 detections</td></tr>
-    <tr><td>A · Rainfall</td><td>NASA POWER PRECTOTCORR (MERRA-2, bias-corrected), regional 0.5° grid</td><td>&lt; 4 mm/day (Field et al. 2016)</td></tr>
-    <tr><td>B · Dryness</td><td>NASA POWER GWETROOT root-zone soil wetness (MERRA-2); peat extent from PEATMAP (Xu et al. 2018)</td><td>wetness &lt; <span id="thrBLbl"></span>: fitted on 2003–2025 peat cells (best split of fire vs no-fire months)</td></tr>
-    <tr><td>C · Forest loss</td><td>Hansen/UMD tree-cover loss (&gt;30% canopy) per regency, Global Forest Watch statistics</td><td>Heavily disturbed at 35%+</td></tr>
-    <tr><td>D · Ocean</td><td>NOAA CPC Oceanic Niño Index; NOAA PSL Dipole Mode Index (HadISST)</td><td>ONI ≥ +0.5 or DMI ≥ +0.4 (Field 2016; Iskandar 2022)</td></tr>
-    <tr><td>E · Smoke</td><td>NASA POWER AOD_55: MERRA-2 aerosol optical depth at 550 nm</td><td>AOD &gt; 1: hazy brown sky</td></tr>
-    <tr><td>Terrain</td><td>AWS Terrain Tiles (SRTM / GMTED-derived elevation)</td><td>—</td></tr>
+    <tr><td>🔥 Fires</td><td>MODIS Thermal Anomalies &amp; Fire 8-day, 1 km (MOD14A2 Terra + MYD14A2 Aqua), fire pixels of nominal or high confidence, via NASA AppEEARS</td><td>Fire month = ≥ 10 fire pixels</td></tr>
+    <tr><td>A · Rainfall</td><td>MERRA-2 PRECTOTCORR (bias-corrected precipitation), monthly 0.5° × 0.625°, via NASA Giovanni / GES DISC</td><td>&lt; 4 mm/day (Field et al. 2016)</td></tr>
+    <tr><td>B · Dryness</td><td>MERRA-2 GWETROOT root-zone soil wetness, via NASA Giovanni / GES DISC</td><td>wetness &lt; <span id="thrBLbl"></span>: fitted on 2003–2025 cells (best split of fire vs no-fire months)</td></tr>
+    <tr><td>C · Forest loss</td><td>MODIS Vegetation Continuous Fields (MOD44B) % tree cover, yearly 250 m, via NASA AppEEARS: decline since 2001 in % of the 2001 cover</td><td>decline ≥ <span id="thrCLbl"></span>%: fitted on 2003–2025 cells</td></tr>
+    <tr><td>D · Ocean</td><td>Niño 3.4 (ONI = 3-month mean) and Dipole Mode Index from NOAA ERSSTv5, via KNMI Climate Explorer</td><td>ONI ≥ +0.5 or DMI ≥ +0.4 (Field 2016; Iskandar 2022)</td></tr>
+    <tr><td>E · Smoke</td><td>MERRA-2 TOTEXTTAU aerosol optical depth at 550 nm, via NASA Giovanni / GES DISC</td><td>AOD &gt; 1: hazy brown sky</td></tr>
+    <tr><td>Terrain</td><td>NASA SRTM elevation (SRTMGL3, 90 m) and MODIS land/water mask (MOD44W), via NASA AppEEARS</td><td>—</td></tr>
     <tr><td>Chance &amp; risk</td><td>Logistic regressions fitted on all cells 2003–2025, tested leave-one-year-out</td><td id="modelLbl"></td></tr>
   </table>
   <p>Sources:
@@ -276,14 +276,13 @@ const REL = { fire: ['A', 'B'], drought: ['A', 'B', 'D'], smoke: ['E', 'fire'], 
 const hl = k => state.rel.includes(k) ? ' hl' : '';
 
 // ---- real-data plumbing ----
-const FL = DATA.fireLast;                       // last month in the NASA FIRMS archive
+const FL = DATA.fireLast;                       // last month covered by MODIS 8-day fire composites
 const fireOK = t => t <= FL;
 const THR_B = DATA.thrB;                        // root-zone wetness danger line (fitted)
 cells.forEach(c => {
   c.s.fire = c.s.fire.map(v => Math.max(0, v)); // -1 = not yet archived → handled via fireOK()
   const fill = a => { let last = null; return a.map(v => (v == null ? last : (last = v))); };
   c.s.rain = fill(c.s.rain); c.s.soil = fill(c.s.soil);
-  c.kabInfo = DATA.kabs[String(c.kab)] || null;
 });
 const soilOf = (c, t) => c.s.soil[t] / 1000;
 const lossOf = (c, t) => (c.s.loss[t] == null ? null : c.s.loss[t] / 10);
@@ -303,9 +302,9 @@ function nearestCell(lon, lat) {
   return bd <= 0.5 ? best : null;
 }
 const dangerD = t => (DATA.oni[t] ?? -9) >= 0.5 || (DATA.dmi[t] ?? -9) >= 0.4;
-// monthly fire-risk: logistic regression fitted on 2003–2025 cell-months (P of ≥10 detections)
+// monthly fire-risk: logistic regression fitted on 2003–2025 cell-months (P of ≥10 fire pixels)
 const burnedBefore = (c, t) => { for (let k = 0; k < t && k <= FL; k++) if (c.s.fire[k] >= 10) return 1; return 0; };
-const riskOf = (c, t) => Math.round(100 * logit(DATA.riskModel, [c.s.rain[t] / 10, soilOf(c, t), DATA.oni[t] ?? 0, c.peatFrac, (lossOf(c, t) ?? 17) / 100, burnedBefore(c, t)]));
+const riskOf = (c, t) => Math.round(100 * logit(DATA.riskModel, [c.s.rain[t] / 10, soilOf(c, t), DATA.oni[t] ?? 0, (lossOf(c, t) ?? 0) / 100, burnedBefore(c, t)]));
 
 const TOWNS = [
   ['Banda Aceh',95.32,5.55,1],['Meulaboh',96.13,4.14,0],['Medan',98.67,3.59,1],['Sibolga',98.78,1.74,0],['Padang',100.35,-0.95,1],
@@ -325,19 +324,19 @@ function nearestTown(lon, lat) {
 // ================= layers =================
 const RAMPS = {
   rain: ['#d95926', '#e8913a', '#6a6a63', '#3f7fc9', '#86b6ef'].map(hex),          // dry → wet (diverging, gray midpoint)
-  peat: ['#2a2026', '#5e2440', '#c5426f', '#ee8ab0', '#ffd1e3'].map(hex),
+  dry: ['#2a2026', '#5e2440', '#c5426f', '#ee8ab0', '#ffd1e3'].map(hex),
   loss: ['#26301f', '#5e4a14', '#a8781c', '#e0a94a', '#ffe3a1'].map(hex),
   ocean: ['#0d2233', '#0f3550', '#1c5a8a', '#3f8fd6', '#9fd0ff'].map(hex)
 };
 const LAYERS = {
   fire: { k: '🔥', name: 'Fires & smoke (the effect)', d: 'Active fires glow, smoke rises, burn scars darken', color: '#ff7a3d',
-    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#1c1a18,#7a2e12,#ff8c42,#ffd27a)"></div><div class="ends"><span>no fire</span><span>many detections</span></div>Charcoal ground = burned in the last 6 months.` },
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#1c1a18,#7a2e12,#ff8c42,#ffd27a)"></div><div class="ends"><span>no fire</span><span>many fire pixels</span></div>Charcoal ground = burned in the last 6 months.` },
   A: { k: 'A', name: 'Rainfall', d: 'Danger when below 4 mm/day', color: '#f2b33d',
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,#d95926,#e8913a,#6a6a63,#3f7fc9,#86b6ef)"></div><div class="ends"><span>0 dry</span><span>4</span><span>7</span><span>12+ mm/day wet</span></div>` },
-  B: { k: 'B', name: 'Soil & peat dryness', d: `Danger when root-zone wetness < ${THR_B.toFixed(2)}`, color: '#e0689a',
-    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#2a2026,#5e2440,#c5426f,#ee8ab0,#ffd1e3)"></div><div class="ends"><span>0.95 wet</span><span>${THR_B.toFixed(2)}</span><span>0.60 dry</span></div>NASA POWER root-zone soil wetness (MERRA-2). Peat swamps (PEATMAP) are coloured strongest.` },
-  C: { k: 'C', name: 'Forest loss', d: 'Tree cover lost since 2001 (Hansen/GFW)', color: '#c9a26b',
-    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#26301f,#5e4a14,#a8781c,#e0a94a,#ffe3a1)"></div><div class="ends"><span>0%</span><span>35%</span><span>80%+</span></div>Regency statistics, canopy &gt;30%, through ${DATA.lossLast}.` },
+  B: { k: 'B', name: 'Soil dryness', d: `Danger when root-zone wetness < ${THR_B.toFixed(2)}`, color: '#e0689a',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#2a2026,#5e2440,#c5426f,#ee8ab0,#ffd1e3)"></div><div class="ends"><span>0.95 wet</span><span>${THR_B.toFixed(2)}</span><span>0.60 dry</span></div>MERRA-2 root-zone soil wetness (NASA Giovanni).` },
+  C: { k: 'C', name: 'Forest loss', d: 'Tree cover decline since 2001 (MODIS VCF)', color: '#c9a26b',
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#26301f,#5e4a14,#a8781c,#e0a94a,#ffe3a1)"></div><div class="ends"><span>0%</span><span>${DATA.thrC}%</span><span>80%+</span></div>MODIS MOD44B % tree cover, decline since 2001, through ${DATA.lossLast}.` },
   E: { k: 'E', name: 'Smoke from space', d: 'Aerosol optical depth (NASA MERRA-2)', color: '#b39ddb',
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,${ATM.aod.ramp.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',')})"></div>
       <div class="ends"><span>0.1 clear</span><span>1.0</span><span>2.0+ AOD</span></div>
@@ -352,8 +351,8 @@ const layerLit = (k, t) => {
   if (k === 'E') { const m = atmMaxNow(); return m.p == null ? null : m.p > 1.0; }
   const share = f => zone.filter(f).length / zone.length;
   if (k === 'A') return share(c => c.s.rain[t] < 40) > 0.25;
-  if (k === 'B') { const p = zone.filter(c => c.peat); return p.filter(c => soilOf(c, t) < THR_B).length / p.length > 0.3; }
-  if (k === 'C') return share(c => (lossOf(c, t) ?? 0) >= 35) > 0.3;
+  if (k === 'B') return share(c => soilOf(c, t) < THR_B) > 0.3;
+  if (k === 'C') return share(c => (lossOf(c, t) ?? 0) >= DATA.thrC) > 0.3;
 };
 
 // ================= three.js scene =================
@@ -432,18 +431,17 @@ function elevAt(i, j) {
   return (e(x0, y0) * (1 - fx) + e(x0 + 1, y0) * fx) * (1 - fy) + (e(x0, y0 + 1) * (1 - fx) + e(x0 + 1, y0 + 1) * fx) * fy;
 }
 // --- cell interpolation grid (for draped layers) ---
-const peatCell = new Map(); cells.forEach(c => peatCell.set(c.i, c.peatFrac));
 const heights = new Float32Array(N), elevM = new Float32Array(N);
 const vCell = new Int32Array(N * 4).fill(-1), vW = new Float32Array(N * 4);
-const baseCol = new Float32Array(N * 3), isData = new Uint8Array(N), peatW = new Float32Array(N);
+const baseCol = new Float32Array(N * 3), isData = new Uint8Array(N);
 for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
   const k = j * NX + i, lon = LON0 + i * RES, lat = LAT1 - j * RES;
   // interpolation weights
   const gx = (lon - 95.25) / 0.5, gy = (lat + 5.75) / 0.5, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = gx - x0, fy = gy - y0;
-  let ws = 0, pw = 0; const quad = [[x0, y0, (1 - fx) * (1 - fy)], [x0 + 1, y0, fx * (1 - fy)], [x0, y0 + 1, (1 - fx) * fy], [x0 + 1, y0 + 1, fx * fy]];
-  quad.forEach(([cx, cy, w], q) => { const c = cellMap.get(`${cx},${cy}`); if (c && w > 0) { vCell[k * 4 + q] = c.i; vW[k * 4 + q] = w; ws += w; pw += w * c.peatFrac; } });
-  if (ws > 0) { for (let q = 0; q < 4; q++) vW[k * 4 + q] /= ws; isData[k] = mask[k] > 0.5 ? 1 : 0; peatW[k] = pw / ws; }
-  // height: real elevation (AWS Terrain Tiles, SRTM/GMTED-derived), ~110x vertical exaggeration
+  let ws = 0; const quad = [[x0, y0, (1 - fx) * (1 - fy)], [x0 + 1, y0, fx * (1 - fy)], [x0, y0 + 1, (1 - fx) * fy], [x0 + 1, y0 + 1, fx * fy]];
+  quad.forEach(([cx, cy, w], q) => { const c = cellMap.get(`${cx},${cy}`); if (c && w > 0) { vCell[k * 4 + q] = c.i; vW[k * 4 + q] = w; ws += w; } });
+  if (ws > 0) { for (let q = 0; q < 4; q++) vW[k * 4 + q] /= ws; isData[k] = mask[k] > 0.5 ? 1 : 0; }
+  // height: real elevation (NASA SRTM via AppEEARS), ~110x vertical exaggeration
   const em = Math.max(0, elevAt(i, j));
   const h = mask[k] < 0.5 ? -0.09 : 0.012 + em * 0.00011;
   heights[k] = h * VZ; elevM[k] = mask[k] < 0.5 ? 0 : em;
@@ -453,7 +451,6 @@ for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
   else if (em < 100) c = mix(hex('#2c4a2a'), hex('#2f5c33'), em / 100);
   else if (em < 1200) c = mix(hex('#2f5c33'), hex('#4f5e3c'), (em - 100) / 1100);
   else c = mix(hex('#4f5e3c'), hex('#8c8678'), clamp((em - 1200) / 2000, 0, 1));
-  if (peatW[k] > 0) c = mix(c, hex('#3a3a22'), 0.55 * peatW[k]);
   if (mask[k] >= 0.5 && !isData[k]) c = mix(c, hex('#30352f'), 0.55); // land outside the study area
   const g = 0.95 + 0.1 * fbm(lon * 9, lat * 9); // subtle texture only (shading, not data)
   baseCol[k * 3] = c[0] * g; baseCol[k * 3 + 1] = c[1] * g; baseCol[k * 3 + 2] = c[2] * g;
@@ -587,7 +584,7 @@ function paint() {
       if (L !== 'C') c = mix(c, tan, clamp(lv / 90, 0, 1) * 0.42);   // cleared land always looks paler
       if (L === 'fire') c = mix(c, charcoal, clamp(Math.sqrt(v) / 16, 0, 0.85));
       else if (L === 'A') c = mix(c, ramp(RAMPS.rain, v <= 4 ? v / 4 * 0.5 : v <= 7 ? 0.5 + (v - 4) / 3 * 0.15 : 0.65 + (v - 7) / 5 * 0.35), 0.85);
-      else if (L === 'B') { const dry = clamp((0.95 - v) / 0.35, 0, 1); c = mix(c, ramp(RAMPS.peat, dry), 0.45 + 0.45 * Math.min(1, peatW[k] * 2.5)); }
+      else if (L === 'B') { const dry = clamp((0.95 - v) / 0.35, 0, 1); c = mix(c, ramp(RAMPS.dry, dry), 0.7); }
       else if (L === 'C') c = mix(c, ramp(RAMPS.loss, v / 80), 0.85);
       else if (L === 'D') c = mix(c, hex('#2b2f2b'), 0.55);
       else if (L === 'E') c = mix(c, hex('#1d211d'), 0.35);
@@ -661,8 +658,8 @@ const hideTip = () => tip.style.display = 'none';
 const pinTip = document.createElement('div'); pinTip.className = 'tip pintip'; document.body.appendChild(pinTip);
 function tipHtml(g, c, t, hint) {
   const town = nearestTown(g.lon, g.lat), ao = aodOf(c, t), el = Math.round(Math.max(0, elevAt(Math.round((g.lon - LON0) / RES), Math.round((LAT1 - g.lat) / RES))));
-  return `<b>near ${town.name}</b><div class="k">${c.kabInfo ? c.kabInfo.name + ' · ' : ''}${c.peat ? 'Peat swamp' : 'Mineral soil'} · ${mshort(t)} · ${el.toLocaleString()}&nbsp;m</div>
-    <div>🔥 <span class="mono">${fireTxt(c, t)}</span> fires${fireOK(t) ? '' : ' <span class="k">(not yet archived)</span>'} · 🛰 AOD <span class="mono">${ao == null ? 'n/a' : ao.toFixed(2)}</span></div><div>A <span class="mono">${(c.s.rain[t]/10).toFixed(1)}</span> mm/d · B <span class="mono">${soilOf(c, t).toFixed(2)}</span> wetness</div><div class="k">${hint}</div>`;
+  return `<b>near ${town.name}</b><div class="k">${c.island} · ${mshort(t)} · ${el.toLocaleString()}&nbsp;m</div>
+    <div>🔥 <span class="mono">${fireTxt(c, t)}</span> fire pixels${fireOK(t) ? '' : ' <span class="k">(not yet available)</span>'} · 🛰 AOD <span class="mono">${ao == null ? 'n/a' : ao.toFixed(2)}</span></div><div>A <span class="mono">${(c.s.rain[t]/10).toFixed(1)}</span> mm/d · B <span class="mono">${soilOf(c, t).toFixed(2)}</span> wetness</div><div class="k">${hint}</div>`;
 }
 function refreshPinTip() { if (!state.sel) { pinTip.style.display = 'none'; return; }
   pinTip.innerHTML = tipHtml({ lon: state.sel.lon, lat: state.sel.lat }, state.sel.c, state.t, 'Case file open in the side panel →'); pinTip.style.display = 'block'; }
@@ -671,7 +668,7 @@ renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return; down = null;
   const g = pick(e); if (!g) return; const c = nearestCell(g.lon, g.lat);
-  if (c) select(c, g); else showTip('<b>No data here</b><div class="k">Click on Sumatra or Kalimantan</div>', e.clientX, e.clientY);
+  if (c) select(c, g); else showTip('<b>No data here</b><div class="k">Click on Sumatra or Borneo</div>', e.clientX, e.clientY);
 });
 renderer.domElement.addEventListener('pointermove', e => {
   if (e.buttons) { hideTip(); return; } const now = performance.now(); if (now - lastHover < 60) return; lastHover = now;
@@ -706,7 +703,7 @@ function renderHeadline() {
   const lit = ['D', 'A', 'B', 'C', 'E'].filter(k => layerLit(k, t));
   $('hM').textContent = mlab(t) + (t === NOW ? ' · latest' : '');
   const am = atmMaxNow();
-  $('hS').innerHTML = `${fireOK(t) ? `<b>${f.toLocaleString()}</b> fire detections` : '<span class="pending">fire archive not yet published (NASA FIRMS)</span>'} · clues lit: ${lit.length ? lit.map(k => `<b style="color:var(--clue)">${k}</b>`).join(' ') : 'none'} · 🛰 AOD peak <b style="color:#c9b6ff">${am.p == null ? 'n/a' : am.p.toFixed(2)}</b>`;
+  $('hS').innerHTML = `${fireOK(t) ? `<b>${f.toLocaleString()}</b> fire pixels` : '<span class="pending">MODIS fire composites not yet available</span>'} · clues lit: ${lit.length ? lit.map(k => `<b style="color:var(--clue)">${k}</b>`).join(' ') : 'none'} · 🛰 AOD peak <b style="color:#c9b6ff">${am.p == null ? 'n/a' : am.p.toFixed(2)}</b>`;
   $('nowLbl').textContent = mlab(t);
 }
 function renderTimeline() {
@@ -722,7 +719,7 @@ function renderTimeline() {
   s += `<line x1="${state.t * bw + bw / 2}" x2="${state.t * bw + bw / 2}" y1="0" y2="${base + 5}" stroke="#fff" stroke-width="1.5"/>`;
   svg.innerHTML = s;
   const at = ev => { const r = svg.getBoundingClientRect(); return clamp(Math.floor((ev.clientX - r.left) / r.width * T), 0, T - 1); };
-  svg.onmousemove = ev => { const i = at(ev); showTip(`<b>${mlab(i)}</b><div>${fireOK(i) ? `<span class="mono">${f[i].toLocaleString()}</span> fire detections` : 'Fire archive not yet published'}</div><div class="k">ONI ${fmtIdx(DATA.oni[i])} · DMI ${fmtIdx(DATA.dmi[i])} · Click to travel here</div>`, ev.clientX, ev.clientY - 60); };
+  svg.onmousemove = ev => { const i = at(ev); showTip(`<b>${mlab(i)}</b><div>${fireOK(i) ? `<span class="mono">${f[i].toLocaleString()}</span> fire pixels` : 'MODIS fire composites not yet available'}</div><div class="k">ONI ${fmtIdx(DATA.oni[i])} · DMI ${fmtIdx(DATA.dmi[i])} · Click to travel here</div>`, ev.clientX, ev.clientY - 60); };
   svg.onmouseleave = hideTip;
   svg.onclick = ev => setTime(at(ev));
   if (svg.dataset.drag !== '1') { svg.dataset.drag = '1'; svg.addEventListener('pointermove', ev => { if (ev.buttons === 1) setTime(at(ev)); }); }
@@ -757,7 +754,7 @@ function caseRows(c) {
       D: big ? leadMonths(P, dangerD) : null,
       A: big ? leadMonths(P, i => c.s.rain[i] < 40) : null,
       B: big ? leadMonths(P, i => soilOf(c, i) < THR_B) : null,
-      C: big ? ((lossOf(c, P) ?? 0) >= 35) : null,
+      C: big ? ((lossOf(c, P) ?? 0) >= DATA.thrC) : null,
       firstLit: big ? Math.max(0, P - Math.max(leadMonths(P, dangerD), leadMonths(P, i => c.s.rain[i] < 40), leadMonths(P, i => soilOf(c, i) < THR_B))) : null };
   });
 }
@@ -804,7 +801,7 @@ function atmField(t) {
   atmCache.set(t, F); return F;
 }
 const ATM = {
-  aod: { name: 'Smoke (aerosol optical depth, 550 nm)', unit: 'AOD', inst: 'NASA POWER · MERRA-2 AOD_55 (monthly)', f: v => v, fmt: v => v.toFixed(2), norm: v => v / 2,
+  aod: { name: 'Smoke (aerosol optical depth, 550 nm)', unit: 'AOD', inst: 'MERRA-2 TOTEXTTAU (monthly) · NASA Giovanni', f: v => v, fmt: v => v.toFixed(2), norm: v => v / 2,
          ramp: ['#1e1b18', '#4a4038', '#8a7a68', '#c9b9a3', '#f4ece0'].map(hex), note: 'Above ~1 the sky turns hazy brown; smoke this thick blocks the sun.' }
 };
 state.atm = 'aod';
@@ -879,11 +876,11 @@ function yearCheck(c, y) {
   const D = dangerD(iJul) || dangerD(iJun);
   const rain = (c.s.rain[iJun] + c.s.rain[iJul]) / 20, rainNorm = c._clim.rain, A = rain < 0.75 * rainNorm;
   const soil = (soilOf(c, iJun) + soilOf(c, iJul)) / 2, B = soil <= c._clim.soilQ25;
-  const loss = lossOf(c, iJul), C = loss != null && loss >= 35;
-  const H = !!c.peat || c.s.fire.slice(0, iJun).some(v => v >= 10);
+  const loss = lossOf(c, iJul), C = loss != null && loss >= DATA.thrC;
+  const H = c.s.fire.slice(0, iJun).some(v => v >= 10);
   // chance = logistic model fitted on every cell and July 2003–2025 (leave-one-year-out AUC in DATA.julyModel)
   const oniJJ = ((DATA.oni[iJun] ?? 0) + (DATA.oni[iJul] ?? 0)) / 2;
-  const p = logit(DATA.julyModel, [oniJJ, rain / rainNorm, (soil - c._clim.soilMean) / (c._clim.soilSd || 1), c.peatFrac, (loss ?? 17) / 100, H ? 1 : 0]);
+  const p = logit(DATA.julyModel, [oniJJ, rain / rainNorm, (soil - c._clim.soilMean) / (c._clim.soilSd || 1), (loss ?? 0) / 100, H ? 1 : 0]);
   const chance = Math.round(100 * p), cut = Math.round(100 * DATA.julyModel.cut);
   const pending = iJul + 4 > FL;
   let peak = 0, pi = iJul; for (let k = iJul + 1; k <= Math.min(FL, iJul + 4); k++) if (c.s.fire[k] > peak) { peak = c.s.fire[k]; pi = k; }
@@ -900,11 +897,11 @@ function yearStory(c, r) {
   why.push(r.D ? `<b>D</b> the ocean was in drought mode (ONI ${fmtIdx(r.oni)}, IOD ${fmtIdx(r.dmi)})` : `<b>D</b> the ocean was calm (ONI ${fmtIdx(r.oni)})`);
   why.push(r.A ? `<b>A</b> rain was only ${r.rain.toFixed(1)} mm/day, ${Math.round((1 - r.rain / r.rainNorm) * 100)}% below normal for June–July` : `<b>A</b> rain was normal (${r.rain.toFixed(1)} mm/day vs ${r.rainNorm.toFixed(1)} usual)`);
   why.push(r.B ? `<b>B</b> the root zone was drier than in 3 of 4 years (wetness ${r.soil.toFixed(2)})` : `<b>B</b> the soil was still moist (wetness ${r.soil.toFixed(2)})`);
-  why.push(r.loss == null ? `<b>C</b> no forest-loss statistics for this regency` : r.C ? `<b>C</b> ${r.loss.toFixed(0)}% of the tree cover was already gone` : `<b>C</b> most tree cover still stood (${r.loss.toFixed(0)}% lost)`);
-  why.push(r.H ? `<b>H</b> this land burns easily (${c.peat ? 'peat swamp' : 'it has burned before'})` : `<b>H</b> no history of big fires here`);
-  const out = r.pending ? `<span class="pending">NASA FIRMS has not yet published the ${r.y} fire archive, so the outcome is still open.</span>`
-    : r.big ? `🔥 <b>${r.peak}</b> fire detections at the peak (${mshort(r.pi)})${r.co != null ? `, smoke (AOD) up to <b>${r.co.toFixed(2)}</b>` : ''}`
-    : (r.peak >= 10 ? `Fires stayed moderate: ${r.peak} detections at most` : `Only ${r.peak} fire detection${r.peak === 1 ? '' : 's'} at most`) + (r.co != null ? (r.co > 1 ? `, though smoke drifting in pushed AOD to ${r.co.toFixed(2)}` : `; the air stayed fairly clear (AOD ${r.co.toFixed(2)})`) : '');
+  why.push(r.loss == null ? `<b>C</b> no tree-cover data for this spot` : r.C ? `<b>C</b> tree cover had already fallen ${r.loss.toFixed(0)}% since 2001` : `<b>C</b> most tree cover still stood (${r.loss.toFixed(0)}% decline)`);
+  why.push(r.H ? `<b>H</b> this land has burned before` : `<b>H</b> no history of big fires here`);
+  const out = r.pending ? `<span class="pending">MODIS fire composites for the rest of ${r.y} are not yet available, so the outcome is still open.</span>`
+    : r.big ? `🔥 <b>${r.peak}</b> fire pixels at the peak (${mshort(r.pi)})${r.co != null ? `, smoke (AOD) up to <b>${r.co.toFixed(2)}</b>` : ''}`
+    : (r.peak >= 10 ? `Fires stayed moderate: ${r.peak} fire pixels at most` : `Only ${r.peak} fire pixel${r.peak === 1 ? '' : 's'} at most`) + (r.co != null ? (r.co > 1 ? `, though smoke drifting in pushed AOD to ${r.co.toFixed(2)}` : `; the air stayed fairly clear (AOD ${r.co.toFixed(2)})`) : '');
   const leads = r.big ? [['D', r.leadD], ['A', r.leadA], ['B', r.leadB]].filter(([, v]) => v >= 0).map(([k, v]) => `${k} ${v} mo`).join(' · ') : '';
   return { why, out, leads };
 }
@@ -916,15 +913,15 @@ function renderPanel() {
   const JM = DATA.julyModel, RM = DATA.riskModel;
   if (!state.sel) {
     const oniNow = [...DATA.oni].reverse().find(v => v != null), iO = DATA.oni.lastIndexOf(oniNow);
-    const peatNow = cells.filter(c => c.peat), dryNow = peatNow.filter(c => soilOf(c, NOW) < THR_B).length;
+    const tS = DATA.months.length - 1 - [...cells[0].s.soil].reverse().findIndex(v => v != null), dryNow = cells.filter(c => soilOf(c, tS) < THR_B).length;
     P.innerHTML = `<div class="intro"><h2 style="margin-top:0">Case file</h2><div class="place">Pick a place to investigate</div>
-      <p>Every 0.5° cell (~55 km) of Sumatra and Kalimantan carries 23 years of satellite measurements. Click anywhere to see:</p>
-      <p>🔥 <b>The effect:</b> NASA FIRMS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil &amp; peat dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
+      <p>Every 0.5° cell (~55 km) of Sumatra and Borneo carries ${NOW_YEAR - FIRST_YEAR + 1} years of satellite measurements. Click anywhere to see:</p>
+      <p>🔥 <b>The effect:</b> MODIS fire pixels and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
       <h2>Or start with a fire hotspot</h2><div class="quick">${['Palangka Raya','Pekanbaru','Kayu Agung (OKI)','Pontianak','Jambi','Ketapang'].map(n => `<button class="pill" data-town="${n}">${n}</button>`).join('')}</div>
       <h2>Field evidence on the map</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
-      <h2>What's happening in 2026</h2><p style="font-size:12.5px">The ocean clue is at a record: NOAA's Niño 3.4 anomaly reached <b>+${DATA.nino34Oct2026.toFixed(2)} °C</b> in October 2026, the highest since satellite SSTs began in 1982, and the ONI hit <b>${fmtIdx(oniNow)}</b> (${mshort(iO)}). In ${mshort(NOW)}, <b>${dryNow} of ${peatNow.length}</b> peat cells were below the dryness line. NASA FIRMS has not yet published the 2026 fire archive, so this year's fire months are shown as "not yet archived".</p></div>`;
+      <h2>What's happening in 2026</h2><p style="font-size:12.5px">The ocean clue is at a record: the Niño 3.4 anomaly reached <b>${DATA.nino34Latest >= 0 ? '+' : ''}${DATA.nino34Latest.toFixed(2)} °C</b> in ${mshort(DATA.months.indexOf(DATA.nino34LatestMonth) >= 0 ? DATA.months.indexOf(DATA.nino34LatestMonth) : NOW)}${DATA.nino34IsRecord ? `, the highest in the record since ${DATA.nino34RecordSince}` : ''}, and the ONI hit <b>${fmtIdx(oniNow)}</b> (${mshort(iO)}). In ${mshort(tS)}, <b>${dryNow} of ${cells.length}</b> cells were below the dryness line. MODIS fire composites are processed through ${mshort(FL)}.</p></div>`;
     P.querySelectorAll('[data-town]').forEach(b => b.onclick = () => { const t = TOWNS.find(x => x[0] === b.dataset.town);
-      const c = cells.filter(c => Math.hypot(c.lon - t[1], c.lat - t[2]) < 0.75).sort((a, b2) => (b2.peat - a.peat) || (Math.hypot(a.lon - t[1], a.lat - t[2]) - Math.hypot(b2.lon - t[1], b2.lat - t[2])))[0] || nearestCell(t[1], t[2]);
+      const c = cells.filter(c => Math.hypot(c.lon - t[1], c.lat - t[2]) < 0.75).sort((a, b2) => Math.hypot(a.lon - t[1], a.lat - t[2]) - Math.hypot(b2.lon - t[1], b2.lat - t[2]))[0] || nearestCell(t[1], t[2]);
       if (c) select(c, { lon: t[1], lat: t[2] }); });
     P.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => openEvidence(b.dataset.ev));
     return;
@@ -956,25 +953,23 @@ function renderPanel() {
     ? `Here, big fires came in <b>${pastBig.map(r => r.y).join(', ')}</b>. Checking the clues each July, the fitted model called it right in <b>${hits} of ${done.length} years</b>, including the quiet years.`
     : `Fires here stayed small in every year since ${FIRST_YEAR}, and the model called it right in <b>${hits} of ${done.length} years</b>. <b>Lower-priority area.</b>`;
   verdict += nowCheck.pending
-    ? `<br><br><b>${nowCheck.y}:</b> in July the clues said <b>${nowCheck.level.toLowerCase()} chance (${nowCheck.chance}%)</b>${nowCheck.chance >= nowCheck.cut ? ', above the warning line' : ''}. The fire record for ${nowCheck.y} is not yet archived.`
+    ? `<br><br><b>${nowCheck.y}:</b> in July the clues said <b>${nowCheck.level.toLowerCase()} chance (${nowCheck.chance}%)</b>${nowCheck.chance >= nowCheck.cut ? ', above the warning line' : ''}. The MODIS fire record for the rest of ${nowCheck.y} is not yet available.`
     : nowCheck.big ? `<br><br><b>${nowCheck.y}:</b> the clues said ${nowCheck.level.toLowerCase()} chance (${nowCheck.chance}%), and fires peaked in <b>${mshort(nowCheck.pi)}</b>.` : '';
-  const K = c.kabInfo;
   const aodSeries = c.s.aod.map(v => (v == null ? NaN : v / 1000));
 
   P.innerHTML = `<button class="close" id="closeSel">✕</button>
     <h2 style="margin-top:0">Case file</h2>
     <div class="place">near ${town.name}</div>
-    <div class="placesub">${c.lat.toFixed(2)}°, ${c.lon.toFixed(2)}°E · ${K ? `${K.name}, ` : ''}${c.region} · ${town.km} km from town</div>
-    <span class="tag">${c.peat ? `🟫 Peat swamp (${Math.round(c.peatFrac * 100)}% of cell)` : c.peatFrac > 0 ? `⛰ Mostly mineral soil (${Math.round(c.peatFrac * 100)}% peat)` : '⛰ Mineral soil'}</span><span class="tag">${loss == null ? 'no loss stats' : loss.toFixed(0) + '% tree cover lost since 2001'}</span>
-    ${K ? `<span class="tag">Regency #${K.rank} of 519 by fires · trend ${K.pct_dec == null ? '—' : (K.pct_dec > 0 ? '+' : '') + K.pct_dec + '%/decade'}${K.sig ? ' (significant)' : ''}</span>` : ''}
+    <div class="placesub">${c.lat.toFixed(2)}°, ${c.lon.toFixed(2)}°E · ${c.island} · ${town.km} km from town</div>
+    <span class="tag">${loss == null ? 'no tree-cover data' : 'tree cover ' + loss.toFixed(0) + '% below 2001'}</span>
 
     <h2>The effect · ${mlab(t)}</h2>
     <div class="nowbox">
-      <div class="stat"><div class="v" style="color:${fireOK(t) && c.s.fire[t] > 20 ? 'var(--fire)' : 'var(--text)'}">${fireTxt(c, t)}</div><div class="l">${fireOK(t) ? 'fire detections this month' : 'fires: not yet archived'}</div></div>
-      <div class="stat"><div class="v">${fireOK(t) ? season : 'n/a'}</div><div class="l">detections in ${y} so far</div></div>
+      <div class="stat"><div class="v" style="color:${fireOK(t) && c.s.fire[t] > 20 ? 'var(--fire)' : 'var(--text)'}">${fireTxt(c, t)}</div><div class="l">${fireOK(t) ? 'fire pixels this month' : 'fires: not yet available'}</div></div>
+      <div class="stat"><div class="v">${fireOK(t) ? season : 'n/a'}</div><div class="l">fire pixels in ${y} so far</div></div>
       <div class="stat risk"><span style="font-size:12px;color:var(--text-2);white-space:nowrap">Risk this month</span><span class="riskbar"><i style="width:${risk}%"></i></span><span style="font-family:var(--mono)">${risk}%</span></div>
     </div>
-    <div class="src">Risk = probability of ≥${RM.event} detections in a month, from a logistic model of rain, soil wetness, ONI, peat, forest loss and fire history (fitted on ${RM.n.toLocaleString()} cell-months, leave-one-year-out AUC ${RM.auc_loyo}).</div>
+    <div class="src">Risk = probability of ≥${RM.event} fire pixels in a month, from a logistic model of rain, soil wetness, ONI, tree-cover decline and fire history (fitted on ${RM.n.toLocaleString()} cell-months, leave-one-year-out AUC ${RM.auc_loyo}).</div>
 
     <h2>The clues · ${FIRST_YEAR} → ${NOW_YEAR}</h2>
     ${clue('D', '#5fa8ff', 'Ocean: El Niño / IOD', `${fmtIdx(oni)} / ${fmtIdx(dmi)}`, 'ONI / DMI', dangerD(t), 'ONI ≥ +0.5 or DMI ≥ +0.4',
@@ -983,13 +978,13 @@ function renderPanel() {
       spark('spA', c.s.rain.map(v => v / 10), { color: '#f2b33d', thr: 4, dir: 'below', lo: 0, hi: 15, fmt: v => v.toFixed(1), unit: 'mm/day' }))}
     ${clue('B', '#e0689a', 'Root-zone soil wetness', soil.toFixed(2), '0–1', soil < THR_B, `Danger below ${THR_B.toFixed(2)} (fitted)`,
       spark('spB', c.s.soil.map(v => v / 1000), { color: '#e0689a', thr: THR_B, dir: 'below', lo: 0.55, hi: 1, fmt: v => v.toFixed(3), unit: 'root-zone wetness' }))}
-    ${clue('C', '#c9a26b', 'Tree cover lost since 2001', loss == null ? '—' : loss.toFixed(0), loss == null ? '' : '%', (loss ?? 0) >= 35, `Heavily disturbed at 35%+ · stats through ${DATA.lossLast}`,
-      loss == null ? '' : spark('spC', c.s.loss.map(v => (v ?? 0) / 10), { color: '#c9a26b', thr: 35, dir: 'above', lo: 0, hi: 90, fmt: v => v.toFixed(0), unit: '% lost' }), loss == null)}
+    ${clue('C', '#c9a26b', 'Tree cover decline since 2001', loss == null ? '—' : loss.toFixed(0), loss == null ? '' : '%', (loss ?? 0) >= DATA.thrC, `Danger at ${DATA.thrC}%+ (fitted) · MODIS VCF through ${DATA.lossLast}`,
+      loss == null ? '' : spark('spC', c.s.loss.map(v => (v ?? 0) / 10), { color: '#c9a26b', thr: DATA.thrC, dir: 'above', lo: 0, hi: 90, fmt: v => v.toFixed(0), unit: '% decline' }), loss == null)}
     <div class="src">Orange bands = fire seasons of 2015, 2019, 2023, 2026. Dashed line = danger line. Click any line to travel to that month.</div>
 
     <h2>🛰 The air above · seen from space</h2>
     <div class="clue${hl('E')}"><div class="row"><span class="k" style="background:#b39ddb">E</span><span class="n">Smoke (aerosol optical depth)</span><span class="v">${ao == null ? 'n/a' : ao.toFixed(2)} <small>AOD</small></span></div>
-      <div class="meta"><span>NASA MERRA-2 · above ~1 the sky turns hazy brown</span><span class="chip ${ao == null ? 'na' : ao > 1 ? 'on' : 'off'}">${ao == null ? 'N/A' : ao > 1 ? '● SMOKY' : '○ clear-ish'}</span></div>
+      <div class="meta"><span>MERRA-2 (NASA Giovanni) · above ~1 the sky turns hazy brown</span><span class="chip ${ao == null ? 'na' : ao > 1 ? 'on' : 'off'}">${ao == null ? 'N/A' : ao > 1 ? '● SMOKY' : '○ clear-ish'}</span></div>
       ${spark('spE', aodSeries.map(v => (isNaN(v) ? 0 : v)), { color: '#b39ddb', thr: 1, dir: 'above', lo: 0, hi: Math.max(1.5, ...aodSeries.filter(v => !isNaN(v))), fmt: v => v.toFixed(2), unit: 'AOD (550 nm)' })}</div>
 
     <h2>⏪ Compare years · could we have seen it coming?</h2>
@@ -997,16 +992,16 @@ function renderPanel() {
     ${Y ? ycard(Y) : ''}
 
     <h2>Every year at this spot · July check vs. what happened</h2>
-    <table class="proof"><tr><th>Year</th><th title="Ocean">D</th><th title="Rain">A</th><th title="Dryness">B</th><th title="Forest loss">C</th><th title="Peat or burned before">H</th><th>Chance</th><th>🔥 peak</th><th></th></tr>
+    <table class="proof"><tr><th>Year</th><th title="Ocean">D</th><th title="Rain">A</th><th title="Dryness">B</th><th title="Forest loss">C</th><th title="Burned before">H</th><th>Chance</th><th>🔥 peak</th><th></th></tr>
       ${years.map(r => `<tr class="y ${r.y === nowCheck.y ? 'now' : ''}" data-y="${r.y}"><td>${r.y}</td><td>${dot(r.D)}</td><td>${dot(r.A)}</td><td>${dot(r.B)}</td><td>${dot(r.C, r.loss == null)}</td><td>${dot(r.H)}</td><td>${r.chance}%</td><td style="color:${r.big ? 'var(--fire)' : 'var(--muted)'}">${r.pending ? '…' : r.peak}</td><td>${r.pending ? '<span class="pending">pending</span>' : r.correct ? '✓' : '<span style="color:#ff8a8a">✗</span>'}</td></tr>`).join('')}
     </table>
-    <div class="src">● = clue lit in June–July (A = rain 25%+ below normal, B = soil drier than this spot's 25th percentile, H = peat or burned before). Chance comes from a logistic model fitted on all ${JM.n.toLocaleString()} cell-Julys 2003–2025 (leave-one-year-out AUC ${JM.auc_loyo}; it flags ${Math.round(JM.hit_rate * 100)}% of big fire seasons, with a ${Math.round(JM.false_alarm * 100)}% false-alarm rate). ✓ = the call (≥ ${Math.round(JM.cut * 100)}% means "fire likely") matched what happened. Click a row to open that year.</div>
+    <div class="src">● = clue lit in June–July (A = rain 25%+ below normal, B = soil drier than this spot's 25th percentile, H = burned before). Chance comes from a logistic model fitted on all ${JM.n.toLocaleString()} cell-Julys 2003–2025 (leave-one-year-out AUC ${JM.auc_loyo}; it flags ${Math.round(JM.hit_rate * 100)}% of big fire seasons, with a ${Math.round(JM.false_alarm * 100)}% false-alarm rate). ✓ = the call (≥ ${Math.round(JM.cut * 100)}% means "fire likely") matched what happened. Click a row to open that year.</div>
 
     ${near.length ? `<h2>📷 Field evidence near here</h2>${near.map(e => `<div class="place" style="font-size:15px;margin:6px 0">${e.icon} ${e.name}</div>${evidenceHtml(e, true)}`).join('')}` : ''}
 
     <h2>Verdict</h2>
     <div class="verdict">${verdict}</div>
-    <div class="src">Data: NASA FIRMS MODIS · NASA POWER (MERRA-2) rain, root-zone wetness &amp; AOD · Hansen/UMD tree-cover loss via Global Forest Watch · PEATMAP · NOAA ONI &amp; DMI. Thresholds: A <a href="https://www.pnas.org/doi/10.1073/pnas.1524888113" target="_blank" rel="noopener">Field 2016</a> · D <a href="https://doi.org/10.3390/su142215155" target="_blank" rel="noopener">Iskandar 2022</a> · B fitted on this data.</div>`;
+    <div class="src">Data: MODIS MOD14A2/MYD14A2 fire pixels and MOD44B tree cover (NASA AppEEARS) · MERRA-2 rain, root-zone wetness &amp; AOD (NASA Giovanni) · Niño 3.4 &amp; DMI, NOAA ERSSTv5 (KNMI Climate Explorer). Thresholds: A <a href="https://www.pnas.org/doi/10.1073/pnas.1524888113" target="_blank" rel="noopener">Field 2016</a> · D <a href="https://doi.org/10.3390/su142215155" target="_blank" rel="noopener">Iskandar 2022</a> · B and C fitted on this data.</div>`;
   $('closeSel').onclick = () => { state.sel = null; pin.visible = false; selLbl.style.display = 'none'; renderPanel(); flyTo(0.5, 0.4, 14, 10); };
   P.querySelectorAll('.tabs [data-y]').forEach(b => b.onclick = () => { state.cmpYear = b.dataset.y; renderPanel(); });
   P.querySelectorAll('tr.y').forEach(tr => tr.onclick = () => { state.cmpYear = tr.dataset.y; renderPanel();
@@ -1035,7 +1030,8 @@ function loop() {
   if (pin.visible) { const s = 1 + 0.35 * ((et * 0.8) % 1); ring.scale.set(s, s, s); ring.material.opacity = 0.8 * (1 - (et * 0.8) % 1); }
   controls.update(); renderer.render(scene, camera); updateLabels(); updateEvPins();
 }
-$('thrBLbl').textContent = THR_B.toFixed(2); $('lossLastLbl').textContent = DATA.lossLast;
+$('thrBLbl').textContent = THR_B.toFixed(2); $('thrCLbl').textContent = DATA.thrC; $('lossLastLbl').textContent = DATA.lossLast;
+$('lastLbl').textContent = mlab(NOW); $('fireLastLbl').textContent = mlab(FL);
 $('modelLbl').textContent = `Monthly risk AUC ${DATA.riskModel.auc_loyo} · July check AUC ${DATA.julyModel.auc_loyo}`;
 setTime(NOW); renderPanel(); loop();
 
@@ -1044,7 +1040,7 @@ setTime(NOW); renderPanel(); loop();
   const q = new URLSearchParams(location.search), what = q.get('layer');
   const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D', wildlife: 'fire' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind', wildlife: 'Wildlife impacts' };
   if (!GL[what]) return;
-  const where = q.get('where') || 'Kalimantan', yr = q.get('year') || 'now';
+  const where = q.get('where') || 'Borneo', yr = q.get('year') || 'now';
   const town = TOWNS.find(x => x[0] === where), cellOf = town && nearestCell(town[1], town[2]);
   const group = cellOf ? [cellOf] : cells.filter(c => where === 'Sumatra' ? c.lon < 107.5 : c.lon >= 107.5);
   const mean = (f) => { let s = 0, n = 0; for (const c of group) { const v = f(c); if (v != null) { s += v; n++; } } return n ? s / n : null; };
@@ -1066,14 +1062,14 @@ setTime(NOW); renderPanel(); loop();
     : what === 'wildlife' ? (() => {
         const Y0 = MONTHS[t].slice(0, 4), evs = EVIDENCE.filter(e => town ? Math.hypot(e.lon - town[1], e.lat - town[2]) < 3 : where === 'Sumatra' ? e.lon < 107.5 : e.lon >= 107.5);
         const hit = evs.flatMap(e => e.stories.filter(s => s.y === Y0).map(s => ({ e, s })))[0];
-        const fires = fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire detections in ${mshort(t)}` : 'fire archive for this month is not yet published';
+        const fires = fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire pixels in ${mshort(t)}` : 'MODIS fire composites for this month are not yet available';
         return hit ? `${fires}<br>🦧 <b>${hit.e.name.split(' · ')[0]}</b>: ${hit.s.t.length > 170 ? hit.s.t.slice(0, 170) + '…' : hit.s.t} <button class="qa-ev" data-ev="${hit.e.id}" type="button">Read the field report</button>`
           : `${fires}<br>No orangutan field report on the map for ${Y0}${evs.length ? '' : ' in this area'}. Reports exist for ${[...new Set(EVIDENCE.flatMap(e => e.stories.map(s => s.y)))].sort().join(', ')}.`;
       })()
-    : what === 'fire' ? (fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire detections` : 'fire archive for this month is not yet published by NASA FIRMS')
+    : what === 'fire' ? (fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire pixels` : 'MODIS fire composites for this month are not yet available')
     : what === 'drought' ? `root-zone wetness <b>${f1(mean(c => soilOf(c, t)))}</b> (danger below ${THR_B.toFixed(2)}) · rain <b>${f1(mean(c => c.s.rain[t] / 10))}</b> mm/day`
     : what === 'smoke' ? `smoke (aerosol optical depth) <b>${f1(mean(c => aodOf(c, t)))}</b> (above ~1 the sky turns hazy)`
-    : `<b>${(mean(c => lossOf(c, t)) ?? 0).toFixed(0)}%</b> of the tree cover lost since 2001`;
+    : `tree cover <b>${(mean(c => lossOf(c, t)) ?? 0).toFixed(0)}%</b> below its 2001 level`;
   const bn = $('qbanner'), Y = MONTHS[t].slice(0, 4), EX = /^https:\/\//.test(q.get('ex') || '') ? q.get('ex') : '';
   // the cell the story is about: the chosen place, or the worst-hit cell of the region that year
   const yearFire = c => { let v = 0; MONTHS.forEach((m, i) => { if (m.startsWith(Y)) v += c.s.fire[i]; }); return v; };

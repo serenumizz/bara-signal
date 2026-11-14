@@ -21,8 +21,8 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 // ------------------------------------------------------------------ hero
 const y2015 = T.find((d) => d.year === 2015);
 $("#heroStat").textContent = `Niño 3.4 hit +${O.nino34_max_2026.toFixed(2)} °C in ${MONTHS[O.nino34_monthly.at(-1)[0] - 1]} 2026.`;
-$("#heroSub").innerHTML = `The previous record since satellite SSTs began (1982) was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. That year, satellites counted <b>${fmt(y2015.fires_season)} fires</b> across Sumatra and Kalimantan in four months, and the haze crossed borders.`;
-$("#liveLine").textContent = `Live · ${A.live.n} MODIS fire detections in the study area, ${A.live.from} → ${A.live.to} (NASA FIRMS NRT)`;
+$("#heroSub").innerHTML = `The previous high in the NOAA ERSSTv5 record since 1950 was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire pixels</b> across Sumatra and Borneo in four months, and the haze crossed borders.`;
+$("#liveLine").textContent = `Latest · ${A.live.n} MODIS fire pixels in the study area, ${A.live.from} → ${A.live.to} (8-day composite, NASA AppEEARS)`;
 $("#genTime").textContent = A.generated.replace("T", " ");
 
 const hero = new MapScene($("#heroScene"), { terrain, grid: A.grid, autoRotate: true, camera: "hero", labels: false, interactive: false, rotate: true });
@@ -45,7 +45,7 @@ setInterval(() => { nodes.forEach((n, i) => n.classList.toggle("lit", i === litI
 
 // ------------------------------------------------------------------ timeline
 const tl = new MapScene($("#tlScene"), { terrain, grid: A.grid, contours: true, clickCard: true, explainUrl: EXPLAIN_URL, explainCtx: () => ({ year: +$("#tlSlider").value }),
-  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> MODIS fire detections in ${$("#tlSlider").value}<br><span class="tk">in this ${d.cell}° cell (~28 km) · NASA FIRMS</span>` });
+  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> MODIS fire pixels in ${$("#tlSlider").value}<br><span class="tk">in this ${d.cell}° cell (~28 km) · MODIS MOD14A2/MYD14A2 via AppEEARS</span>` });
 let updInd = charts.indicators($("#tlIndicators"), T, (y) => setYear(y));
 $("#tlTicks").innerHTML = [2000, 2005, 2010, 2015, 2020, 2025].map((y) => `<span>${y}</span>`).join("");
 const tags = { 2015: "Strong El Niño · record haze", 2019: "Positive IOD + weak El Niño", 2006: "El Niño + positive IOD", 2002: "El Niño", 2010: "La Niña · wettest dry season", 2023: "El Niño + strong IOD", 2016: "Peat restoration agency founded", 1997: "" };
@@ -56,7 +56,7 @@ function setYear(y) {
   $("#tlTag").textContent = (r.terra_only ? "Terra only · " : "") + (tags[y] || "");
   $("#tlFires").textContent = r.fires_season == null ? "n/a" : fmt(r.fires_season);
   $("#tlSum").textContent = r.sumatra == null ? "n/a" : fmt(r.sumatra);
-  $("#tlKal").textContent = r.kalimantan == null ? "n/a" : fmt(r.kalimantan);
+  $("#tlKal").textContent = r.borneo == null ? "n/a" : fmt(r.borneo);
   tl.setFires(r.cells);
   tl.setClimate({ dryness: dryOf(r.soil), warm: warmOf(r.oni), smoke: smokeOf(r.aod) });
   updInd(y);
@@ -93,7 +93,7 @@ drawEvidence();
 
 // ------------------------------------------------------------------ 2026 simulator
 const sim = new MapScene($("#simScene"), { terrain, grid: A.grid,
-  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> simulated detections in ${$("#simMonth").textContent}<br><span class="tk">in this ${d.cell}° cell · spread by the observed 2003–2025 fire pattern</span>` });
+  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> simulated fire pixels in ${$("#simMonth").textContent}<br><span class="tk">in this ${d.cell}° cell · spread by the observed 2003–2025 fire pattern</span>` });
 const S = { oni: O.oni, dmi: O.dmi_latest, rain: O.rain, soil: O.soil, gov: 1, useObs: true, override: "obs" };
 const ctl = { oni: $("#c_oni"), dmi: $("#c_dmi"), rain: $("#c_rain"), soil: $("#c_soil"), gov: $("#c_gov") };
 let simRes = null, monthT = null, monthIdx = 0;
@@ -123,17 +123,18 @@ function renderSim() {
   const [cls, ic, lbl] = hazeStatus(r.aod);
   const worse = r.rankAbove;
   $("#simTiles").innerHTML = `
-    <div class="tile"><div class="k">Fire detections, Jul–Oct 2026</div><div class="v">${fmt(r.fires)}</div><div class="s">10–90%: ${fmt(r.lo)} – ${fmt(r.hi)}</div></div>
-    <div class="tile"><div class="k">Closest past season</div><div class="v">${r.analog.year}</div><div class="s">${fmt(r.analog.fires)} detections · ${worse} of 23 seasons were worse</div></div>
+    <div class="tile"><div class="k">Fire pixels, Jul–Oct 2026</div><div class="v">${fmt(r.fires)}</div><div class="s">10–90%: ${fmt(r.lo)} – ${fmt(r.hi)}</div></div>
+    <div class="tile"><div class="k">Closest past season</div><div class="v">${r.analog.year}</div><div class="s">${fmt(r.analog.fires)} fire pixels · ${worse} of ${chain.history.length} seasons were worse</div></div>
     <div class="tile"><div class="k">Haze, AOD Aug–Oct</div><div class="v">${r.aod.toFixed(2)}</div><div class="s"><span class="status ${cls}">${ic} ${lbl}</span></div></div>
-    <div class="tile"><div class="k">Fire radiative power, season</div><div class="v">${fmt(r.frp)} GW</div><div class="s">sum of detection FRP · 2015: ${fmt(T.find((d) => d.year === 2015).frp_GW)} GW</div></div>`;
+    <div class="tile"><div class="k">Observed so far, Jul–Oct 2026</div><div class="v">${O.fires_season_observed == null ? "pending" : fmt(O.fires_season_observed)}</div><div class="s">MODIS fire pixels · composites through ${O.fires_last_composite_end}</div></div>`;
   const rng = A.ranges;
+  const fMin = d3.min(chain.history, (d) => d.fires), fMax = d3.max(chain.history, (d) => d.fires);
   const meter = (v, a, b) => Math.max(2, Math.min(100, (100 * (v - a)) / (b - a)));
   const rows = [
     ["🌊", "ENSO (ONI)", `${d3.format("+.2f")(S.oni)} °C`, `[${rng.oni[0].toFixed(1)} to ${rng.oni[1].toFixed(1)}]`, meter(S.oni, -1.5, 2.5)],
     ["🌧", "Dry-season rain", `${r.rain.toFixed(2)} mm/d`, `[${rng.rain[0].toFixed(1)}–${rng.rain[1].toFixed(1)}] · ${S.override === "obs" ? "observed 2026" : S.override === "rain" || S.override === "soil" ? "your input" : "from ocean"}`, 100 - meter(r.rain, 1.5, 9.5)],
     ["🟫", "Root-zone soil wetness", r.soil.toFixed(3), `[${rng.soil[0].toFixed(2)}–${rng.soil[1].toFixed(2)}] · ${S.override === "obs" ? "observed 2026" : S.override === "soil" ? "your input" : "from rain"}`, 100 - meter(r.soil, 0.6, 0.93)],
-    ["🔥", "Fire detections", fmt(r.fires), "[3,023–105,106]", meter(Math.log(r.fires), Math.log(3000), Math.log(110000))],
+    ["🔥", "Fire pixels", fmt(r.fires), `[${fmt(fMin)}–${fmt(fMax)}]`, meter(Math.log(r.fires), Math.log(fMin * 0.9), Math.log(fMax * 1.1))],
     ["🌫", "Aerosol optical depth", r.aod.toFixed(2), `[${rng.aod[0].toFixed(2)}–${rng.aod[1].toFixed(2)}]`, meter(r.aod, 0.33, 1.12)],
   ];
   $("#simChain").innerHTML = rows.map(([ic, nm, v, s, m]) => `<div class="sc-row"><span class="ic">${ic}</span><span class="nm">${nm}<small>${s}</small></span><span class="vl">${v}</span><div class="sc-meter"><i style="width:${m}%"></i></div></div>`).join("");
@@ -186,7 +187,7 @@ document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("cl
 
 // ------------------------------------------------------------------ 2027-2030
 const fut = new MapScene($("#futScene"), { terrain, grid: A.grid,
-  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> detections in ${FS.year} (median of 4,000 runs)<br><span class="tk">in this ${d.cell}° cell · fire season Jul–Oct</span>` });
+  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> fire pixels in ${FS.year} (median of 4,000 runs)<br><span class="tk">in this ${d.cell}° cell · fire season Jul–Oct</span>` });
 const FS = { path: "analog", shift: 0, gov: 1, year: 2027 };
 let mc = null, futCycle = null;
 function updateFuture() {
@@ -239,12 +240,14 @@ const pf = (p) => (p < 0.001 ? "<0.001" : p.toFixed(3));
 const coefRows = [
   ["Rain ← ENSO + IOD", "rain (mm/d)", ch.climate_to_rain, ["oni", "dmi"]],
   ["Soil ← rain", "GWETROOT", ch.rain_to_soil, ["rain"]],
-  ["ln(fire) ← soil + regime", "ln detections", ch.soil_to_fires, ["soil", "regime"]],
+  ["ln(fire) ← soil + regime", "ln fire pixels", ch.soil_to_fires, ["soil", "regime"]],
   ["AOD ← ln(fire)", "AOD Aug–Oct", ch.fires_to_aod, ["ln_fires"]],
 ];
 $("#coefTable").innerHTML = `<thead><tr><th>Link</th><th>Term</th><th class="num">Coef.</th><th class="num">p</th><th class="num">R²</th><th class="num">LOO R²</th></tr></thead><tbody>${
   coefRows.map(([nm, , L, terms]) => terms.map((t, i) => `<tr><td>${i ? "" : nm}</td><td>${t}</td><td class="num">${d3.format("+.3f")(L.coef[t])}</td><td class="num">${pf(L.p[t])}</td><td class="num">${i ? "" : L.r2.toFixed(2)}</td><td class="num">${i ? "" : L.r2_loo.toFixed(2)}</td></tr>`).join("")).join("")}</tbody>`;
 const seasonShare = d3.sum(fit, (d) => d.fires_season) / d3.sum(fit, (d) => d.fires_year);
+$("#seasonSharePct").textContent = Math.round(100 * seasonShare);
+$("#aquaTrend").textContent = `${tr.fires_aqua_season.pct_per_decade.toFixed(0)}%/decade, p = ${pf(tr.fires_aqua_season.p)}; combined ${tr.fires_season.pct_per_decade.toFixed(0)}%/decade`;
 $("#keyResults").innerHTML = [
   `Fire-season detections: Sen slope ${fmt(tr.fires_season.sen_slope)} per year (${tr.fires_season.pct_per_decade.toFixed(0)}%/decade), p = ${pf(tr.fires_season.p)}. Aqua-only: p = ${pf(tr.fires_aqua_season.p)}. Terra-only 2001–2025: p = ${pf(tr.fires_terra_year.p)}.`,
   `Root-zone soil wetness trended up ${tr.soil.pct_per_decade.toFixed(1)}%/decade (p = ${pf(tr.soil.p)}), but rainfall (p = ${pf(tr.rain.p)}), Tmax (p = ${pf(tr.tmax.p)}), ONI and DMI show no significant trend.`,
@@ -340,7 +343,7 @@ setNavH(); window.addEventListener("resize", setNavH);
     const hit = TOPICS.find(([, re]) => re.test(t)); if (hit) out.what = hit[0];
     if (/\b(hot|hotter|heat|temperature|warm|panas|suhu|gerah)\b/i.test(t)) { out.what = out.what || "drought"; out.heat = true; }
     const town = TOWNS_ALL.find((n) => low.includes(n.toLowerCase().replace(/ \(.*\)/, "")));
-    if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Kalimantan";
+    if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Borneo";
     else { const prov = { riau: "Pekanbaru", jambi: "Jambi", aceh: "Banda Aceh", lampung: "Bandar Lampung", bengkulu: "Bengkulu", "sumatera utara": "Medan", "north sumatra": "Medan", "south sumatra": "Palembang", "sumatera selatan": "Palembang", "central kalimantan": "Palangka Raya", "kalimantan tengah": "Palangka Raya", "west kalimantan": "Pontianak", "kalimantan barat": "Pontianak", "south kalimantan": "Banjarmasin", "kalimantan selatan": "Banjarmasin", "east kalimantan": "Samarinda", "kalimantan timur": "Samarinda" };
       const k = Object.keys(prov).find((p) => low.includes(p)); if (k) out.where = prov[k]; }
     const y = t.match(/\b(20(?:0[3-9]|1\d|2[0-6]))\b/); if (y) out.year = y[1] === "2026" ? "now" : y[1];

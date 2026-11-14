@@ -28,12 +28,12 @@ const kfmt = (v) => (v >= 1000 ? d3.format("~s")(v).replace("k", "k") : v);
 // ------------------------------------------------------------------ timeline small multiples
 export function indicators(el, T, onPick) {
   const defs = [
-    { k: "fires_season", name: "Fire detections, Jul–Oct", src: "NASA FIRMS MODIS", unit: "", f: fmt, bar: true, color: C.obs },
-    { k: "oni", name: "ENSO (ONI, Jul–Sep)", src: "NOAA CPC", unit: "°C", f: d3.format("+.2f"), zero: true, color: C.model },
-    { k: "dmi", name: "Indian Ocean Dipole (DMI)", src: "NOAA PSL", unit: "°C", f: d3.format("+.2f"), zero: true, color: C.model },
-    { k: "rain", name: "Dry-season rainfall", src: "NASA POWER", unit: "mm/day", f: d3.format(".1f"), color: C.model },
-    { k: "soil", name: "Root-zone soil wetness", src: "NASA POWER", unit: "", f: d3.format(".2f"), color: C.aqua },
-    { k: "aod", name: "Haze: aerosol optical depth", src: "MERRA-2", unit: "", f: d3.format(".2f"), color: C.muted },
+    { k: "fires_season", name: "Fire pixels, Jul–Oct", src: "MODIS · AppEEARS", unit: "", f: fmt, bar: true, color: C.obs },
+    { k: "oni", name: "ENSO (ONI, Jul–Sep)", src: "ERSSTv5 · KNMI", unit: "°C", f: d3.format("+.2f"), zero: true, color: C.model },
+    { k: "dmi", name: "Indian Ocean Dipole (DMI)", src: "ERSSTv5 · KNMI", unit: "°C", f: d3.format("+.2f"), zero: true, color: C.model },
+    { k: "rain", name: "Dry-season rainfall", src: "MERRA-2 · Giovanni", unit: "mm/day", f: d3.format(".1f"), color: C.model },
+    { k: "soil", name: "Root-zone soil wetness", src: "MERRA-2 · Giovanni", unit: "", f: d3.format(".2f"), color: C.aqua },
+    { k: "aod", name: "Haze: aerosol optical depth", src: "MERRA-2 · Giovanni", unit: "", f: d3.format(".2f"), color: C.muted },
   ];
   el.innerHTML = "";
   const parts = defs.map((d) => {
@@ -121,7 +121,7 @@ export function trendMap(el, legendEl, cells, land) {
     .attr("width", s - 1).attr("height", s - 1).attr("rx", 1.5)
     .attr("fill", (c) => col(c.sen)).attr("opacity", (c) => (c.sig_fdr ? 1 : 0.35))
     .on("mousemove", (ev, c) => showTip(
-      `<span class="tk">${c.lon.toFixed(2)}°E, ${c.lat.toFixed(2)}°</span><br>Trend: <b>${d3.format("+.1f")(c.sen)}</b> detections/yr<br>
+      `<span class="tk">${c.lon.toFixed(2)}°E, ${c.lat.toFixed(2)}°</span><br>Trend: <b>${d3.format("+.1f")(c.sen)}</b> fire pixels/yr<br>
        Mean before 2016: <b>${fmt(c.pre)}</b> · after: <b>${fmt(c.post)}</b><br>p = ${c.p.toFixed(3)} · ${c.sig_fdr ? "<b>FDR significant</b>" : "not significant after FDR"}`, ev))
     .on("mouseleave", hideTip);
   // label a few places
@@ -132,7 +132,7 @@ export function trendMap(el, legendEl, cells, land) {
   });
   const dec = cells.filter((c) => c.sen < 0 && c.sig_fdr).length, inc = cells.filter((c) => c.sen > 0 && c.sig_fdr).length;
   legendEl.innerHTML = `<span>Falling</span><span class="divbar"></span><span>Rising</span>
-    <span class="note">±${lim.toFixed(0)} detections/yr per cell · ${dec} cells significantly falling, ${inc} rising, ${cells.length} tested</span>`;
+    <span class="note">±${lim.toFixed(0)} fire pixels/yr per cell · ${dec} cells significantly falling, ${inc} rising, ${cells.length} tested</span>`;
 }
 
 // ------------------------------------------------------------------ governance gap
@@ -160,7 +160,7 @@ export function gapChart(el, legendEl, T, A) {
     .on("mousemove", (ev, r) => showTip(`<span class="tk">${r.year}</span><br>Observed: <b>${fmt(r.obs)}</b><br>Expected from soil wetness, pre-2016 regime: <b>${fmt(r.pre)}</b><br>Ratio: <b>${(r.obs / r.pre).toFixed(2)}×</b>`, ev))
     .on("mouseleave", hideTip);
   const eff = Math.round(-100 * A.chain.regime_effect);
-  legendEl.innerHTML = `<span><i class="sw" style="background:${C.obs}"></i>Observed detections</span><span><i class="sw line" style="background:${C.model}"></i>Expected from soil wetness alone (pre-2016 regime)</span><span class="note">At equal dryness, post-2016 seasons burn ${eff}% less (p &lt; 0.001)</span>`;
+  legendEl.innerHTML = `<span><i class="sw" style="background:${C.obs}"></i>Observed fire pixels</span><span><i class="sw line" style="background:${C.model}"></i>Expected from soil wetness alone (pre-2016 regime)</span><span class="note">At equal dryness, post-2016 seasons burn ${eff}% less (p &lt; 0.001)</span>`;
 }
 
 // ------------------------------------------------------------------ lag small multiples
@@ -222,7 +222,7 @@ export function simHist(el, T, sim) {
   F.g.selectAll("rect.b").data(rows).join("rect").attr("class", "b").attr("x", (r) => x(r.year)).attr("width", x.bandwidth())
     .attr("y", (r) => y(r.v)).attr("height", (r) => F.ih - y(r.v)).attr("rx", 2)
     .attr("fill", (r) => (r.sim ? "#ffd36b" : r.year === 2015 || r.year === 2019 ? C.obs : "#4a5260"))
-    .on("mousemove", (ev, r) => showTip(`<span class="tk">${r.year}${r.sim ? " (simulated)" : ""}</span><br><b>${fmt(r.v)}</b> detections${r.sim ? `<br>10–90%: ${fmt(r.lo)} – ${fmt(r.hi)}` : ""}`, ev))
+    .on("mousemove", (ev, r) => showTip(`<span class="tk">${r.year}${r.sim ? " (simulated)" : ""}</span><br><b>${fmt(r.v)}</b> fire pixels${r.sim ? `<br>10–90%: ${fmt(r.lo)} – ${fmt(r.hi)}` : ""}`, ev))
     .on("mouseleave", hideTip);
   const s = rows[rows.length - 1], cx = x(2026) + x.bandwidth() / 2;
   F.g.append("line").attr("x1", cx).attr("x2", cx).attr("y1", y(s.lo)).attr("y2", y(s.hi)).attr("stroke", "#f0efec").attr("stroke-width", 1.5);
@@ -250,7 +250,7 @@ export function fanChart(el, legendEl, T, now, mc, active) {
   F.g.append("g").attr("class", "axis").attr("transform", `translate(0,${F.ih})`).call(d3.axisBottom(x).tickValues(years.filter((v) => v % 3 === 0 || v === 2030))).select(".domain").remove();
   F.g.selectAll("rect.o").data(obs).join("rect").attr("class", "o").attr("x", (r) => x(r.year)).attr("width", x.bandwidth())
     .attr("y", (r) => y(r.v)).attr("height", (r) => F.ih - y(r.v)).attr("rx", 2).attr("fill", C.obs).attr("opacity", 0.85)
-    .on("mousemove", (ev, r) => showTip(`<span class="tk">${r.year} observed</span><br><b>${fmt(r.v)}</b> detections`, ev)).on("mouseleave", hideTip);
+    .on("mousemove", (ev, r) => showTip(`<span class="tk">${r.year} observed</span><br><b>${fmt(r.v)}</b> fire pixels`, ev)).on("mouseleave", hideTip);
   F.g.append("path").datum(band).attr("fill", C.model).attr("opacity", 0.22)
     .attr("d", d3.area().x((r) => cx(r.year)).y0((r) => y(r.p10)).y1((r) => y(r.p90)));
   F.g.append("path").datum(band).attr("fill", "none").attr("stroke", C.model).attr("stroke-width", 2)

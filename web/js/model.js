@@ -29,14 +29,6 @@ export class Chain {
     this.q10 = quantile(this.rf, 0.1);
     this.q90 = quantile(this.rf, 0.9);
 
-    // FRP per season vs detections (fitted here from the same observations)
-    const pts = timeline.filter((d) => d.year >= 2003 && d.fires_season && d.frp_GW);
-    const xs = pts.map((d) => Math.log(d.fires_season)), ys = pts.map((d) => Math.log(d.frp_GW));
-    const mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length;
-    let sxy = 0, sxx = 0;
-    xs.forEach((x, i) => { sxy += (x - mx) * (ys[i] - my); sxx += (x - mx) ** 2; });
-    this.frpB = sxy / sxx; this.frpA = my - this.frpB * mx;
-
     // spatial pattern anchors: median ln fires of low- and high-fire years
     const fit = timeline.filter((d) => d.year >= 2003 && d.fires_season);
     const hi = fit.filter((d) => A.high_years.includes(d.year)).map((d) => Math.log(d.fires_season));
@@ -61,7 +53,6 @@ export class Chain {
       rain, soil, ln, fires,
       lo: Math.exp(ln + this.q10), hi: Math.exp(ln + this.q90),
       aod: this.aod(ln),
-      frp: Math.exp(this.frpA + this.frpB * ln),
       w: clamp((ln - this.lnLo) / (this.lnHi - this.lnLo), 0, 1),
     };
     // nearest historical season

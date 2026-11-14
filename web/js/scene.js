@@ -1,4 +1,4 @@
-// 3D map scene in the "Jejak Api" style: real terrain (AWS Terrain Tiles), coastlines, glowing fire
+// 3D map scene in the "Jejak Api" style: real terrain (NASA SRTM via AppEEARS), coastlines, glowing fire
 // particles, rising smoke, ENSO-tinted ocean and burn-scar darkening, with hover read-outs.
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -227,7 +227,7 @@ export class MapScene {
     const n = this.counts.get(ci * 1000 + cj) || 0;
     const town = nearestTown(g.lon, g.lat);
     return this.describe ? this.describe({ n, lon: g.lon, lat: g.lat, town, cell }) :
-      `<b>near ${town.name}</b><br><span class="tk">${g.lat.toFixed(2)}°, ${g.lon.toFixed(2)}°E</span><br>🔥 <b>${Math.round(n).toLocaleString()}</b> fire detections in this ${cell}° cell`;
+      `<b>near ${town.name}</b><br><span class="tk">${g.lat.toFixed(2)}°, ${g.lon.toFixed(2)}°E</span><br>🔥 <b>${Math.round(n).toLocaleString()}</b> fire pixels in this ${cell}° cell`;
   }
   _onLand(g) {
     const gi = Math.round((g.lon - this.LON0) / this.RES), gj = Math.round((this.LAT1 - g.lat) / this.RES);
