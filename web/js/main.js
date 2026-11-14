@@ -268,7 +268,7 @@ setNavH(); window.addEventListener("resize", setNavH);
       <ol class="sv">${rows}</ol>
       <div class="sv-how"><b>Then test it like a data detective.</b> Download the monthly series (daily and monthly data are the easiest), remove the seasonal cycle, then run a Mann–Kendall test and Sen's slope for the size of the trend. A trend that is not yet significant is still a finding: a longer record can make it significant. Guides: ${GUIDES.map((g) => `<a href="${g.url}" target="_blank" rel="noopener">${esc(g.name)} ↗</a>`).join(" · ")}</div>
       <div class="sv-act">
-        ${a?.site ? `<button class="btn primary" type="button" id="svSite">${esc(a.site.text)} →</button>` : `<span class="sv-none">This site maps Sumatra and Kalimantan; use the tools above for your region.</span>`}
+        ${a?.site ? `<button class="btn primary" type="button" id="svSite">${esc(a.site.text)} →</button>` : `<span class="sv-none">This site maps Sumatra and Borneo; use the tools above for your region.</span>`}
         ${EXPLAIN_URL ? `<button class="btn" type="button" id="svAi">✨ Tailor with AI</button>` : ""}
       </div>`;
     out.hidden = false;

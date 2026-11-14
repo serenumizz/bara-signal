@@ -63,7 +63,7 @@ export const ARCH = {
       ["et", "Forests recycle rain; falling evapotranspiration can mean drier air."],
       ["enso", "El Niño years bring drought to many tropical forests."],
     ],
-    site: { what: "forest", where: "Kalimantan", year: "2015", text: "Try the same idea on Kalimantan's forests" },
+    site: { what: "forest", where: "Borneo", year: "2015", text: "Try the same idea on Borneo's forests" },
   },
   estuary: {
     label: "Tidal estuary / coast", emoji: "🌊", re: /estuar|delta|mangrove|tidal|tides?\b|coast|river mouth|lagoon|\bbay\b|muara|pesisir|pasang|wetland/i,
@@ -97,7 +97,7 @@ export const ARCH = {
       ["treecover", "Cleared and drained land burns more easily."],
       ["enso", "El Niño and a positive Indian Ocean Dipole bring the worst fire years."],
     ],
-    site: { what: "fire", where: "Kalimantan", year: "2015", text: "Open this case on the map" },
+    site: { what: "fire", where: "Borneo", year: "2015", text: "Open this case on the map" },
   },
 };
 

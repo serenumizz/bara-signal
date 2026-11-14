@@ -307,6 +307,7 @@ let DATA = /*__DATA__*/null;
 function main() {
 // ================= data & helpers =================
 const MONTHS = DATA.months, T = MONTHS.length, cells = DATA.cells;
+cells.forEach(c => { if (c.island === 'Kalimantan') c.island = 'Borneo'; if (c.region === 'Kalimantan') c.region = 'Borneo'; }); // one name for old and new data builds
 const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MNF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const mlab = i => { const [y, m] = MONTHS[i].split('-'); return `${MNF[+m-1]} ${y}`; };
@@ -1080,7 +1081,7 @@ setTime(NOW); renderPanel(); loop();
   const q = new URLSearchParams(location.search), what = q.get('layer');
   const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind' };
   if (!GL[what]) return;
-  const where = q.get('where') || 'Borneo', yr = q.get('year') || 'now';
+  const where = (q.get('where') || 'Borneo').replace(/^Kalimantan$/, 'Borneo'), yr = q.get('year') || 'now';
   const town = TOWNS.find(x => x[0] === where), cellOf = town && nearestCell(town[1], town[2]);
   const group = cellOf ? [cellOf] : cells.filter(c => where === 'Sumatra' ? c.lon < 107.5 : c.lon >= 107.5);
   const mean = (f) => { let s = 0, n = 0; for (const c of group) { const v = f(c); if (v != null) { s += v; n++; } } return n ? s / n : null; };
@@ -1198,8 +1199,11 @@ setTime(NOW); renderPanel(); loop();
     dmi: 'A positive Indian Ocean Dipole cools the sea near Sumatra and cuts rain, adding to El Niño dryness.',
     wind: 'Stronger wind dries the surface and carries fire and smoke further. Local terrain changes this a lot.',
   };
-  const PLACES = (() => { const by = {}; cells.forEach(c => (by[c.island] ||= new Set()).add(c.region)); return { Sumatra: [...(by.Sumatra || [])].sort(), Kalimantan: [...(by.Kalimantan || [])].sort() }; })();
-  const placeCells = p => p === 'Whole study area' ? cells : p === 'All Sumatra' ? cells.filter(c => c.island === 'Sumatra') : p === 'All Kalimantan' ? cells.filter(c => c.island === 'Kalimantan') : cells.filter(c => c.region === p);
+  // islands from the data; provinces per island only when the data knows them (old build). The Resources-tab build has islands only.
+  const ISLANDS = [...new Set(cells.map(c => c.island))].sort((a, b) => a === 'Sumatra' ? -1 : b === 'Sumatra' ? 1 : a.localeCompare(b));
+  const PLACES = ISLANDS.map(isl => [isl, [...new Set(cells.filter(c => c.island === isl).map(c => c.region))].filter(r => r && r !== isl).sort()]);
+  const HAS_PROV = PLACES.some(([, p]) => p.length), AREAS = [...PLACES.map(([isl, p]) => p.length ? 'All ' + isl : isl), 'Whole study area'];
+  const placeCells = p => p === 'Whole study area' ? cells : p.startsWith('All ') && ISLANDS.includes(p.slice(4)) ? cells.filter(c => c.island === p.slice(4)) : ISLANDS.includes(p) ? cells.filter(c => c.island === p) : cells.filter(c => c.region === p);
   const monthly = (vk, place) => { const V = VARS[vk]; if (V.regional) { const r = vk === 'oni' ? DATA.oni : vk === 'dmi' ? DATA.dmi : R?.[V.regional]; return r ? MN.map((_, t) => r[t] ?? null) : MN.map(() => null); }
     const cs = placeCells(place); return MN.map((_, t) => V.get(cs, t)); };
   function yearly(vk, place, mode, from) {
@@ -1215,7 +1219,7 @@ setTime(NOW); renderPanel(); loop();
   const pTxt = p => p < 0.001 ? '< 0.001' : p.toFixed(3);
   const esc = t => String(t).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
   // ---- state + UI
-  const S = { place: 'Central Kalimantan', mode: 'season', from: YR0, v: 'fire', built: false };
+  const S = { place: PLACES.some(([, p]) => p.includes('Central Kalimantan')) ? 'Central Kalimantan' : (ISLANDS.includes('Borneo') ? 'Borneo' : ISLANDS[0]), mode: 'season', from: YR0, v: 'fire', built: false };
   const years = []; for (let y = YR0; y <= YR1 - 5; y++) years.push(y);
   function build() {
     const groups = {}; Object.entries(VARS).forEach(([k, V]) => (groups[V.g] ||= []).push(k));
@@ -1224,10 +1228,9 @@ setTime(NOW); renderPanel(); loop();
       <div class="btns"><button class="lbtn" id="labMap">🗺️ Show on map</button><button class="lbtn" id="labX" aria-label="Close">✕</button></div></div>
       <div class="lab-steps">
         <div class="lab-card"><div class="st"><span class="n">1</span><div style="flex:1"><div class="k">Pick a place</div>
-          <select id="labPlace" aria-label="Place"><optgroup label="Sumatra">${PLACES.Sumatra.map(p => `<option>${esc(p)}</option>`).join('')}</optgroup>
-          <optgroup label="Kalimantan">${PLACES.Kalimantan.map(p => `<option>${esc(p)}</option>`).join('')}</optgroup>
-          <optgroup label="Larger areas"><option>All Sumatra</option><option>All Kalimantan</option><option>Whole study area</option></optgroup></select>
-          <div class="lhint">Most trends are local, so start with one province.</div></div></div></div>
+          <select id="labPlace" aria-label="Place">${PLACES.filter(([, p]) => p.length).map(([isl, p]) => `<optgroup label="${esc(isl)}">${p.map(x => `<option>${esc(x)}</option>`).join('')}</optgroup>`).join('')}
+          <optgroup label="${HAS_PROV ? 'Larger areas' : 'Areas'}">${AREAS.map(x => `<option>${esc(x)}</option>`).join('')}</optgroup></select>
+          <div class="lhint">Most trends are local, so start with ${HAS_PROV ? 'one province' : 'one island'}.</div></div></div></div>
         <div class="lab-card"><div class="st"><span class="n">2</span><div style="flex:1"><div class="k">How to look at each year</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="lbtn" id="labSeason" aria-pressed="true">Fire season (Jul–Oct)</button><button class="lbtn" id="labYear" aria-pressed="false">Whole year</button></div>
           <div class="lhint" style="margin-top:12px">From <select id="labFrom" aria-label="First year">${years.map(y => `<option>${y}</option>`).join('')}</select> to ${YR1}: <span id="labN"></span> of NASA data.</div></div></div></div>
@@ -1276,7 +1279,7 @@ setTime(NOW); renderPanel(); loop();
     const st = stats(d.xs, d.ys), per = st.slope * 10, dir = st.mkP < 0.1 ? (st.slope > 0 ? 'rising' : 'falling') : 'flat', mid = d.win.length === 4 ? 8 / 12 : 0.5, f0 = st.fit(d.xs[0] + mid), f1 = st.fit(d.xs[d.xs.length - 1] + mid);
     const pct = V.noPct || Math.abs(f0) < 1e-9 ? null : Math.max(-100, (f1 - f0) / Math.abs(f0) * 100), sig = st.mkP < 0.05;
     const lvl = st.mkP < 0.001 ? ['Very strong evidence', 'almost certainly a real trend'] : st.mkP < 0.01 ? ['Strong evidence', 'very unlikely to be chance'] : st.mkP < 0.05 ? ['Moderate evidence', 'probably real, but check with a longer record'] : st.mkP < 0.1 ? ['Weak evidence', 'suggestive, not conclusive'] : ['No clear trend', 'the ups and downs could just be natural variation; a longer record might change this'];
-    const where = V.regional || place === 'Whole study area' ? 'across the whole study area' : `in ${place}`, be = V.pl ? 'are' : 'is', rate = `${sgn(per)} ${V.unit.replace(/^% of cover lost since 2001$/, '% points').replace('wetness 0–1', 'wetness')} per decade`;
+    const where = V.regional || place === 'Whole study area' ? 'across the whole study area' : place.startsWith('All ') ? `across ${place.slice(4)}` : `in ${place}`, be = V.pl ? 'are' : 'is', rate = `${sgn(per)} ${V.unit.replace(/^% of cover lost since 2001$/, '% points').replace('wetness 0–1', 'wetness')} per decade`;
     const test = (ok, title, nums, q, expl) => `<div class="lab-test ${ok ? '' : 'no'}"><h4>${ok ? '✓' : '–'} ${title}</h4><p>${q}</p><div class="nums">${nums}</div><p>${expl}</p></div>`;
     res.innerHTML = head + `<div class="lab-chart">${chart(d, st, V)}</div>
       <div class="lab-legend"><span><i style="width:9px;height:9px;border-radius:50%;background:#ff6b5a"></i>each dot = one year's ${mode} ${sumWord}</span><span><i style="width:22px;border-top:2px dashed #ffc34d"></i>trend line</span><span><i style="width:14px;height:9px;background:rgba(255,176,60,.35)"></i>95% confidence band</span>${V.agg === 'sum' ? '' : '<span><i style="width:22px;border-top:1px solid rgba(255,255,255,.4)"></i>monthly values</span>'}</div>
