@@ -278,7 +278,7 @@ const NOW = T - 1;
 const FIRST_YEAR = +MONTHS[0].slice(0, 4), NOW_YEAR = +MONTHS[NOW].slice(0, 4);
 const state = { t: NOW, layer: 'fire', sel: null, playing: false, rel: [] };
 // which clues matter for each guided question (set from the landing page)
-const REL = { fire: ['A', 'B'], drought: ['A', 'B', 'D'], smoke: ['E', 'fire'], forest: ['C'], ocean: ['D'], wildlife: ['fire', 'C'] };
+const REL = { fire: ['A', 'B'], drought: ['A', 'B', 'D'], smoke: ['E', 'fire'], forest: ['C'], ocean: ['D'] };
 const hl = k => state.rel.includes(k) ? ' hl' : '';
 
 // ---- real-data plumbing ----
@@ -836,23 +836,9 @@ function paintAtm() {
 function atmMaxNow() { let m = null, best = null; for (const c of cells) { const v = aodOf(c, state.t); if (v != null && (m == null || v > m)) { m = v; best = c; } }
   return { p: m, lon: best?.lon, lat: best?.lat }; }
 
-// ================= field evidence (real stories; photos from local media/ folder) =================
+// ================= evidence from NASA (published measurements, linked to their source) =================
 const EVIDENCE = [
-  { id: 'ketapang', icon: '🦧', name: 'Ketapang · orangutan rescues', lon: 110.05, lat: -1.75, photo: 'media/orangutan-ketapang.jpg',
-    stories: [
-      { y: '2026', t: 'On 19 August 2026, IAR Indonesia and local authorities rescued three orangutans found in a community plantation after fire swept through the nearby forest that was their home range.', src: 'The Star, 31 Aug 2026', url: 'https://www.thestar.com.my/aseanplus/aseanplus-news/2026/08/31/burning-kalimantan-forests-put-orangutans-at-risk' },
-      { y: '2019', t: 'Ketapang recorded the highest number of fire hotspots of any district in 2019. In late November an orangutan later named Epen was found foraging on a farm after fires destroyed her forest.', src: 'Mongabay, Feb 2020', url: 'https://news.mongabay.com/2020/02/burning-and-bullets-forest-fires-push-bornean-orangutans-into-harms-way/' }
-    ] },
-  { id: 'nyaru', icon: '🦧', name: 'Nyaru Menteng · haze-sick orangutans', lon: 113.85, lat: -2.1, photo: 'media/orangutan-nyaru-menteng.jpg',
-    stories: [
-      { y: '2019', t: 'Orangutans at the BOS Foundation rehabilitation centre near Palangka Raya showed signs of respiratory illness from the toxic haze.', src: 'AFP via Phys.org, Sep 2019', url: 'https://phys.org/news/2019-09-indonesia-toxic-haze-affecting-borneo.html' },
-      { y: '2015', t: 'Baby orangutans at the same centre suffered respiratory problems from thick haze; rescued wild orangutans were malnourished and dehydrated.', src: 'AFP via Phys.org, Oct 2015', url: 'https://phys.org/news/2015-10-sick-hungry-orangutans-fall-victim.html' }
-    ] },
-  { id: 'sampit', icon: '🦧', name: 'Sampit · driven out by fire', lon: 112.95, lat: -2.53, photo: 'media/orangutan-sampit.jpg',
-    stories: [
-      { y: '2015', t: 'With fires across the Sampit area and Central Kalimantan, orangutans that lost their habitat moved close to people in search of food, and rescue teams had to translocate them to safe forest.', src: 'BOS Foundation, 2015', url: 'https://orangutan.or.id/emergency-rescues-from-the-devastating-fires' }
-    ] },
-  { id: 'space', icon: '🛰', name: 'Seen from space · 2015 smoke', lon: 111.6, lat: 0.6, photo: 'media/nasa-smoke-2015.jpg', space: true,
+  { id: 'space', icon: '🛰', name: 'Seen from space · 2015 smoke', lon: 111.6, lat: 0.6, space: true,
     stories: [
       { y: '2015', t: 'NASA\'s MOPITT sensor measured carbon monoxide near the surface of up to nearly 1,300 ppb over parts of Borneo, against a usual ~100 ppb. Burning peat released especially large amounts.', src: 'NASA Earth Observatory', url: 'https://earthobservatory.nasa.gov/images/87119' },
       { y: '2015–17', t: 'The pollution did not stay low: carbon monoxide from the 2015 fires was carried into the upper troposphere and on into the stratosphere, where it stayed high until the end of 2016.', src: 'Park et al. 2021, JGR (NASA MLS)', url: 'https://doi.org/10.1029/2020JD033474' }
@@ -865,13 +851,14 @@ function updateEvPins() { for (const p of evEls) { tmpV.copy(p.v).project(camera
   const show = tmpV.z < 1 && Math.abs(tmpV.x) < 1.02 && Math.abs(tmpV.y) < 1.02 && (!p.e.space || state.layer === 'E' || camera.position.y > 6);
   p.el.style.display = show ? 'flex' : 'none'; if (show) { p.el.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px'; p.el.style.top = ((1 - tmpV.y) / 2 * innerHeight) + 'px'; } } }
 function photoHtml(e) {
+  if (!e.photo) return '';
   return `<div class="evphoto"><img src="${e.photo}" alt="${e.name}" onerror="this.parentNode.innerHTML='<div class=&quot;evph&quot;>📷 Real photo slot<br><span style=&quot;font-size:11px&quot;>Save a photo you are allowed to use as <code>${e.photo}</code> (with credit) and it appears here. The real photos are in the linked stories.</span></div>'"></div>`;
 }
 function evidenceHtml(e, compact) {
   return `${photoHtml(e)}${e.stories.map(s => `<div class="story"><b>${s.y}</b> · ${s.t}<div class="src"><a href="${s.url}" target="_blank" rel="noopener">${s.src}</a></div></div>`).join('')}`;
 }
 function openEvidence(id) { const e = EVIDENCE.find(x => x.id === id);
-  $('evDlg').innerHTML = `<button class="close" onclick="this.closest('dialog').close()">✕</button><h2 style="margin-top:0">Field evidence</h2><div class="place" style="margin-bottom:10px">${e.icon} ${e.name}</div>${evidenceHtml(e)}`;
+  $('evDlg').innerHTML = `<button class="close" onclick="this.closest('dialog').close()">✕</button><h2 style="margin-top:0">Evidence from NASA</h2><div class="place" style="margin-bottom:10px">${e.icon} ${e.name}</div>${evidenceHtml(e)}`;
   $('evDlg').showModal(); }
 
 // ================= year check: could we have seen it coming? =================
@@ -927,7 +914,7 @@ function renderPanel() {
       <p>Every 0.5° cell (~55 km) of Sumatra and Kalimantan carries 23 years of satellite measurements. Click anywhere to see:</p>
       <p>🔥 <b>The effect:</b> NASA FIRMS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil &amp; peat dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
       <h2>Or start with a fire hotspot</h2><div class="quick">${['Palangka Raya','Pekanbaru','Kayu Agung (OKI)','Pontianak','Jambi','Ketapang'].map(n => `<button class="pill" data-town="${n}">${n}</button>`).join('')}</div>
-      <h2>Field evidence on the map</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
+      <h2>Evidence from NASA</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
       <h2>What's happening in 2026</h2><p style="font-size:12.5px">The ocean clue is at a record: NOAA's Niño 3.4 anomaly reached <b>+${DATA.nino34Oct2026.toFixed(2)} °C</b> in October 2026, the highest since satellite SSTs began in 1982, and the ONI hit <b>${fmtIdx(oniNow)}</b> (${mshort(iO)}). In ${mshort(NOW)}, <b>${dryNow} of ${peatNow.length}</b> peat cells were below the dryness line. NASA FIRMS has not yet published the 2026 fire archive, so this year's fire months are shown as "not yet archived".</p></div>`;
     P.querySelectorAll('[data-town]').forEach(b => b.onclick = () => { const t = TOWNS.find(x => x[0] === b.dataset.town);
       const c = cells.filter(c => Math.hypot(c.lon - t[1], c.lat - t[2]) < 0.75).sort((a, b2) => (b2.peat - a.peat) || (Math.hypot(a.lon - t[1], a.lat - t[2]) - Math.hypot(b2.lon - t[1], b2.lat - t[2])))[0] || nearestCell(t[1], t[2]);
@@ -1008,7 +995,7 @@ function renderPanel() {
     </table>
     <div class="src">● = clue lit in June–July (A = rain 25%+ below normal, B = soil drier than this spot's 25th percentile, H = peat or burned before). Chance comes from a logistic model fitted on all ${JM.n.toLocaleString()} cell-Julys 2003–2025 (leave-one-year-out AUC ${JM.auc_loyo}; it flags ${Math.round(JM.hit_rate * 100)}% of big fire seasons, with a ${Math.round(JM.false_alarm * 100)}% false-alarm rate). ✓ = the call (≥ ${Math.round(JM.cut * 100)}% means "fire likely") matched what happened. Click a row to open that year.</div>
 
-    ${near.length ? `<h2>📷 Field evidence near here</h2>${near.map(e => `<div class="place" style="font-size:15px;margin:6px 0">${e.icon} ${e.name}</div>${evidenceHtml(e, true)}`).join('')}` : ''}
+    ${near.length ? `<h2>🛰 Evidence from NASA near here</h2>${near.map(e => `<div class="place" style="font-size:15px;margin:6px 0">${e.icon} ${e.name}</div>${evidenceHtml(e, true)}`).join('')}` : ''}
 
     <h2>Verdict</h2>
     <div class="verdict">${verdict}</div>
@@ -1048,7 +1035,7 @@ setTime(NOW); renderPanel(); loop();
 // ================= guided question from the landing page: ?layer=&where=&year= =================
 (function applyGuide() {
   const q = new URLSearchParams(location.search), what = q.get('layer');
-  const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D', wildlife: 'fire' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind', wildlife: 'Wildlife impacts' };
+  const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind' };
   if (!GL[what]) return;
   const where = q.get('where') || 'Kalimantan', yr = q.get('year') || 'now';
   const town = TOWNS.find(x => x[0] === where), cellOf = town && nearestCell(town[1], town[2]);
@@ -1069,13 +1056,6 @@ setTime(NOW); renderPanel(); loop();
   // one-line answer
   const f1 = v => v == null ? 'n/a' : v.toFixed(2);
   const answer = what === 'ocean' ? `Niño 3.4 anomaly <b>${fmtIdx(DATA.oni[t])}</b> °C · Indian Ocean Dipole <b>${fmtIdx(DATA.dmi[t])}</b> · ${dangerD(t) ? 'drought-mode pattern (warm Pacific / warm-west Indian Ocean)' : 'no drought-mode signal this month'}`
-    : what === 'wildlife' ? (() => {
-        const Y0 = MONTHS[t].slice(0, 4), evs = EVIDENCE.filter(e => town ? Math.hypot(e.lon - town[1], e.lat - town[2]) < 3 : where === 'Sumatra' ? e.lon < 107.5 : e.lon >= 107.5);
-        const hit = evs.flatMap(e => e.stories.filter(s => s.y === Y0).map(s => ({ e, s })))[0];
-        const fires = fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire detections in ${mshort(t)}` : 'fire archive for this month is not yet published';
-        return hit ? `${fires}<br>🦧 <b>${hit.e.name.split(' · ')[0]}</b>: ${hit.s.t.length > 170 ? hit.s.t.slice(0, 170) + '…' : hit.s.t} <button class="qa-ev" data-ev="${hit.e.id}" type="button">Read the field report</button>`
-          : `${fires}<br>No orangutan field report on the map for ${Y0}${evs.length ? '' : ' in this area'}. Reports exist for ${[...new Set(EVIDENCE.flatMap(e => e.stories.map(s => s.y)))].sort().join(', ')}.`;
-      })()
     : what === 'fire' ? (fireOK(t) ? `<b>${Math.round(sum(c => c.s.fire[t])).toLocaleString()}</b> fire detections` : 'fire archive for this month is not yet published by NASA FIRMS')
     : what === 'drought' ? `root-zone wetness <b>${f1(mean(c => soilOf(c, t)))}</b> (danger below ${THR_B.toFixed(2)}) · rain <b>${f1(mean(c => c.s.rain[t] / 10))}</b> mm/day`
     : what === 'smoke' ? `smoke (aerosol optical depth) <b>${f1(mean(c => aodOf(c, t)))}</b> (above ~1 the sky turns hazy)`

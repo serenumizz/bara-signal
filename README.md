@@ -2,7 +2,7 @@
 
 Live: https://web-zeta-six-76.vercel.app
 
-**Research question:** Has a decade of peat-fire governance broken the chain that turns ocean heat (ENSO/IOD) into drought, drought into fire, and fire into haze over Sumatra and Kalimantan? And what will the record 2026 El Niño (Niño 3.4 = +3.25 °C in Oct 2026) and the years after it do?
+**Research question:** Has a decade of peat-fire governance broken the chain that turns ocean heat (ENSO/IOD) into drought, drought into fire, and fire into haze over Sumatra and Kalimantan? Is the decline significant, and is the record 2026 El Niño (Niño 3.4 = +3.25 °C in Oct 2026) putting it to the test?
 
 ## Pipeline
 
@@ -39,7 +39,6 @@ The risk and July-check scores come from logistic models fitted on 2003–2025 d
 - **Spatial trends:** a test for each 0.5° cell, with Benjamini–Hochberg FDR control.
 - **Change point:** Pettitt test on raw counts and on the climate-adjusted residual.
 - **Chain model:** OLS links ENSO+IOD → rain → soil wetness → ln(fire) (+ regime term) → AOD, validated by leave-one-year-out CV.
-- **2027–2030:** a 4,000-run Monte Carlo over real post-El Niño ocean sequences (1957–2015), with bootstrapped residuals.
 
 ## Deploy
 

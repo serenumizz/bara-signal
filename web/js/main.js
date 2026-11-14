@@ -2,7 +2,6 @@ import * as d3 from "d3";
 import { MapScene } from "./scene.js";
 import { EXPLAIN_URL } from "./config.js";
 import { ARCH, VARS, SOURCES, GUIDES, matchText } from "./scout.js";
-import { Chain } from "./model.js";
 import * as charts from "./charts.js";
 
 const $ = (s) => document.querySelector(s);
@@ -25,7 +24,6 @@ async function getData(name) {
   return (await fetch(`data/${name}.json`)).json();
 }
 const [T, A, land, terrain] = await Promise.all(["timeline", "analysis", "land", "terrain"].map(getData));
-const chain = new Chain(A, T);
 const O = A.obs2026;
 
 const tipHead = (d) => `<b>near ${d.town.name}</b> <span class="tk">· ${d.lat.toFixed(2)}°, ${d.lon.toFixed(2)}°E</span><br>`;
@@ -59,35 +57,6 @@ const nodes = [...document.querySelectorAll("#chainDiagram .node")];
 let litI = 0;
 setInterval(() => { nodes.forEach((n, i) => n.classList.toggle("lit", i === litI)); litI = (litI + 1) % (nodes.length + 2); }, 900);
 
-// ------------------------------------------------------------------ timeline
-const tl = new MapScene($("#tlScene"), { terrain, grid: A.grid, contours: true, clickCard: true, explainUrl: EXPLAIN_URL, explainCtx: () => ({ year: +$("#tlSlider").value }),
-  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> MODIS fire detections in ${$("#tlSlider").value}<br><span class="tk">in this ${d.cell}° cell (~28 km) · NASA FIRMS</span>` });
-let updInd = charts.indicators($("#tlIndicators"), T, (y) => setYear(y));
-$("#tlTicks").innerHTML = [2000, 2005, 2010, 2015, 2020, 2025].map((y) => `<span>${y}</span>`).join("");
-const tags = { 2015: "Strong El Niño · record haze", 2019: "Positive IOD + weak El Niño", 2006: "El Niño + positive IOD", 2002: "El Niño", 2010: "La Niña · wettest dry season", 2023: "El Niño + strong IOD", 2016: "Peat restoration agency founded", 1997: "" };
-function setYear(y) {
-  const r = T.find((d) => d.year === y);
-  $("#tlSlider").value = y;
-  $("#tlYear").textContent = y;
-  $("#tlTag").textContent = (r.terra_only ? "Terra only · " : "") + (tags[y] || "");
-  $("#tlFires").textContent = r.fires_season == null ? "n/a" : fmt(r.fires_season);
-  $("#tlSum").textContent = r.sumatra == null ? "n/a" : fmt(r.sumatra);
-  $("#tlKal").textContent = r.kalimantan == null ? "n/a" : fmt(r.kalimantan);
-  tl.setFires(r.cells);
-  tl.setClimate({ dryness: dryOf(r.soil), warm: warmOf(r.oni), smoke: smokeOf(r.aod) });
-  updInd(y);
-}
-setYear(2015);
-$("#tlSlider").addEventListener("input", (e) => { stopPlay(); setYear(+e.target.value); });
-let playT = null;
-function stopPlay() { clearInterval(playT); playT = null; $("#tlPlay").textContent = "▶"; }
-$("#tlPlay").addEventListener("click", () => {
-  if (playT) return stopPlay();
-  let y = +$("#tlSlider").value; if (y >= 2025) y = 1999;
-  $("#tlPlay").textContent = "❚❚";
-  playT = setInterval(() => { y++; setYear(y); if (y >= 2025) stopPlay(); }, 1100);
-});
-
 // ------------------------------------------------------------------ evidence
 const tr = Object.fromEntries(A.trends.map((t) => [t.key, t]));
 const cellsSig = A.spatial.filter((c) => c.sig_fdr);
@@ -106,144 +75,15 @@ const drawEvidence = () => {
   charts.hindChart($("#hindChart"), $("#hindLegend"), A);
 };
 drawEvidence();
-
-// ------------------------------------------------------------------ 2026 simulator
-const sim = new MapScene($("#simScene"), { terrain, grid: A.grid,
-  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> simulated detections in ${$("#simMonth").textContent}<br><span class="tk">in this ${d.cell}° cell · spread by the observed 2003–2025 fire pattern</span>` });
-const S = { oni: O.oni, dmi: O.dmi_latest, rain: O.rain, soil: O.soil, gov: 1, useObs: true, override: "obs" };
-const ctl = { oni: $("#c_oni"), dmi: $("#c_dmi"), rain: $("#c_rain"), soil: $("#c_soil"), gov: $("#c_gov") };
-let simRes = null, monthT = null, monthIdx = 0;
-
-function simInputs() {
-  if (S.override === "obs") return { oni: S.oni, dmi: S.dmi, rain: O.rain, soil: O.soil, gov: S.gov };
-  if (S.override === "soil") return { oni: S.oni, dmi: S.dmi, rain: S.rain, soil: S.soil, gov: S.gov };
-  if (S.override === "rain") return { oni: S.oni, dmi: S.dmi, rain: S.rain, gov: S.gov };
-  return { oni: S.oni, dmi: S.dmi, gov: S.gov };
-}
-function hazeStatus(aod) {
-  if (aod < 0.42) return ["good", "✓", "Typical"];
-  if (aod < 0.55) return ["warning", "!", "Elevated"];
-  if (aod < 0.8) return ["serious", "▲", "Severe"];
-  return ["critical", "✕", "Extreme (2015-like)"];
-}
-function renderSim() {
-  const r = (simRes = chain.run(simInputs()));
-  S.rain = r.rain; S.soil = r.soil;
-  for (const k of Object.keys(ctl)) ctl[k].value = S[k];
-  $("#o_oni").textContent = d3.format("+.2f")(S.oni);
-  $("#o_dmi").textContent = d3.format("+.2f")(S.dmi);
-  $("#o_rain").textContent = r.rain.toFixed(2);
-  $("#o_soil").textContent = r.soil.toFixed(3);
-  $("#o_gov").textContent = S.gov === 0 ? "0 · pre-2016" : S.gov === 1 ? "1 · observed" : S.gov.toFixed(2) + (S.gov > 1 ? " · extrapolated" : "");
-  $("#c_useObs").checked = S.override === "obs";
-  const [cls, ic, lbl] = hazeStatus(r.aod);
-  const worse = r.rankAbove;
-  $("#simTiles").innerHTML = `
-    <div class="tile"><div class="k">Fire detections, Jul–Oct 2026</div><div class="v">${fmt(r.fires)}</div><div class="s">10–90%: ${fmt(r.lo)} – ${fmt(r.hi)}</div></div>
-    <div class="tile"><div class="k">Closest past season</div><div class="v">${r.analog.year}</div><div class="s">${fmt(r.analog.fires)} detections · ${worse} of 23 seasons were worse</div></div>
-    <div class="tile"><div class="k">Haze, AOD Aug–Oct</div><div class="v">${r.aod.toFixed(2)}</div><div class="s"><span class="status ${cls}">${ic} ${lbl}</span></div></div>
-    <div class="tile"><div class="k">Fire radiative power, season</div><div class="v">${fmt(r.frp)} GW</div><div class="s">sum of detection FRP · 2015: ${fmt(T.find((d) => d.year === 2015).frp_GW)} GW</div></div>`;
-  const rng = A.ranges;
-  const meter = (v, a, b) => Math.max(2, Math.min(100, (100 * (v - a)) / (b - a)));
-  const rows = [
-    ["🌊", "ENSO (ONI)", `${d3.format("+.2f")(S.oni)} °C`, `[${rng.oni[0].toFixed(1)} to ${rng.oni[1].toFixed(1)}]`, meter(S.oni, -1.5, 2.5)],
-    ["🌧", "Dry-season rain", `${r.rain.toFixed(2)} mm/d`, `[${rng.rain[0].toFixed(1)}–${rng.rain[1].toFixed(1)}] · ${S.override === "obs" ? "observed 2026" : S.override === "rain" || S.override === "soil" ? "your input" : "from ocean"}`, 100 - meter(r.rain, 1.5, 9.5)],
-    ["🟫", "Root-zone soil wetness", r.soil.toFixed(3), `[${rng.soil[0].toFixed(2)}–${rng.soil[1].toFixed(2)}] · ${S.override === "obs" ? "observed 2026" : S.override === "soil" ? "your input" : "from rain"}`, 100 - meter(r.soil, 0.6, 0.93)],
-    ["🔥", "Fire detections", fmt(r.fires), "[3,023–105,106]", meter(Math.log(r.fires), Math.log(3000), Math.log(110000))],
-    ["🌫", "Aerosol optical depth", r.aod.toFixed(2), `[${rng.aod[0].toFixed(2)}–${rng.aod[1].toFixed(2)}]`, meter(r.aod, 0.33, 1.12)],
-  ];
-  $("#simChain").innerHTML = rows.map(([ic, nm, v, s, m]) => `<div class="sc-row"><span class="ic">${ic}</span><span class="nm">${nm}<small>${s}</small></span><span class="vl">${v}</span><div class="sc-meter"><i style="width:${m}%"></i></div></div>`).join("");
-  charts.simHist($("#simHistChart"), T, r);
-  sim.setClimate({ dryness: dryOf(r.soil), warm: warmOf(S.oni) });
-  playSeason(true);
-  updateFuture();
-}
-function playSeason(restart) {
-  const r = simRes;
-  const prof = chain.monthProfile(r.w);
-  const annual = r.fires / chain.seasonShare(prof);
-  const pattern = chain.pattern(1, r.w, S.gov);
-  const peak = Math.max(...prof);
-  $("#simMonthBar").innerHTML = prof.map((p) => `<i style="height:${Math.max(4, (100 * p) / peak)}%"></i>`).join("");
-  const bars = [...document.querySelectorAll("#simMonthBar i")];
-  clearInterval(monthT);
-  if (restart) monthIdx = 0;
-  const step = () => {
-    const m = monthIdx;
-    const n = annual * prof[m];
-    sim.setFires(pattern.map(([i, j, v]) => [i, j, v * n]), { min: 0.5 });
-    sim.setClimate({ smoke: smokeOf(r.aod) * Math.min(1, (prof[m] / peak) * 1.3) });
-    const cum = d3.sum(prof.slice(0, m + 1)) * annual;
-    $("#simMonth").textContent = `${MONTHS[m]} 2026`;
-    $("#simFiresLive").textContent = fmt(cum);
-    bars.forEach((b, i) => b.classList.toggle("on", i <= m));
-    monthIdx = (m + 1) % 12;
-  };
-  step();
-  monthT = setInterval(step, 1300);
-}
-for (const k of ["oni", "dmi"]) ctl[k].addEventListener("input", (e) => { S[k] = +e.target.value; S.override = "none"; renderSim(); });
-ctl.rain.addEventListener("input", (e) => { S.rain = +e.target.value; S.override = "rain"; renderSim(); });
-ctl.soil.addEventListener("input", (e) => { S.soil = +e.target.value; S.override = "soil"; renderSim(); });
-ctl.gov.addEventListener("input", (e) => { S.gov = +e.target.value; renderSim(); });
-$("#c_useObs").addEventListener("change", (e) => { S.override = e.target.checked ? "obs" : "none"; renderSim(); });
-$("#simPlay").addEventListener("click", () => playSeason(true));
-const y15 = T.find((d) => d.year === 2015);
-const presets = {
-  obs: () => Object.assign(S, { oni: O.oni, dmi: O.dmi_latest, gov: 1, override: "obs" }),
-  2015: () => Object.assign(S, { oni: y15.oni, dmi: y15.dmi, rain: y15.rain, soil: y15.soil, gov: 0, override: "soil" }),
-  relapse: () => Object.assign(S, { oni: O.oni, dmi: O.dmi_latest, gov: 0, override: "obs" }),
-  lanina: () => Object.assign(S, { oni: -1.2, dmi: -0.3, gov: 1, override: "none" }),
-};
-document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("click", () => {
-  document.querySelectorAll("[data-preset]").forEach((x) => x.classList.toggle("on", x === b));
-  presets[b.dataset.preset](); renderSim();
-}));
-
-// ------------------------------------------------------------------ 2027-2030
-const fut = new MapScene($("#futScene"), { terrain, grid: A.grid,
-  describe: (d) => `${tipHead(d)}🔥 <b>${fmt(d.n)}</b> detections in ${FS.year} (median of 4,000 runs)<br><span class="tk">in this ${d.cell}° cell · fire season Jul–Oct</span>` });
-const FS = { path: "analog", shift: 0, gov: 1, year: 2027 };
-let mc = null, futCycle = null;
-function updateFuture() {
-  if (!simRes) return;
-  mc = chain.monteCarlo({ path: FS.path, shift: FS.shift, gov: FS.gov });
-  $("#o_shift").textContent = `${FS.shift > 0 ? "+" : ""}${FS.shift}%`;
-  $("#o_fgov").textContent = FS.gov.toFixed(2);
-  charts.fanChart($("#fanChart"), $("#fanLegend"), T, simRes, mc, FS.year);
-  $("#futTiles").innerHTML = mc.map((m) => `<div class="tile"><div class="k">${m.year} · median</div><div class="v">${fmt(m.p50)}</div>
-    <div class="s">10–90%: ${fmt(m.p10)} – ${fmt(m.p90)}<br>P(&gt; 2019): <b>${Math.round(100 * m.pOver2019)}%</b> · P(&gt; 2015): <b>${Math.round(100 * m.pOver2015)}%</b></div></div>`).join("");
-  showFutYear(FS.year);
-}
-function showFutYear(y) {
-  FS.year = y;
-  const m = mc.find((d) => d.year === y);
-  const ln = Math.log(m.p50);
-  const ww = Math.max(0, Math.min(1, (ln - chain.lnLo) / (chain.lnHi - chain.lnLo)));
-  fut.setFires(chain.pattern(m.p50, ww, FS.gov), { min: 2 });
-  fut.setClimate({ dryness: Math.min(1, ww * 0.9), warm: FS.path === "nino" ? 0.8 : 0.15, smoke: smokeOf(m.aod50) });
-  $("#futYear").textContent = y;
-  $("#futFires").textContent = fmt(m.p50);
-  $("#futRisk").textContent = `${Math.round(100 * m.pOver2019)}%`;
-  document.querySelectorAll("#futPills button").forEach((b) => b.classList.toggle("on", +b.dataset.y === y));
-}
-$("#futPills").innerHTML = [2027, 2028, 2029, 2030].map((y) => `<button data-y="${y}">${y}</button>`).join("");
-$("#futPills").addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  clearInterval(futCycle); futCycle = null;
-  showFutYear(+b.dataset.y);
-  charts.fanChart($("#fanChart"), $("#fanLegend"), T, simRes, mc, FS.year);
-});
-$("#f_path").addEventListener("change", (e) => { FS.path = e.target.value; updateFuture(); });
-$("#f_shift").addEventListener("input", (e) => { FS.shift = +e.target.value; updateFuture(); });
-$("#f_gov").addEventListener("input", (e) => { FS.gov = +e.target.value; document.querySelectorAll("[data-fgov]").forEach((b) => b.classList.toggle("on", +b.dataset.fgov === FS.gov)); updateFuture(); });
-document.querySelectorAll("[data-fgov]").forEach((b) => b.addEventListener("click", () => {
-  FS.gov = +b.dataset.fgov; $("#f_gov").value = FS.gov;
-  document.querySelectorAll("[data-fgov]").forEach((x) => x.classList.toggle("on", x === b)); updateFuture();
-}));
-futCycle = setInterval(() => { showFutYear(FS.year >= 2030 ? 2027 : FS.year + 1); }, 3500);
-
-renderSim();
+const fires26 = T.filter((d) => d.year >= 2003 && d.fires_season);
+const drierThan26 = fires26.filter((d) => d.soil < O.soil).map((d) => d.year);
+$("#now2026").innerHTML = [
+  `Ocean: Niño 3.4 reached <b>+${O.nino34_max_2026.toFixed(2)} °C</b> in 2026, above the previous record (+${O.nino34_record_before_2026.toFixed(2)} °C in ${O.nino34_record_before_2026_when[0]}). ONI for Jul–Sep: <b>${d3.format("+.2f")(O.oni)}</b>.`,
+  `Land: Jul–Oct root-zone soil wetness was <b>${O.soil.toFixed(3)}</b>. ${drierThan26.length ? `Only ${drierThan26.join(", ")} ${drierThan26.length === 1 ? "was" : "were"} drier in 2003–2025.` : "Drier than every season in 2003–2025."}`,
+  `Haze: 2026 fire-season aerosol optical depth so far is <b>${O.aod.toFixed(2)}</b> (2003–2025 range ${A.ranges.aod[0].toFixed(2)}–${A.ranges.aod[1].toFixed(2)}).`,
+  `Fire: NASA FIRMS has not yet published the 2026 archive, so the fire count for this season is still open. Live detections for the last 7 days: <b>${A.live.n}</b>.`,
+  `When FIRMS publishes the 2026 archive, the expected-vs-observed chart above will show whether the post-2016 gap survives a record El Niño.`,
+].map((s) => `<li>${s}</li>`).join("");
 
 // ------------------------------------------------------------------ methods
 document.querySelectorAll(".mtabs button").forEach((b) => b.addEventListener("click", () => {
@@ -277,11 +117,7 @@ window.addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() =
 // ------------------------------------------------------------------ tabs (one numbered section at a time)
 const TABS = [...document.querySelectorAll("#tabbar [data-tab]")].map((b) => ({ id: b.dataset.tab, btn: b, label: b.textContent.replace(/^\d+/, "").trim(), num: b.querySelector("span").textContent }));
 const redraw = {
-  explore: () => { const f = $("#exploreFrame"); if (!f.src) f.src = f.dataset.src; },
-  timeline: () => { updInd = charts.indicators($("#tlIndicators"), T, (y) => setYear(y)); updInd(+$("#tlSlider").value); },
   evidence: () => drawEvidence(),
-  sim2026: () => charts.simHist($("#simHistChart"), T, simRes),
-  future: () => updateFuture(),
 };
 // prev / next buttons at the bottom of every panel
 TABS.forEach((t, i) => {
@@ -332,7 +168,7 @@ setNavH(); window.addEventListener("resize", setNavH);
 // ------------------------------------------------------------------ guided questions → the answer opens right below, on the map
 (() => {
   const form = $("#gq"), place = $("#gqPlace"), year = $("#gqYear"), box = $("#gqResult"), frame = $("#gqFrame"), dlg = $("#gqDlg");
-  const LBL = { fire: "Fires & haze", drought: "Drought & rain", smoke: "Air from space", forest: "Forests", ocean: "Ocean & wind", wildlife: "Wildlife impacts" };
+  const LBL = { fire: "Fires & haze", drought: "Drought & rain", smoke: "Air from space", forest: "Forests", ocean: "Ocean & wind" };
   const read = () => {
     const f = new FormData(form), w = f.get("where");
     return { what: f.get("what"), where: w === "place" ? place.value : w, year: year.value };
@@ -344,7 +180,6 @@ setNavH(); window.addEventListener("resize", setNavH);
   // ---- "ask in your own words": English + Indonesian keywords → topic, place and year
   const TOWNS_ALL = [...place.options].map((o) => o.value);
   const TOPICS = [
-    ["wildlife", /orangutan|wildlife|animal|satwa|hewan|habitat/i],
     ["ocean", /ocean|sea\b|wind|el ni|la ni|enso|iod|dipole|laut|angin|samudra/i],
     ["smoke", /smoke|haze|air quality|aerosol|asap|kabut|udara|polusi/i],
     ["drought", /drought|dry|rain|water|peat|moist|kering|kemarau|hujan|gambut|air tanah|lembap/i],
@@ -366,7 +201,7 @@ setNavH(); window.addEventListener("resize", setNavH);
   const askGo = () => {
     const t = $("#gqText").value.trim(), hint = $("#gqHint"); if (!t) { hint.textContent = "Type a question, or pick a topic above."; return; }
     const p = parseAsk(t);
-    if (!p.what) { hint.textContent = "I could not tell the topic. Mention fires, drought, smoke, forests, the ocean or orangutans, or pick a card above."; return; }
+    if (!p.what) { hint.textContent = "I could not tell the topic. Mention fires, drought, smoke, forests or the ocean, or pick a card above."; return; }
     form.elements.what.value = p.what;
     if (p.where) { if (TOWNS_ALL.includes(p.where)) { form.elements.where.value = "place"; place.value = p.where; } else form.elements.where.value = p.where; }
     if (p.year) year.value = p.year;
