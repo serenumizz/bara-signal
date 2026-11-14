@@ -245,7 +245,13 @@
 let DATA = /*__DATA__*/null;
 (async () => {
   if (!DATA) {
-    try { DATA = await (await fetch('data.json')).json(); }
+    let API = ''; try { API = ((await import('../js/config.js')).EXPLAIN_URL || '').replace(/\/$/, ''); } catch { /* optional */ }
+    window.__API = API;
+    try {
+      DATA = null;
+      if (API) { try { const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 4000); const r = await fetch(API + '/data/explore.json', { signal: ctl.signal }); clearTimeout(tm); if (r.ok) DATA = await r.json(); } catch { /* use the local file */ } }
+      if (!DATA) DATA = await (await fetch('data.json')).json();
+    }
     catch (e) { document.body.innerHTML = '<div style="padding:40px;color:#f0efec;font-family:sans-serif;max-width:640px;line-height:1.6"><h2>No data loaded</h2><p>Run <code>python3 build.py</code> and open the built HTML, or serve this folder with <code>python3 -m http.server</code>.</p></div>'; return; }
   }
   if (typeof THREE === 'undefined' || !THREE.OrbitControls) { document.body.innerHTML = '<div style="padding:40px;color:#f0efec;font-family:sans-serif"><h2>3D library did not load</h2><p>Check your internet connection (three.js loads from cdnjs / jsdelivr).</p></div>'; return; }
@@ -1074,7 +1080,7 @@ setTime(NOW); renderPanel(); loop();
     : what === 'drought' ? `root-zone wetness <b>${f1(mean(c => soilOf(c, t)))}</b> (danger below ${THR_B.toFixed(2)}) · rain <b>${f1(mean(c => c.s.rain[t] / 10))}</b> mm/day`
     : what === 'smoke' ? `smoke (aerosol optical depth) <b>${f1(mean(c => aodOf(c, t)))}</b> (above ~1 the sky turns hazy)`
     : `<b>${(mean(c => lossOf(c, t)) ?? 0).toFixed(0)}%</b> of the tree cover lost since 2001`;
-  const bn = $('qbanner'), Y = MONTHS[t].slice(0, 4), EX = /^https:\/\//.test(q.get('ex') || '') ? q.get('ex') : '';
+  const bn = $('qbanner'), Y = MONTHS[t].slice(0, 4), EX = window.__API || (/^https:\/\//.test(q.get('ex') || '') ? q.get('ex') : '');
   // the cell the story is about: the chosen place, or the worst-hit cell of the region that year
   const yearFire = c => { let v = 0; MONTHS.forEach((m, i) => { if (m.startsWith(Y)) v += c.s.fire[i]; }); return v; };
   const rc = cellOf || group.reduce((b, c) => yearFire(c) > yearFire(b) ? c : b, group[0]);
@@ -1101,13 +1107,13 @@ setTime(NOW); renderPanel(); loop();
   bn.querySelectorAll('[data-q]').forEach(b => b.onclick = () => show(ANS[b.dataset.q]()));
   bn.querySelector('form').onsubmit = async (e) => {
     e.preventDefault(); const inp = bn.querySelector('input'), text = inp.value.trim(); if (!text) return;
-    if (!EX) return show(`Free-text answers need the Gemini explainer, which is not connected on this site yet. Try one of the suggested questions above.`);
-    show('<span class="k">✨ Asking Gemini…</span>');
+    if (!EX) return show(`Free-text answers need the AI explainer (Cloudflare Workers AI), which is not connected on this site yet. Try one of the suggested questions above.`);
+    show('<span class="k">✨ Asking the AI…</span>');
     try {
       const f = rY ? { oni: rY.oni, dmi: rY.dmi, rain_mm_day: +rY.rain.toFixed(2), rain_normal: +rY.rainNorm.toFixed(2), soil_wetness: +rY.soil.toFixed(2), tree_loss_pct: rY.loss == null ? null : Math.round(rY.loss), chance_pct: rY.chance, peak_fires: rY.pending ? null : rY.peak } : {};
       const r = await fetch(EX, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'ask', question: text, place: rtown, lat: +rc.lat.toFixed(2), lon: +rc.lon.toFixed(2), year: +Y, facts: f, lang: 'en' }) });
       const j = await r.json(); if (!r.ok) throw 0;
-      show(`<b>${text.replace(/[<>&]/g, '')}</b><br>${j.text.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}<div class="k">AI answer · Gemini · based on the numbers for ${where_}</div>`);
+      show(`<b>${text.replace(/[<>&]/g, '')}</b><br>${j.text.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}<div class="k">AI answer · Cloudflare Workers AI · based on the numbers for ${where_}</div>`);
     } catch { show('Could not reach the explainer. Try again, or use a suggested question.'); }
   };
 })();

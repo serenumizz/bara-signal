@@ -97,6 +97,19 @@
     </div>
     <p class="gq-hint" id="scoutHint" aria-live="polite"></p>
     <div class="scout-out" id="scoutOut" hidden></div>
+    <div class="tq" id="tq" hidden>
+      <h3>Ask the data: is fire in a regency going up or down?</h3>
+      <p class="tq-lede">Pick a regency and a period. The trend (Mann–Kendall test and Sen's slope) is computed on the fly from fire counts stored in a Cloudflare D1 database, then explained in plain words.</p>
+      <div class="tq-form">
+        <label>Regency <select id="tqReg" aria-label="Regency"></select></label>
+        <label>From <select id="tqFrom"></select></label>
+        <label>To <select id="tqTo"></select></label>
+        <label>Count <select id="tqMetric"><option value="season">Jul–Oct fires</option><option value="total">All-year fires</option></select></label>
+        <button class="btn primary" type="button" id="tqGo">Compute trend</button>
+      </div>
+      <p class="gq-hint" id="tqHint" aria-live="polite"></p>
+      <div class="tq-out" id="tqOut" hidden></div>
+    </div>
     <p class="scout-src">Tools from the challenge resources:
       <a href="https://giovanni.gsfc.nasa.gov/" target="_blank" rel="noopener">Giovanni</a> ·
       <a href="https://disc.gsfc.nasa.gov/information/tools?title=Hydrology%20Time%20Series" target="_blank" rel="noopener">Hydrology Time Series</a> ·

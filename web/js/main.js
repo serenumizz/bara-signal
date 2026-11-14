@@ -10,7 +10,18 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const fmt = d3.format(",.0f");
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const [T, A, land, terrain] = await Promise.all(["timeline", "analysis", "land", "terrain"].map((f) => fetch(`data/${f}.json`).then((r) => r.json())));
+// the big JSON files come from Cloudflare R2 (through the Worker) when it is configured, otherwise from this site
+async function getData(name) {
+  if (EXPLAIN_URL) {
+    try {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+      const r = await fetch(`${EXPLAIN_URL.replace(/\/$/, "")}/data/${name}.json`, { signal: ctl.signal }); clearTimeout(t);
+      if (r.ok) return await r.json();
+    } catch { /* fall back to the local copy */ }
+  }
+  return (await fetch(`data/${name}.json`)).json();
+}
+const [T, A, land, terrain] = await Promise.all(["timeline", "analysis", "land", "terrain"].map(getData));
 const chain = new Chain(A, T);
 const O = A.obs2026;
 
@@ -413,12 +424,12 @@ setNavH(); window.addEventListener("resize", setNavH);
       <p class="sv-src"><span>${esc(v.product)}</span> ${v.src.map(link).join(" · ")}</p></li>`; }).join("");
     out.innerHTML = `<h3>${a ? a.emoji + " " + esc(a.label) : "Your region"} · ${items.length} variables worth checking</h3>
       ${picked ? `<p class="sv-note">I picked up: <b>${esc(picked)}</b></p>` : ""}
-      ${note ? `<p class="sv-note ${ai ? "ai" : ""}">${ai ? "✨ " : ""}${esc(note)}${ai ? ' <span>AI note · Gemini · the variables are chosen from a fixed NASA/NOAA list</span>' : ""}</p>` : ""}
+      ${note ? `<p class="sv-note ${ai ? "ai" : ""}">${ai ? "✨ " : ""}${esc(note)}${ai ? ' <span>AI note · Cloudflare Workers AI · the variables are chosen from a fixed NASA/NOAA list</span>' : ""}</p>` : ""}
       <ol class="sv">${rows}</ol>
       <div class="sv-how"><b>Then test it like a data detective.</b> Download the monthly series (daily and monthly data are the easiest), remove the seasonal cycle, then run a Mann–Kendall test and Sen's slope for the size of the trend. A trend that is not yet significant is still a finding: a longer record can make it significant. Guides: ${GUIDES.map((g) => `<a href="${g.url}" target="_blank" rel="noopener">${esc(g.name)} ↗</a>`).join(" · ")}</div>
       <div class="sv-act">
         ${a?.site ? `<button class="btn primary" type="button" id="svSite">${esc(a.site.text)} →</button>` : `<span class="sv-none">This site maps Sumatra and Kalimantan; use the tools above for your region.</span>`}
-        ${EXPLAIN_URL ? `<button class="btn" type="button" id="svAi">✨ Tailor with Gemini</button>` : ""}
+        ${EXPLAIN_URL ? `<button class="btn" type="button" id="svAi">✨ Tailor with AI</button>` : ""}
       </div>`;
     out.hidden = false;
     current = { kind, text: $("#scoutText").value.trim() };
@@ -429,19 +440,19 @@ setNavH(); window.addEventListener("resize", setNavH);
   function suggest() {
     const t = $("#scoutText").value.trim(); if (!t) { hint.textContent = "Pick a kind of place above, or type a few words."; return; }
     const kinds = matchText(t);
-    if (!kinds.length) { hint.textContent = "I could not match that to a kind of place. Pick a card above" + (EXPLAIN_URL ? ", or press “Tailor with Gemini” after choosing one." : "."); return; }
+    if (!kinds.length) { hint.textContent = "I could not match that to a kind of place. Pick a card above" + (EXPLAIN_URL ? ", or press “Tailor with AI” after choosing one." : "."); return; }
     hint.textContent = "";
     fromKind(kinds[0], { picked: kinds.map((k) => ARCH[k].label).join(", ") });
   }
   async function tailor() {
-    const btn = $("#svAi"); btn.disabled = true; btn.textContent = "✨ Asking Gemini…";
+    const btn = $("#svAi"); btn.disabled = true; btn.textContent = "✨ Asking the AI…";
     const text = current.text || ARCH[current.kind].label;
     try {
       const r = await fetch(EXPLAIN_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "scout", text, lang: "en" }) });
       const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
       const kind = ARCH[j.kind] ? j.kind : current.kind;
       render({ kind, items: j.ids.filter((i) => VARS[i]).map((i) => [i, (ARCH[kind].vars.find((v) => v[0] === i) || [])[1]]), note: j.note, ai: true });
-    } catch { btn.disabled = false; btn.textContent = "✨ Tailor with Gemini"; hint.textContent = "Could not reach Gemini. The built-in suggestions above still apply."; }
+    } catch { btn.disabled = false; btn.textContent = "✨ Tailor with AI"; hint.textContent = "Could not reach the AI. The built-in suggestions above still apply."; }
   }
   $("#scoutCards").addEventListener("click", (e) => {
     const b = e.target.closest("[data-arch]"); if (!b) return;
@@ -450,4 +461,51 @@ setNavH(); window.addEventListener("resize", setNavH);
   });
   $("#scoutGo").addEventListener("click", suggest);
   $("#scoutText").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); suggest(); } });
+})();
+
+// ------------------------------------------------------------------ ask the data: regency trends from Cloudflare D1 (via the Worker)
+(() => {
+  if (!EXPLAIN_URL) return;
+  const API = EXPLAIN_URL.replace(/\/$/, ""), box = $("#tq"), out = $("#tqOut"), hint = $("#tqHint");
+  const esc = (t) => String(t).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+  const years = Array.from({ length: 23 }, (_, i) => 2003 + i);
+  $("#tqFrom").innerHTML = years.map((y) => `<option>${y}</option>`).join("");
+  $("#tqTo").innerHTML = years.map((y) => `<option>${y}</option>`).reverse().join(""); $("#tqTo").value = 2025;
+  fetch(`${API}/api/regencies`).then((r) => r.json()).then(({ regencies }) => {
+    const by = {}; regencies.forEach((r) => (by[r.province] ||= []).push(r));
+    $("#tqReg").innerHTML = Object.keys(by).sort().map((p) => `<optgroup label="${esc(p)}">${by[p].map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join("")}</optgroup>`).join("");
+    const d = regencies.find((r) => r.name === "Pulang Pisau"); if (d) $("#tqReg").value = d.id;
+    box.hidden = false;
+  }).catch(() => { /* the Worker is not reachable: keep the widget hidden */ });
+
+  function chart(series, sen) {
+    const W = 640, H = 170, m = { l: 44, r: 10, t: 10, b: 22 }, xs = series.map((d) => d[0]), ys = series.map((d) => d[1]);
+    const x0 = xs[0], x1 = xs[xs.length - 1], ymax = Math.max(1, ...ys), X = (x) => m.l + ((x - x0) / Math.max(1, x1 - x0)) * (W - m.l - m.r), Y = (v) => H - m.b - (v / ymax) * (H - m.t - m.b);
+    const bw = Math.max(4, (W - m.l - m.r) / series.length - 4);
+    const icpt = [...ys.map((y, i) => y - sen * xs[i])].sort((a, b) => a - b), c0 = icpt[Math.floor(icpt.length / 2)];
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Annual fire detections with the Sen's slope trend line">
+      <line x1="${m.l}" y1="${Y(0)}" x2="${W - m.r}" y2="${Y(0)}" stroke="#323a47"/>
+      ${series.map(([x, v]) => `<rect x="${X(x) - bw / 2}" y="${Y(v)}" width="${bw}" height="${Math.max(0, Y(0) - Y(v))}" rx="2" fill="#ff9a3c" opacity=".75"><title>${x}: ${v.toLocaleString()}</title></rect>`).join("")}
+      <line x1="${X(x0)}" y1="${Y(Math.max(0, c0 + sen * x0))}" x2="${X(x1)}" y2="${Y(Math.max(0, c0 + sen * x1))}" stroke="#f0efec" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="${m.l - 6}" y="${Y(ymax) + 4}" text-anchor="end" fill="#8d8c84" font-size="11">${ymax.toLocaleString()}</text><text x="${m.l - 6}" y="${Y(0) + 4}" text-anchor="end" fill="#8d8c84" font-size="11">0</text>
+      <text x="${X(x0)}" y="${H - 5}" text-anchor="middle" fill="#8d8c84" font-size="11">${x0}</text><text x="${X(x1)}" y="${H - 5}" text-anchor="end" fill="#8d8c84" font-size="11">${x1}</text></svg>`;
+  }
+  async function go() {
+    const body = { mode: "trend", regency: $("#tqReg").value, from: +$("#tqFrom").value, to: +$("#tqTo").value, metric: $("#tqMetric").value, lang: "en" };
+    const btn = $("#tqGo"); btn.disabled = true; btn.textContent = "Computing…"; hint.textContent = "";
+    try {
+      const r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
+      const s = j.stats, dir = s.sen < 0 ? "down" : s.sen > 0 ? "up" : "flat", pct = s.pct_per_decade == null ? "n/a" : `${s.pct_per_decade > 0 ? "+" : "−"}${Math.abs(s.pct_per_decade)}%`;
+      out.innerHTML = `<div class="tq-head"><b>${esc(j.regency.name)}</b> <span>${esc(j.regency.province)} · rank #${j.regency.rank} for fires</span></div>
+        <p class="tq-big ${dir}">${esc(j.metric)} are <b>${dir === "flat" ? "flat" : dir === "down" ? "falling" : "rising"}</b>: ${pct} per decade <small>p = ${s.p} · ${s.significant ? "significant" : "not significant"} (p &lt; 0.05)</small></p>
+        ${chart(j.series, s.sen)}
+        <p class="tq-stats">Sen's slope <b>${s.sen}</b> detections/year · Mann–Kendall z = ${s.z} · ${s.n} years (${j.from}–${j.to}) · mean ${s.mean.toLocaleString()}/year</p>
+        ${j.text ? `<p class="sv-note ai">✨ ${esc(j.text)} <span>AI explanation · Cloudflare Workers AI · it only rewords the numbers above</span></p>` : ""}
+        <p class="tq-src">${esc(j.source)}. Whole 2003–2025 period in the analysis pipeline (autocorrelation-corrected): ${j.whole_period_from_pipeline.pct_per_decade}%/decade, p = ${j.whole_period_from_pipeline.p}.</p>`;
+      out.hidden = false;
+    } catch (e) { hint.textContent = e.message === "choose at least 5 years" ? "Choose a period of at least 5 years." : "Could not compute that trend. Try again."; }
+    btn.disabled = false; btn.textContent = "Compute trend";
+  }
+  $("#tqGo").addEventListener("click", go);
 })();

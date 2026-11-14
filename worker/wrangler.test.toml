@@ -1,0 +1,12 @@
+name = "ember-signal-test"
+main = "test/entry.js"
+compatibility_date = "2025-01-01"
+[vars]
+ALLOWED_ORIGINS = "http://localhost:8000"
+[[d1_databases]]
+binding = "DB"
+database_name = "ember-signal"
+database_id = "a37c07a5-173d-47f0-8301-aec0295b59ca"
+[[kv_namespaces]]
+binding = "CACHE"
+id = "36eaf04375ed41579cb138117050f553"

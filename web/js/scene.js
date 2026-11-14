@@ -307,8 +307,8 @@ export class MapScene {
   _exHtml(s) {
     if (!this.explainUrl) return "";
     const e = s.ex || { state: "idle" };
-    if (e.state === "loading") return `<div class="ex tk">✨ Asking Gemini…</div>`;
-    if (e.state === "done") return `<div class="ex">${e.text.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}<div class="tk">AI summary · Gemini · check against the numbers above</div></div>`;
+    if (e.state === "loading") return `<div class="ex tk">✨ Asking the AI…</div>`;
+    if (e.state === "done") return `<div class="ex">${e.text.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]))}<div class="tk">AI summary · Cloudflare Workers AI · check against the numbers above</div></div>`;
     if (e.state === "err") return `<div class="ex tk">Could not reach the explainer. <button class="exbtn" type="button">Try again</button></div>`;
     return `<div class="ex"><button class="exbtn" type="button">✨ Explain this place</button></div>`;
   }

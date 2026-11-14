@@ -420,3 +420,18 @@ dialog.gqdlg .eyebrow { margin: 0; }
 .sv-act .btn { cursor: pointer; font-family: inherit; } .sv-act .btn:not(.primary) { border: 1px solid var(--line-2); } .sv-act .primary { border: 0; }
 .sv-none { font-size: 13.5px; color: var(--text-3); }
 .scout-src { margin: 18px 0 0; font-size: 13px; color: var(--text-3); }
+
+/* ask the data (D1) */
+.tq { margin-top: 30px; padding: 22px 24px; border: 1px solid var(--line-2); border-radius: 18px; background: var(--bg); }
+.tq[hidden], .tq-out[hidden] { display: none; }
+.tq h3 { margin: 0 0 4px; font-size: 20px; } .tq-lede { margin: 0 0 14px; color: var(--text-3); font-size: 14.5px; max-width: 760px; }
+.tq-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.tq-form label { display: grid; gap: 4px; font-size: 12.5px; color: var(--text-3); }
+.tq-form select { background: var(--surface); color: var(--text); border: 1px solid var(--line-2); border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 15px; max-width: 240px; }
+.tq-form .btn { border: 0; cursor: pointer; font-family: inherit; }
+.tq-out { margin-top: 18px; }
+.tq-head b { font-size: 18px; } .tq-head span { color: var(--text-3); font-size: 13.5px; margin-left: 8px; }
+.tq-big { font-size: 20px; margin: 8px 0; } .tq-big b { font-weight: 700; } .tq-big small { display: block; font-size: 13px; color: var(--text-3); margin-top: 2px; }
+.tq-big.down b { color: #6fd08c; } .tq-big.up b { color: var(--fire-3); }
+.tq-out svg { width: 100%; max-width: 680px; height: auto; display: block; }
+.tq-stats, .tq-src { font-size: 13px; color: var(--text-3); margin: 8px 0; }

@@ -1,10 +1,30 @@
-name = "ember-signal-explain"
+name = "ember-signal-api"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
 [vars]
-GEMINI_MODEL = "gemini-2.5-flash"
-# comma-separated list of sites allowed to call this Worker (CORS)
+AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
+# comma-separated list of sites allowed to call this Worker from a browser (CORS)
 ALLOWED_ORIGINS = "https://web-zeta-six-76.vercel.app,http://localhost:8000"
 
-# Secret (never commit): npx wrangler secret put GEMINI_API_KEY
+# Workers AI: plain-language explanations (no API key or secret to manage)
+[ai]
+binding = "AI"
+
+# D1: trend results per regency / grid cell, queried by /api/trend
+[[d1_databases]]
+binding = "DB"
+database_name = "ember-signal"
+database_id = "a37c07a5-173d-47f0-8301-aec0295b59ca"
+
+# KV: cache of AI answers, so the same question is never generated twice
+[[kv_namespaces]]
+binding = "CACHE"
+id = "36eaf04375ed41579cb138117050f553"
+
+# R2: the big JSON files, served through /data/<file>. Enable R2 in the dashboard, then:
+#   npx wrangler r2 bucket create ember-signal-data
+# and uncomment this block.
+# [[r2_buckets]]
+# binding = "BUCKET"
+# bucket_name = "ember-signal-data"

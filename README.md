@@ -46,3 +46,25 @@ The risk and July-check scores come from logistic models fitted on 2003–2025 d
 ```
 cd web && vercel deploy --prod
 ```
+
+## Cloudflare (Worker + Workers AI + D1 + KV + R2)
+
+`worker/` is a Cloudflare Worker, `ember-signal-api`, that the site calls from the browser.
+
+| Product | What it does here |
+|---|---|
+| **Workers AI** | Plain-language answers (`env.AI.run`, Llama 3.1 8B fp8): explain a map cell, answer a question about a year, suggest variables in the Trend scout, and explain a computed trend. No API key or secret. |
+| **D1** | Fire counts per regency and year plus the FDR-tested cell trends. `GET /api/trend?regency=Pulang Pisau&from=2003&to=2025` computes Mann–Kendall and Sen's slope on the fly. |
+| **KV** | Caches every AI answer, so the same question is generated once. |
+| **R2** | Serves the big JSON files (`/data/explore.json`, ...) when the bucket is enabled; the site falls back to its own copies. |
+
+The model can only reword numbers that the Worker supplies, and the Trend scout can only pick ids from a fixed catalog of NASA/NOAA variables.
+
+```
+cd worker
+python3 scripts/build_seed.py                          # analysis outputs -> db/seed.sql
+npx wrangler d1 execute ember-signal --remote --file=db/seed.sql
+npx wrangler deploy
+```
+
+Local test without Workers AI: `npx wrangler dev -c wrangler.test.toml` (real D1 and KV, fake model).
