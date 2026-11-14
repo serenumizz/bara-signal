@@ -1,6 +1,6 @@
 # Ember Signal: Earth System Trend Detective (NASA Space Apps 2026)
 
-Live: https://ember-signal-seven.vercel.app
+Live: https://web-zeta-six-76.vercel.app
 
 **Research question:** Has a decade of peat-fire governance broken the chain that turns ocean heat (ENSO/IOD) into drought, drought into fire, and fire into haze over Sumatra and Kalimantan? And what will the record 2026 El Niño (Niño 3.4 = +3.25 °C in Oct 2026) and the years after it do?
 
