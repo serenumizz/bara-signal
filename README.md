@@ -68,3 +68,9 @@ npx wrangler deploy
 ```
 
 Local test without Workers AI: `npx wrangler dev -c wrangler.test.toml` (real D1 and KV, fake model).
+
+### Auto-deploy
+
+- `web/` is deployed by Vercel on every push to `main`.
+- `.github/workflows/cloudflare.yml` deploys the Cloudflare side: the Worker when `worker/` changes, the D1 seed when `worker/db/seed.sql` changes, and the R2 files when `web/data/*.json` or `web/explore/data.json` change. It needs the repository secret `CLOUDFLARE_API_TOKEN` (a Cloudflare API token with Workers Scripts, D1, R2 and KV edit rights on the account); without it the jobs are skipped.
+- Run it by hand with `gh workflow run cloudflare.yml -f everything=true`.

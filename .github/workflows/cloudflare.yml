@@ -1,0 +1,108 @@
+# Keeps the Cloudflare side in step with git. Vercel already deploys web/ on every push;
+# this deploys what Vercel does not:
+#   worker/**                      -> wrangler deploy   (the Worker: Workers AI, D1, KV, R2 bindings)
+#   worker/db/seed.sql             -> re-seed the D1 database
+#   web/data/*.json, web/explore/data.json -> re-upload the files served from R2
+# Needs one repository secret: CLOUDFLARE_API_TOKEN (see README). Without it the jobs are skipped.
+name: Cloudflare
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/**"
+      - "web/data/*.json"
+      - "web/explore/data.json"
+      - ".github/workflows/cloudflare.yml"
+  workflow_dispatch:
+    inputs:
+      everything:
+        description: "Deploy the Worker, re-seed D1 and re-upload R2 regardless of what changed"
+        type: boolean
+        default: false
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: f6af0d0ab35516df530bf4971aba413d
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      worker: ${{ steps.f.outputs.worker == 'true' || inputs.everything }}
+      seed: ${{ steps.f.outputs.seed == 'true' || inputs.everything }}
+      data: ${{ steps.f.outputs.data == 'true' || inputs.everything }}
+      token: ${{ steps.t.outputs.has }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            worker:
+              - "worker/src/**"
+              - "worker/wrangler.toml"
+              - ".github/workflows/cloudflare.yml"
+            seed:
+              - "worker/db/seed.sql"
+            data:
+              - "web/data/*.json"
+              - "web/explore/data.json"
+      - id: t
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then echo "has=true" >> "$GITHUB_OUTPUT"; else echo "has=false" >> "$GITHUB_OUTPUT"; echo "::notice::CLOUDFLARE_API_TOKEN is not set, so the Cloudflare jobs are skipped. See the README."; fi
+
+  worker:
+    needs: changes
+    if: needs.changes.outputs.token == 'true' && needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: node --check worker/src/index.js
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: deploy
+
+  seed-d1:
+    needs: changes
+    if: needs.changes.outputs.token == 'true' && needs.changes.outputs.seed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: d1 execute ember-signal --remote --file=db/seed.sql --yes
+
+  upload-r2:
+    needs: changes
+    if: needs.changes.outputs.token == 'true' && needs.changes.outputs.data == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload JSON files to R2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: |
+            r2 object put ember-signal-data/explore.json --file ../web/explore/data.json --content-type application/json --remote
+      - name: Upload the rest
+        run: |
+          cd worker
+          for f in timeline analysis terrain land; do
+            npx --yes wrangler r2 object put "ember-signal-data/$f.json" --file "../web/data/$f.json" --content-type application/json --remote
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
