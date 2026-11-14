@@ -30,7 +30,7 @@ RAW = ROOT / "data" / "raw"
 WEB = ROOT / "web" / "data"
 WEB.mkdir(parents=True, exist_ok=True)
 
-SEASON = [7, 8, 9, 10]  # Jul-Oct fire season (83% of 2003-2025 detections in Sumatra+Kalimantan fall Jun-Oct)
+SEASON = [7, 8, 9, 10]  # Jul-Oct fire season
 FIT = range(2003, 2026)  # full Terra+Aqua years
 LON0, LAT0, CELL = 95.0, -6.5, 0.25
 
@@ -129,7 +129,7 @@ ix = pd.read_csv(PROC / "indices_monthly.csv")
 grid = pd.read_csv(PROC / "fires_grid_annual.csv")
 
 dom = fires[fires.region != "Other"]
-monthly_dom = dom.groupby(["year", "month"]).agg(n=("n", "sum"), n_terra=("n_terra", "sum"), frp=("frp_sum_MW", "sum"))
+monthly_dom = dom.groupby(["year", "month"]).agg(n=("n", "sum"), n_terra=("n_terra", "sum"), n_aqua=("n_aqua", "sum"))
 
 
 def seas_mean(df: pd.DataFrame, col: str, months: list[int]) -> pd.Series:
@@ -139,40 +139,38 @@ def seas_mean(df: pd.DataFrame, col: str, months: list[int]) -> pd.Series:
 A = pd.DataFrame(index=range(2000, 2027))
 A["fires_year"] = dom.groupby("year").n.sum()
 A["fires_season"] = dom[dom.month.isin(SEASON)].groupby("year").n.sum()
-A["fires_aqua_season"] = (dom.assign(aq=dom.n - dom.n_terra)[dom.month.isin(SEASON)].groupby("year").aq.sum())
+A["fires_aqua_season"] = dom[dom.month.isin(SEASON)].groupby("year").n_aqua.sum()
 A["fires_terra_year"] = dom.groupby("year").n_terra.sum()
-A["frp_season_GW"] = dom[dom.month.isin(SEASON)].groupby("year").frp_sum_MW.sum() / 1000
 A["fires_sumatra"] = fires[(fires.region == "Sumatra") & fires.month.isin(SEASON)].groupby("year").n.sum()
-A["fires_kalimantan"] = fires[(fires.region == "Kalimantan") & fires.month.isin(SEASON)].groupby("year").n.sum()
-_ally = fires.groupby(["year", "region"]).n.sum().unstack()
-A["share_outside"] = _ally["Other"] / _ally.sum(axis=1)  # share of Indonesian fires outside Sumatra+Kalimantan
+A["fires_borneo"] = fires[(fires.region == "Borneo") & fires.month.isin(SEASON)].groupby("year").n.sum()
 A["rain"] = seas_mean(drv, "PRECTOTCORR", SEASON)          # mm/day
 A["soil"] = seas_mean(drv, "GWETROOT", SEASON)             # 0-1
 A["soil_top"] = seas_mean(drv, "GWETTOP", SEASON)
-A["tmax"] = seas_mean(drv, "T2M_MAX", SEASON)
+A["t2m"] = seas_mean(drv, "T2M", SEASON)
 A["rh"] = seas_mean(drv, "RH2M", SEASON)
-A["wind"] = seas_mean(drv, "WS2M", SEASON)
-A["aod"] = seas_mean(drv, "AOD_55", [8, 9, 10])             # haze peak months (2026 only until Aug)
+A["wind"] = seas_mean(drv, "SPEED", SEASON)
+A["aod"] = seas_mean(drv, "TOTEXTTAU", [8, 9, 10])          # haze peak months
 A["oni"] = seas_mean(ix, "oni", [7, 8, 9])                  # JJA, JAS, ASO seasons
 A["nino34"] = seas_mean(ix, "nino34_anom", SEASON)
 A["dmi"] = seas_mean(ix, "dmi", [8, 9, 10])
-A.loc[2000, ["fires_year", "fires_season", "fires_aqua_season", "frp_season_GW"]] = np.nan  # only Nov-Dec 2000
-A.loc[2026, ["share_outside", "fires_year", "fires_season", "fires_aqua_season", "fires_terra_year", "frp_season_GW",
-             "fires_sumatra", "fires_kalimantan"]] = np.nan
+A.loc[2000, ["fires_year", "fires_season", "fires_aqua_season"]] = np.nan  # Terra fire record starts Nov 2000
+FMETA = json.loads((PROC / "fires_meta.json").read_text())
+# 2026: the fire season is only used once its last month is fully covered by 8-day composites
+season26_done = pd.Timestamp(FMETA["last_composite_end"]) >= pd.Timestamp(2026, SEASON[-1], 1) + pd.offsets.MonthEnd(0)
+fires_season_2026 = float(A.loc[2026, "fires_season"]) if season26_done else None
+A.loc[2026, ["fires_year", "fires_season", "fires_aqua_season", "fires_terra_year", "fires_sumatra", "fires_borneo"]] = np.nan
 print(A.round(3).to_string())
 
 # ----------------------------------------------------------------------------- 1. trends
 trend_vars = {
-    "fires_season": ("Fire-season hotspots (Jul-Oct, Terra+Aqua)", "detections/yr", FIT),
-    "fires_aqua_season": ("Fire-season hotspots, Aqua only (sensor-consistency check)", "detections/yr", FIT),
-    "fires_terra_year": ("Annual hotspots, Terra only (2001-2025)", "detections/yr", range(2001, 2026)),
-    "frp_season_GW": ("Fire radiative power, season total", "GW/yr", FIT),
-    "fires_sumatra": ("Hotspots - Sumatra (Jul-Oct)", "detections/yr", FIT),
-    "fires_kalimantan": ("Hotspots - Kalimantan (Jul-Oct)", "detections/yr", FIT),
-    "share_outside": ("Share of Indonesia's fires outside Sumatra+Kalimantan", "fraction per yr", FIT),
+    "fires_season": ("Fire-season fire pixels (Jul-Oct, Terra+Aqua)", "pixels/yr", FIT),
+    "fires_aqua_season": ("Fire-season fire pixels, Aqua only (sensor-consistency check)", "pixels/yr", FIT),
+    "fires_terra_year": ("Annual fire pixels, Terra only (2001-2025)", "pixels/yr", range(2001, 2026)),
+    "fires_sumatra": ("Fire pixels - Sumatra (Jul-Oct)", "pixels/yr", FIT),
+    "fires_borneo": ("Fire pixels - Borneo (Jul-Oct)", "pixels/yr", FIT),
     "rain": ("Dry-season rainfall (Jul-Oct)", "mm/day per yr", range(2001, 2026)),
     "soil": ("Root-zone soil wetness (Jul-Oct)", "fraction per yr", range(2001, 2026)),
-    "tmax": ("Max air temperature (Jul-Oct)", "degC per yr", range(2001, 2026)),
+    "t2m": ("Air temperature at 2 m (Jul-Oct)", "degC per yr", range(2001, 2026)),
     "rh": ("Relative humidity (Jul-Oct)", "% per yr", range(2001, 2026)),
     "aod": ("Aerosol optical depth (Aug-Oct, MERRA-2)", "AOD per yr", range(2001, 2026)),
     "oni": ("ENSO - ONI (Jul-Sep)", "degC per yr", range(2001, 2026)),
@@ -230,7 +228,7 @@ print(f"  full chain (ocean indices only) R2 on ln fires = {chain_r2:.2f}")
 M = drv.merge(ix, on=["year", "month"], how="left").merge(monthly_dom.reset_index(), on=["year", "month"], how="left")
 M = M[(M.year >= 2003) & (M.year <= 2025)].sort_values(["year", "month"]).reset_index(drop=True)
 M["ln_n"] = np.log1p(M.n)
-for c in ["PRECTOTCORR", "GWETROOT", "AOD_55", "ln_n", "oni", "dmi"]:
+for c in ["PRECTOTCORR", "GWETROOT", "TOTEXTTAU", "ln_n", "oni", "dmi"]:
     M[c + "_a"] = M[c] - M.groupby("month")[c].transform("mean")
 
 
@@ -249,7 +247,7 @@ lags = {
     "dmi->rain": lagcorr("dmi", "PRECTOTCORR"),
     "rain->soil": lagcorr("PRECTOTCORR", "GWETROOT"),
     "soil->fires": lagcorr("GWETROOT", "ln_n"),
-    "fires->aod": lagcorr("ln_n", "AOD_55"),
+    "fires->aod": lagcorr("ln_n", "TOTEXTTAU"),
 }
 print("\nLAGGED MONTHLY CORRELATIONS (anomalies)")
 for k, v in lags.items():
@@ -293,13 +291,13 @@ clim = [{"oni": float(oni_long[y]), "dmi": float(dmi_long[y]), "year": int(y)} f
 
 # ----------------------------------------------------------------------------- 2026 observed state
 obs26 = {k: (None if pd.isna(A.loc[2026, k]) else float(A.loc[2026, k]))
-         for k in ["rain", "soil", "soil_top", "tmax", "rh", "wind", "aod", "oni", "nino34", "dmi"]}
+         for k in ["rain", "soil", "soil_top", "t2m", "rh", "wind", "aod", "oni", "nino34", "dmi"]}
 obs26["dmi_latest"] = float(ix[(ix.year == 2026) & ix.dmi.notna()].dmi.iloc[-1])
 obs26["dmi_latest_month"] = int(ix[(ix.year == 2026) & ix.dmi.notna()].month.iloc[-1])
 obs26["oni_latest"] = float(ix[(ix.year == 2026) & ix.oni.notna()].oni.iloc[-1])
 obs26["nino34_monthly"] = ix[(ix.year == 2026)][["month", "nino34_anom"]].dropna().values.tolist()
 d26 = drv[drv.year == 2026]
-obs26["monthly"] = d26[["month", "PRECTOTCORR", "GWETROOT", "AOD_55"]].replace({np.nan: None}).values.tolist()
+obs26["monthly"] = d26[["month", "PRECTOTCORR", "GWETROOT", "TOTEXTTAU"]].replace({np.nan: None}).values.tolist()
 rec = ix[ix.nino34_anom.notna()]
 obs26["nino34_record_before_2026"] = float(rec[rec.year < 2026].nino34_anom.max())
 obs26["nino34_record_before_2026_when"] = rec[rec.year < 2026].sort_values("nino34_anom").iloc[-1][["year", "month"]].astype(int).tolist()
@@ -308,6 +306,11 @@ obs26["nino34_max_2026"] = float(rec[rec.year == 2026].nino34_anom.max())
 c = link_fire["coef"]
 obs26["nowcast_ln"] = c["intercept"] + c["soil"] * obs26["soil"] + c["regime"] * 1
 obs26["nowcast_fires"] = float(np.exp(obs26["nowcast_ln"]))
+obs26["fires_season_observed"] = fires_season_2026
+obs26["fires_last_composite_end"] = FMETA["last_composite_end"]
+obs26["nino34_latest"] = float(rec.nino34_anom.iloc[-1])
+obs26["nino34_latest_when"] = rec.iloc[-1][["year", "month"]].astype(int).tolist()
+obs26["nino34_latest_source"] = str(rec.source.iloc[-1])
 print("\n2026 observed:", {k: v for k, v in obs26.items() if k not in ("monthly", "nino34_monthly")})
 
 # soil-wetness rank of 2026 among all years
@@ -337,13 +340,9 @@ mshare = mshare.div(mshare.sum(axis=1), axis=0)
 month_profile = {"high": mshare.loc[high_years].mean().round(4).tolist(),
                  "low": mshare.loc[low_years].mean().round(4).tolist()}
 
-# ----------------------------------------------------------------------------- live fires (last 7 days, MODIS NRT)
-live = pd.read_csv(RAW / "current" / "firms_modis_SEA_7d.csv")
-live = live[(live.longitude >= 95) & (live.longitude < 119) & (live.latitude >= -6.5) & (live.latitude < 6)
-            & (live.confidence >= 30)]
-live_out = {"from": str(live.acq_date.min()), "to": str(live.acq_date.max()), "n": int(len(live)),
-            "points": live[["longitude", "latitude", "frp"]].round(3).values.tolist()}
-print(f"Live MODIS NRT detections in domain {live_out['from']}..{live_out['to']}: {live_out['n']}")
+# ----------------------------------------------------------------------------- latest 8-day MODIS fire composite (AppEEARS)
+live_out = json.loads((PROC / "fires_latest.json").read_text())
+print(f"Latest MODIS 8-day composite {live_out['from']}..{live_out['to']}: {live_out['n']} fire pixels")
 
 # ----------------------------------------------------------------------------- export for web
 timeline = []
@@ -354,11 +353,10 @@ for y in range(2000, 2026):
         "fires_year": None if pd.isna(A.loc[y, "fires_year"]) else int(A.loc[y, "fires_year"]),
         "fires_season": None if pd.isna(A.loc[y, "fires_season"]) else int(A.loc[y, "fires_season"]),
         "sumatra": None if pd.isna(A.loc[y, "fires_sumatra"]) else int(A.loc[y, "fires_sumatra"]),
-        "kalimantan": None if pd.isna(A.loc[y, "fires_kalimantan"]) else int(A.loc[y, "fires_kalimantan"]),
-        "frp_GW": None if pd.isna(A.loc[y, "frp_season_GW"]) else round(float(A.loc[y, "frp_season_GW"]), 1),
+        "borneo": None if pd.isna(A.loc[y, "fires_borneo"]) else int(A.loc[y, "fires_borneo"]),
         "monthly": [int(monthly_dom.n.get((y, m), 0)) for m in range(1, 13)],
         **{k: (None if pd.isna(A.loc[y, k]) else round(float(A.loc[y, k]), 4))
-           for k in ["rain", "soil", "tmax", "rh", "aod", "oni", "dmi"]},
+           for k in ["rain", "soil", "t2m", "rh", "aod", "oni", "dmi"]},
         "terra_only": y <= 2002,
         "cells": gyy[["i", "j", "n"]].values.tolist(),
     })
