@@ -125,6 +125,51 @@
   .tip { position: fixed; pointer-events: none; z-index: 20; background: #0b0b0b; border: 1px solid var(--line); border-radius: 8px;
     padding: 7px 9px; font-size: 12px; line-height: 1.5; display: none; max-width: 240px; }
   .pintip { z-index: 5; max-width: 290px; border-color: rgba(255,122,61,.7); box-shadow: 0 6px 24px #000a; }
+  /* ---- Trend Lab ---- */
+  .lab { position: fixed; inset: 0; z-index: 40; background: #0a0c0f; overflow: auto; padding: 22px clamp(14px, 3vw, 44px) 40px; color: var(--text); }
+  .lab[hidden] { display: none; }
+  .lab h1 { font-size: clamp(24px, 3vw, 36px); margin: 2px 0 14px; letter-spacing: -0.02em; }
+  .lab .eyebrow { font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fire); }
+  .lab-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .lab-top .btns { display: flex; gap: 8px; flex: none; }
+  .lab button { font: inherit; color: inherit; cursor: pointer; }
+  .lab .lbtn { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .lab .lbtn:hover { border-color: var(--muted); }
+  .lab .lbtn[aria-pressed="true"], .lab .lbtn.on { border-color: var(--fire); color: var(--fire); background: rgba(255,122,61,.1); }
+  .lab-steps { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; margin-bottom: 18px; }
+  .lab-card { background: var(--glass-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .lab-card .st { display: flex; gap: 12px; align-items: flex-start; }
+  .lab-card .n { width: 30px; height: 30px; border-radius: 50%; background: var(--fire); color: #1c0d04; font-weight: 700; display: grid; place-items: center; flex: none; }
+  .lab-card .k { font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .lab select { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 14px; max-width: 100%; }
+  .lab .lhint { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+  .lab-main { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 22px; }
+  .lab-vars .grp { font-size: 13.5px; margin: 14px 0 6px; } .lab-vars .grp:first-of-type { margin-top: 6px; }
+  .lab-vars button.v { display: block; width: 100%; text-align: left; background: rgba(255,255,255,.04); border: 1px solid transparent; border-radius: 10px; padding: 9px 12px; margin-bottom: 6px; }
+  .lab-vars button.v b { display: block; font-weight: 500; font-size: 14px; } .lab-vars button.v small { font: 11px var(--mono); color: var(--muted); }
+  .lab-vars button.v:hover { background: rgba(255,255,255,.08); } .lab-vars button.v.on { border-color: var(--fire); background: rgba(255,122,61,.1); }
+  .lab-res h2 { font-size: clamp(20px, 2.2vw, 28px); margin: 0 0 4px; } .lab-res h2 small { font: 13px var(--mono); color: var(--muted); font-weight: 400; }
+  .lab-res .def { color: var(--muted); font-size: 14px; margin: 0 0 10px; } .lab-res .def b { color: var(--text); }
+  .lab-chart { position: relative; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-radius: 12px; padding: 8px 6px 2px; }
+  .lab-chart svg { width: 100%; height: auto; display: block; }
+  .lab-chart .tipc { position: absolute; pointer-events: none; background: #0b0b0b; border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; font-size: 12px; white-space: nowrap; display: none; z-index: 2; }
+  .lab-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--muted); margin: 8px 2px 12px; } .lab-legend i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .lab-verdict { border: 1px solid var(--fire); border-radius: 14px; padding: 14px 18px; background: rgba(255,122,61,.08); margin-bottom: 12px; }
+  .lab-verdict.none { border-color: var(--line); background: rgba(255,255,255,.04); }
+  .lab-verdict .big { font-size: clamp(17px, 1.9vw, 22px); line-height: 1.4; } .lab-verdict .big b.up, .lab-verdict .big b.down { color: var(--fire); } .lab-verdict .big em { font-style: normal; color: var(--fire); font-weight: 700; }
+  .lab-verdict .lev { margin-top: 6px; font-size: 14px; } .lab-verdict .ltag { font: 12px var(--mono); border: 1px solid var(--fire); color: var(--fire); border-radius: 6px; padding: 1px 8px; margin-right: 8px; }
+  .lab-verdict.none .ltag { border-color: var(--muted); color: var(--muted); }
+  .lab-tests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+  .lab-test { border: 1px solid #2f6b44; border-radius: 12px; padding: 12px 14px; background: rgba(60,160,100,.06); font-size: 13.5px; }
+  .lab-test.no { border-color: var(--line); background: rgba(255,255,255,.03); }
+  .lab-test h4 { margin: 0 0 4px; font-size: 14.5px; color: #6fd08c; } .lab-test.no h4 { color: var(--muted); }
+  .lab-test .nums { font: 14px var(--mono); margin: 6px 0; } .lab-test p { color: var(--muted); margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; }
+  .lab-robust { font-size: 13.5px; color: var(--muted); margin: 8px 2px 12px; } .lab-robust b { color: var(--text); }
+  .lab-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .lab-two .lab-card h3 { margin: 0 0 6px; font-size: 15px; } .lab-two p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text); }
+  .lab-ask textarea { width: 100%; min-height: 62px; resize: vertical; background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 10px; color: var(--text); font: inherit; font-size: 13.5px; padding: 8px 10px; }
+  .lab-ask .go { margin-top: 8px; } .lab-ask .out { margin-top: 10px; font-size: 13.5px; line-height: 1.55; } .lab-ask .out small { display: block; color: var(--muted); margin-top: 4px; }
+  @media (max-width: 900px) { .lab-steps, .lab-main, .lab-two, .lab-tests { grid-template-columns: 1fr; } }
   .clue.hl { border-color: var(--fire); box-shadow: inset 0 0 0 1px var(--fire); }
   .clue.hl .n::after { content: ' · matters for your question'; color: var(--fire); font-size: 10.5px; }
   .layer.rel { border-color: rgba(255,122,61,.55); }
@@ -203,7 +248,7 @@
   <div class="tb-top">
     <button class="pill play" id="playBtn">▶ Play</button>
     <span class="now" id="nowLbl"></span>
-    <button class="pill" id="contourBtn" aria-pressed="true" title="Show or hide elevation contour lines">⛰ Contours</button> <button class="pill" id="spaceBtn" title="Fly up to look down like a satellite">🛰 Space view</button><span class="spacer"></span>
+    <button class="pill" id="labBtn" title="Is it really changing? Test a trend with statistics">📈 Trend Lab</button> <button class="pill" id="contourBtn" aria-pressed="true" title="Show or hide elevation contour lines">⛰ Contours</button> <button class="pill" id="spaceBtn" title="Fly up to look down like a satellite">🛰 Space view</button><span class="spacer"></span>
     <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:3px;background:#5fa8ff;vertical-align:middle"></span> D lit &nbsp; <span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
     <span id="jumps"></span>
   </div>
@@ -213,6 +258,7 @@
 <aside class="panel glass" id="panel"></aside>
 <div class="tip" id="tip"></div>
 <div class="qbanner" id="qbanner"></div>
+<div class="lab" id="lab" hidden role="dialog" aria-modal="true" aria-label="Trend Lab"></div>
 <dialog id="evDlg" class="evdlg"></dialog>
 <div id="labels"></div>
 
@@ -1097,6 +1143,182 @@ setTime(NOW); renderPanel(); loop();
     } catch { show('Could not reach the explainer. Try again, or use a suggested question.'); }
   };
 })();
+// ================= Trend Lab: is it really changing? (Mann-Kendall, Sen's slope, regression t-test, 95% CI) =================
+(function trendLab() {
+  const lab = $('lab'); let R = null; // regional.json, loaded when the lab first opens
+  // ---- statistics
+  const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
+  const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+  const lgamma = x => { const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.001208650973866179, -0.000005395239384953]; let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); let s = 1.000000000190015; for (let j = 0; j < 6; j++) s += c[j] / ++y; return -t + Math.log(2.5066282746310005 * s / x); };
+  const betacf = (a, b, x) => { const FP = 1e-30; let qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap; if (Math.abs(d) < FP) d = FP; d = 1 / d; let h = d;
+    for (let m = 1; m <= 200; m++) { const m2 = 2 * m; let aa = m * (b - m) * x / ((qam + m2) * (a + m2)); d = 1 + aa * d; if (Math.abs(d) < FP) d = FP; c = 1 + aa / c; if (Math.abs(c) < FP) c = FP; d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2)); d = 1 + aa * d; if (Math.abs(d) < FP) d = FP; c = 1 + aa / c; if (Math.abs(c) < FP) c = FP; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 3e-12) break; } return h; };
+  const ibeta = (x, a, b) => { if (x <= 0) return 0; if (x >= 1) return 1; const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x)); return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b; };
+  const tCdf = (t, df) => { const p = 0.5 * ibeta(df / (df + t * t), df / 2, 0.5); return t > 0 ? 1 - p : p; };
+  const tCrit = df => { let lo = 0, hi = 30; for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (tCdf(m, df) < 0.975) lo = m; else hi = m; } return (lo + hi) / 2; };
+  function stats(xs, ys) {
+    const n = ys.length; let S = 0; const sl = [];
+    for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) { S += Math.sign(ys[j] - ys[i]); sl.push((ys[j] - ys[i]) / (xs[j] - xs[i])); }
+    const tie = {}; ys.forEach(v => tie[v] = (tie[v] || 0) + 1);
+    const vS = (n * (n - 1) * (2 * n + 5) - Object.values(tie).reduce((a, t) => a + t * (t - 1) * (2 * t + 5), 0)) / 18;
+    const z = vS > 0 ? (S > 0 ? (S - 1) : S < 0 ? (S + 1) : 0) / Math.sqrt(vS) : 0, mkP = 2 * (1 - normCdf(Math.abs(z)));
+    sl.sort((a, b) => a - b); const sen = sl.length % 2 ? sl[(sl.length - 1) / 2] : (sl[sl.length / 2 - 1] + sl[sl.length / 2]) / 2;
+    const xb = xs.reduce((a, b) => a + b, 0) / n, yb = ys.reduce((a, b) => a + b, 0) / n; let sxx = 0, sxy = 0, syy = 0;
+    xs.forEach((x, i) => { sxx += (x - xb) ** 2; sxy += (x - xb) * (ys[i] - yb); syy += (ys[i] - yb) ** 2; });
+    const slope = sxy / sxx, icpt = yb - slope * xb; let sse = 0; xs.forEach((x, i) => sse += (ys[i] - (icpt + slope * x)) ** 2);
+    const df = n - 2, s2 = sse / df, se = Math.sqrt(s2 / sxx), t = se > 0 ? slope / se : 0, tp = se > 0 ? 2 * (1 - tCdf(Math.abs(t), df)) : 1, tc = tCrit(df);
+    return { n, z, mkP, sen, slope, icpt, se, t, tp, df, r2: syy > 0 ? 1 - sse / syy : 0, ciLo: slope - tc * se, ciHi: slope + tc * se,
+      fit: x => icpt + slope * x, band: x => tc * Math.sqrt(s2) * Math.sqrt(1 / n + (x - xb) ** 2 / sxx) };
+  }
+  // ---- what can be measured
+  const MN = MONTHS, YR0 = FIRST_YEAR, YR1 = NOW_YEAR;
+  const VARS = {
+    fire:  { nonneg: true, pl: true, g: 'Fires & haze', name: 'Active fires', sub: 'NASA FIRMS · MODIS', unit: 'detections', agg: 'sum', layer: 'fire', def: 'How many fires the satellites spotted.', dec: 0,
+      get: (cs, t) => t <= FL ? cs.reduce((s, c) => s + c.s.fire[t], 0) : null },
+    aod:   { nonneg: true, g: 'Fires & haze', name: 'Smoke in the air', sub: 'MERRA-2', unit: 'AOD', agg: 'mean', layer: 'E', def: 'How hazy the sky is (aerosol optical depth). Above about 1 it is visibly brown.', dec: 2,
+      get: (cs, t) => { const v = cs.map(c => aodOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
+    rain:  { nonneg: true, g: 'Drought & rain', name: 'Rainfall', sub: 'NASA POWER · MERRA-2', unit: 'mm/day', agg: 'mean', layer: 'A', def: 'How much rain falls on average each day.', dec: 2,
+      get: (cs, t) => cs.reduce((s, c) => s + c.s.rain[t] / 10, 0) / cs.length },
+    soil:  { nonneg: true, g: 'Drought & rain', name: 'Soil moisture', sub: 'NASA POWER · root zone', unit: 'wetness 0–1', agg: 'mean', layer: 'B', def: 'How wet the root zone is, from 0 (dry) to 1 (saturated). Fire danger rises below about 0.87.', dec: 3,
+      get: (cs, t) => cs.reduce((s, c) => s + soilOf(c, t), 0) / cs.length },
+    rh:    { nonneg: true, g: 'Drought & rain', name: 'Humidity', sub: 'NASA POWER · whole study area', unit: '%', agg: 'mean', layer: 'B', regional: 'rh', def: 'How much water the air holds. Drier air pulls water from soil and plants.', dec: 1 },
+    tmax:  { noPct: true, g: 'Heat', name: 'Daytime air temperature', sub: 'NASA POWER · whole study area', unit: '°C', agg: 'mean', layer: 'fire', regional: 'tmax', def: 'The hottest the air gets each day, on average.', dec: 2 },
+    loss:  { nonneg: true, noPct: true, g: 'Forests', name: 'Tree-cover loss', sub: 'Hansen/UMD · Landsat (to 2020)', unit: '% of cover lost since 2001', agg: 'mean', layer: 'C', def: 'Share of the original tree cover that has been lost since 2001.', dec: 1,
+      get: (cs, t) => { if (+MN[t].slice(0, 4) > DATA.lossLast) return null; const v = cs.map(c => lossOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
+    oni:   { g: 'Ocean & wind', name: 'El Niño index (ONI)', sub: 'NOAA · whole study area', unit: '°C', agg: 'mean', layer: 'D', regional: 'oni', def: 'Pacific warmth. Above +0.5 is El Niño, which usually dries Indonesia.', dec: 2, noPct: true },
+    dmi:   { g: 'Ocean & wind', name: 'Indian Ocean Dipole (DMI)', sub: 'NOAA · whole study area', unit: '°C', agg: 'mean', layer: 'D', regional: 'dmi', def: 'Sea-temperature gap across the Indian Ocean. Above +0.4 cuts rain near Sumatra.', dec: 2, noPct: true },
+    wind:  { nonneg: true, g: 'Ocean & wind', name: 'Wind speed', sub: 'NASA POWER · whole study area', unit: 'm/s', agg: 'mean', layer: 'fire', regional: 'wind', def: 'Wind spreads fire and smoke and dries the surface.', dec: 2 },
+  };
+  const CAUSE = {
+    fire: 'Fires follow drought: in El Niño years peat dries out, and drained or cleared land burns easily. Since 2016, peat restoration, canal blocking and enforcement may have pushed counts down, but one very dry year can still spike them.',
+    aod: 'Smoke mostly comes from peat and forest fires, so haze tracks fire. Wind can carry it far from where it burns, so a place can be smoky without local fires.',
+    rain: 'Rain in Indonesia swings with El Niño and the Indian Ocean Dipole. A 20-year trend can be a slow shift, or just one of these cycles landing near the ends of the record.',
+    soil: 'Root-zone wetness follows rain with about a month of delay and falls faster where land is drained or cleared. It is the link between rain and fire.',
+    rh: 'Humidity falls when the air warms and rain is scarce. Drier air pulls water out of soil and plants, raising fire danger.',
+    tmax: 'Warmer air dries soil and fuel faster. A regional trend can be part global warming and part natural swings such as El Niño.',
+    loss: 'Tree cover disappears with logging, plantations and fire. Cleared and drained land is hotter, drier and burns more easily.',
+    oni: 'ONI measures how warm the Pacific is. It is not local: the same value applies to every place.',
+    dmi: 'A positive Indian Ocean Dipole cools the sea near Sumatra and cuts rain, adding to El Niño dryness.',
+    wind: 'Stronger wind dries the surface and carries fire and smoke further. Local terrain changes this a lot.',
+  };
+  const PLACES = (() => { const by = {}; cells.forEach(c => (by[c.island] ||= new Set()).add(c.region)); return { Sumatra: [...(by.Sumatra || [])].sort(), Kalimantan: [...(by.Kalimantan || [])].sort() }; })();
+  const placeCells = p => p === 'Whole study area' ? cells : p === 'All Sumatra' ? cells.filter(c => c.island === 'Sumatra') : p === 'All Kalimantan' ? cells.filter(c => c.island === 'Kalimantan') : cells.filter(c => c.region === p);
+  const monthly = (vk, place) => { const V = VARS[vk]; if (V.regional) { const r = vk === 'oni' ? DATA.oni : vk === 'dmi' ? DATA.dmi : R?.[V.regional]; return r ? MN.map((_, t) => r[t] ?? null) : MN.map(() => null); }
+    const cs = placeCells(place); return MN.map((_, t) => V.get(cs, t)); };
+  function yearly(vk, place, mode, from) {
+    const V = VARS[vk], m = monthly(vk, place), win = mode === 'season' ? [7, 8, 9, 10] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], xs = [], ys = [];
+    for (let y = from; y <= YR1; y++) { const v = win.map(mm => { const i = MN.indexOf(`${y}-${String(mm).padStart(2, '0')}`); return i < 0 ? null : m[i]; }); if (v.some(x => x == null)) continue;
+      xs.push(y); ys.push(V.agg === 'sum' ? v.reduce((a, b) => a + b, 0) : v.reduce((a, b) => a + b, 0) / v.length); }
+    return { xs, ys, m, win };
+  }
+  // ---- formatting
+  const num = (v, d) => { const a = Math.abs(v); return (a >= 1000 ? Math.round(v).toLocaleString() : a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(Math.min(d, 1)) : v.toFixed(Math.max(d, 2))); };
+  const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v), 2);
+  const pTxt = p => p < 0.001 ? '< 0.001' : p.toFixed(3);
+  const esc = t => String(t).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+  // ---- state + UI
+  const S = { place: 'Central Kalimantan', mode: 'season', from: YR0, v: 'fire', built: false };
+  const years = []; for (let y = YR0; y <= YR1 - 5; y++) years.push(y);
+  function build() {
+    const groups = {}; Object.entries(VARS).forEach(([k, V]) => (groups[V.g] ||= []).push(k));
+    const icon = { 'Fires & haze': '🔥', 'Drought & rain': '🌧️', 'Heat': '🌡️', 'Forests': '🌳', 'Ocean & wind': '🌊' };
+    lab.innerHTML = `<div class="lab-top"><div><div class="eyebrow">📈 Trend Lab · the statistics</div><h1>Is it really changing?</h1></div>
+      <div class="btns"><button class="lbtn" id="labMap">🗺️ Show on map</button><button class="lbtn" id="labX" aria-label="Close">✕</button></div></div>
+      <div class="lab-steps">
+        <div class="lab-card"><div class="st"><span class="n">1</span><div style="flex:1"><div class="k">Pick a place</div>
+          <select id="labPlace" aria-label="Place"><optgroup label="Sumatra">${PLACES.Sumatra.map(p => `<option>${esc(p)}</option>`).join('')}</optgroup>
+          <optgroup label="Kalimantan">${PLACES.Kalimantan.map(p => `<option>${esc(p)}</option>`).join('')}</optgroup>
+          <optgroup label="Larger areas"><option>All Sumatra</option><option>All Kalimantan</option><option>Whole study area</option></optgroup></select>
+          <div class="lhint">Most trends are local, so start with one province.</div></div></div></div>
+        <div class="lab-card"><div class="st"><span class="n">2</span><div style="flex:1"><div class="k">How to look at each year</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="lbtn" id="labSeason" aria-pressed="true">Fire season (Jul–Oct)</button><button class="lbtn" id="labYear" aria-pressed="false">Whole year</button></div>
+          <div class="lhint" style="margin-top:12px">From <select id="labFrom" aria-label="First year">${years.map(y => `<option>${y}</option>`).join('')}</select> to ${YR1}: <span id="labN"></span> of NASA data.</div></div></div></div>
+      </div>
+      <div class="lab-main"><div class="lab-vars"><div class="k" style="font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center"><span class="n" style="width:26px;height:26px;border-radius:50%;background:var(--fire);color:#1c0d04;display:grid;place-items:center;font-weight:700">3</span>Pick a variable</div>
+        ${Object.entries(groups).map(([g, ks]) => `<div class="grp">${icon[g]} ${g}</div>${ks.map(k => `<button class="v" data-v="${k}"><b>${VARS[k].name}</b><small>${VARS[k].sub}</small></button>`).join('')}`).join('')}</div>
+        <div class="lab-res" id="labRes"></div></div>`;
+    $('labPlace').value = S.place; $('labFrom').value = S.from;
+    $('labX').onclick = close; $('labMap').onclick = showOnMap;
+    $('labPlace').onchange = e => { S.place = e.target.value; render(); };
+    $('labFrom').onchange = e => { S.from = +e.target.value; render(); };
+    $('labSeason').onclick = () => { S.mode = 'season'; render(); }; $('labYear').onclick = () => { S.mode = 'year'; render(); };
+    lab.querySelectorAll('.v').forEach(b => b.onclick = () => { S.v = b.dataset.v; render(); });
+    S.built = true;
+  }
+  function chart(d, st, V) {
+    const W = 920, H = 300, m = { l: 54, r: 14, t: 14, b: 28 }, years = d.xs, mid = d.win.length === 4 ? 8 / 12 : 0.5;
+    const mx = []; d.m.forEach((v, t) => { const y = +MN[t].slice(0, 4), mo = +MN[t].slice(5); if (v != null && y >= S.from) mx.push([y + (mo - 0.5) / 12, v]); });
+    const x0 = S.from, x1 = Math.max(mx.length ? mx[mx.length - 1][0] : YR1, years[years.length - 1] + 1);
+    const all = [...(V.agg === 'sum' ? [] : mx.map(a => a[1])), ...years.map((y, i) => d.ys[i]), st.fit(years[0] + mid) - st.band(years[0] + mid), st.fit(years[years.length - 1] + mid) + st.band(years[years.length - 1] + mid)];
+    let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad; if (V.nonneg) lo = Math.max(0, lo);
+    const X = x => m.l + (x - x0) / (x1 - x0) * (W - m.l - m.r), Y = v => H - m.b - (Math.max(v, V.nonneg ? 0 : -Infinity) - lo) / (hi - lo) * (H - m.t - m.b);
+    // monthly line, scaled to the yearly units (sums are shown as 12-month/4-month totals, so the monthly line is only drawn for means)
+    const monthlyPath = V.agg === 'sum' ? '' : `<path d="${mx.map(([x, v], i) => (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(v).toFixed(1)).join('')}" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1"/>`;
+    const xa = years.map(y => y + mid), bandTop = xa.map(x => `${X(x).toFixed(1)},${Y(st.fit(x) + st.band(x)).toFixed(1)}`), bandBot = [...xa].reverse().map(x => `${X(x).toFixed(1)},${Y(st.fit(x) - st.band(x)).toFixed(1)}`);
+    const yt = [0, 1, 2, 3].map(i => lo + (hi - lo) * i / 3), xt = []; for (let y = Math.ceil(x0 / 5) * 5; y <= x1; y += 5) xt.push(y); if (!xt.includes(x0)) xt.unshift(x0);
+    const fmtY = v => Math.abs(v) >= 1000 ? Math.round(v).toLocaleString() : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(Math.max(V.dec, 1));
+    return `<svg viewBox="0 0 ${W} ${H}" id="labSvg" role="img" aria-label="Yearly values with trend line and 95% confidence band">
+      ${yt.map(v => `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.07)"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" fill="#8d8c84" font-size="11" font-family="monospace">${fmtY(v)}</text>`).join('')}
+      ${xt.map(x => `<text x="${X(x)}" y="${H - 8}" text-anchor="middle" fill="#8d8c84" font-size="11" font-family="monospace">${x}</text>`).join('')}
+      ${monthlyPath}<polygon points="${bandTop.join(' ')} ${bandBot.join(' ')}" fill="rgba(255,176,60,.22)"/>
+      <line x1="${X(xa[0])}" y1="${Y(st.fit(xa[0]))}" x2="${X(xa[xa.length - 1])}" y2="${Y(st.fit(xa[xa.length - 1]))}" stroke="#ffc34d" stroke-width="2" stroke-dasharray="6 4"/>
+      <path d="${years.map((y, i) => (i ? 'L' : 'M') + X(y + mid).toFixed(1) + ' ' + Y(d.ys[i]).toFixed(1)).join('')}" fill="none" stroke="#ff6b5a" stroke-width="2"/>
+      ${years.map((y, i) => `<circle cx="${X(y + mid)}" cy="${Y(d.ys[i])}" r="4" fill="#ff6b5a" data-i="${i}"/>`).join('')}
+      <line id="labCur" y1="${m.t}" y2="${H - m.b}" stroke="rgba(255,255,255,.4)" style="display:none"/></svg><div class="tipc" id="labTip"></div>`;
+  }
+  function render() {
+    if (!S.built) build();
+    const V = VARS[S.v], place = V.regional ? 'Whole study area' : S.place, d = yearly(S.v, place, S.mode, S.from);
+    $('labSeason').setAttribute('aria-pressed', S.mode === 'season'); $('labYear').setAttribute('aria-pressed', S.mode === 'year');
+    lab.querySelectorAll('.v').forEach(b => b.classList.toggle('on', b.dataset.v === S.v));
+    $('labN').textContent = `${d.xs.length} year${d.xs.length === 1 ? '' : 's'}`;
+    const res = $('labRes'), mode = S.mode === 'season' ? 'fire season (Jul–Oct)' : 'whole year', sumWord = V.agg === 'sum' ? 'total' : 'average';
+    const head = `<h2>${V.name} <small>${V.unit} · ${sumWord} per ${mode}</small></h2><p class="def">${V.def} Measured by <b>${V.sub}</b>.</p>`;
+    if (d.xs.length < 6) { res.innerHTML = head + `<div class="lab-verdict none"><div class="big">Not enough years with data for this choice (${d.xs.length}). Try an earlier start year${S.mode === 'year' ? ' or the fire season' : ''}.</div></div>`; return; }
+    const st = stats(d.xs, d.ys), per = st.slope * 10, dir = st.mkP < 0.1 ? (st.slope > 0 ? 'rising' : 'falling') : 'flat', mid = d.win.length === 4 ? 8 / 12 : 0.5, f0 = st.fit(d.xs[0] + mid), f1 = st.fit(d.xs[d.xs.length - 1] + mid);
+    const pct = V.noPct || Math.abs(f0) < 1e-9 ? null : Math.max(-100, (f1 - f0) / Math.abs(f0) * 100), sig = st.mkP < 0.05;
+    const lvl = st.mkP < 0.001 ? ['Very strong evidence', 'almost certainly a real trend'] : st.mkP < 0.01 ? ['Strong evidence', 'very unlikely to be chance'] : st.mkP < 0.05 ? ['Moderate evidence', 'probably real, but check with a longer record'] : st.mkP < 0.1 ? ['Weak evidence', 'suggestive, not conclusive'] : ['No clear trend', 'the ups and downs could just be natural variation; a longer record might change this'];
+    const where = V.regional || place === 'Whole study area' ? 'across the whole study area' : `in ${place}`, be = V.pl ? 'are' : 'is', rate = `${sgn(per)} ${V.unit.replace(/^% of cover lost since 2001$/, '% points').replace('wetness 0–1', 'wetness')} per decade`;
+    const test = (ok, title, nums, q, expl) => `<div class="lab-test ${ok ? '' : 'no'}"><h4>${ok ? '✓' : '–'} ${title}</h4><p>${q}</p><div class="nums">${nums}</div><p>${expl}</p></div>`;
+    res.innerHTML = head + `<div class="lab-chart">${chart(d, st, V)}</div>
+      <div class="lab-legend"><span><i style="width:9px;height:9px;border-radius:50%;background:#ff6b5a"></i>each dot = one year's ${mode} ${sumWord}</span><span><i style="width:22px;border-top:2px dashed #ffc34d"></i>trend line</span><span><i style="width:14px;height:9px;background:rgba(255,176,60,.35)"></i>95% confidence band</span>${V.agg === 'sum' ? '' : '<span><i style="width:22px;border-top:1px solid rgba(255,255,255,.4)"></i>monthly values</span>'}</div>
+      <div class="lab-verdict ${sig ? '' : 'none'}"><div class="big">${esc(V.name)} ${where} ${dir === 'flat' ? (V.pl ? 'show <b>no clear trend</b>' : 'shows <b>no clear trend</b>') : `${be} <b class="${dir === 'rising' ? 'up' : 'down'}">${dir}</b>`}: about <em>${rate}</em>${pct == null ? '' : ` (${pct > 0 ? '+' : '−'}${Math.abs(pct) < 10 ? Math.abs(pct).toFixed(1) : Math.round(Math.abs(pct))}% since ${d.xs[0]})`}.</div>
+        <div class="lev"><span class="ltag">${lvl[0]}</span>${lvl[1]}${V.regional && S.place !== 'Whole study area' ? ` · <span style="color:var(--muted)">this variable is measured for the whole study area, not for ${esc(S.place)}</span>` : ''}</div></div>
+      <div class="lab-tests">
+        ${test(st.mkP < 0.05, 'Mann–Kendall test', `Z = ${st.z.toFixed(2)}, p = ${pTxt(st.mkP)}`, 'Do later years keep beating earlier years?', 'Compares every pair of years. Robust to spikes like 2015, so it is the standard test for climate trends.')}
+        ${test(st.tp < 0.05, 't-test on the slope', `t = ${st.t.toFixed(2)}, p = ${pTxt(st.tp)}`, 'Is the straight-line slope far enough from zero?', S.v === 'fire' ? 'Fits the best straight line. Fire counts spike in El Niño years, so trust the Mann–Kendall result more here.' : 'Fits the best straight line through the yearly values and asks whether its slope could just be noise.')}
+        ${test(st.ciLo > 0 || st.ciHi < 0, '95% confidence interval', `${sgn(st.ciLo * 10)} to ${sgn(st.ciHi * 10)} ${V.unit.split(' ')[0]}`, 'Range of believable rates per decade', st.ciLo > 0 || st.ciHi < 0 ? 'The whole range is on one side of zero, so the change is real at 95% confidence.' : 'The range includes zero, so we cannot rule out no change.')}
+      </div>
+      <div class="lab-robust">Robust rate (Sen's slope): <b>${sgn(st.sen * 10)} ${V.unit.split(' ')[0]}/decade</b> · the straight-line fit explains ${Math.round(st.r2 * 100)}% of the year-to-year change.</div>
+      <div class="lab-two"><div class="lab-card"><h3>🔍 What could be causing it?</h3><p>${esc(CAUSE[S.v])}</p></div>
+        <div class="lab-card lab-ask"><h3>✨ Ask the AI to explain</h3><textarea id="labQ" maxlength="180" aria-label="Question">Explain this trend in simple words and what it means for people living ${V.regional ? 'here' : 'in ' + esc(place)}.</textarea>
+          <button class="lbtn go" id="labAsk">Ask the AI</button><div class="out" id="labOut"></div></div></div>`;
+    // hover
+    const svg = $('labSvg'), tip = $('labTip'), cur = $('labCur'), box = svg.parentElement;
+    svg.onmousemove = ev => { const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * 920; let bi = 0, bd = 1e9;
+      d.xs.forEach((y, i) => { const px = 54 + (y + mid - S.from) / (Math.max(...[d.xs[d.xs.length - 1] + 1]) - S.from) * (920 - 54 - 14); const dd = Math.abs(px - x); if (dd < bd) { bd = dd; bi = i; } });
+      const c = svg.querySelector(`circle[data-i="${bi}"]`); cur.setAttribute('x1', c.getAttribute('cx')); cur.setAttribute('x2', c.getAttribute('cx')); cur.style.display = '';
+      tip.style.display = 'block'; tip.innerHTML = `<b>${d.xs[bi]}</b> · ${num(d.ys[bi], V.dec)} ${V.unit.split(' ')[0]}`; const cb = c.getBoundingClientRect(), bb = box.getBoundingClientRect(); tip.style.left = Math.min(bb.width - 130, cb.left - bb.left + 10) + 'px'; tip.style.top = (cb.top - bb.top - 34) + 'px'; };
+    svg.onmouseleave = () => { tip.style.display = 'none'; cur.style.display = 'none'; };
+    // AI explanation (Cloudflare Workers AI through the Worker)
+    $('labAsk').onclick = async () => {
+      const out = $('labOut'), API = window.__API; if (!API) { out.innerHTML = 'The AI explainer (Cloudflare Workers AI) is not connected on this site yet.'; return; }
+      out.innerHTML = '<span style="color:var(--muted)">✨ Asking the AI…</span>';
+      try { const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'stat', place: place, variable: V.name, unit: V.unit.split(' ')[0], from: d.xs[0], to: d.xs[d.xs.length - 1], n: st.n, regional: !!V.regional, per_decade: +per.toFixed(4), pct_since_start: pct == null ? null : +pct.toFixed(1), mk_z: +st.z.toFixed(2), mk_p: +st.mkP.toFixed(4), t: +st.t.toFixed(2), t_p: +st.tp.toFixed(4), ci_lo: +(st.ciLo * 10).toFixed(4), ci_hi: +(st.ciHi * 10).toFixed(4), r2: +st.r2.toFixed(2), question: $('labQ').value.slice(0, 180), lang: 'en' }) });
+        const j = await r.json(); if (!r.ok) throw 0; out.innerHTML = `${esc(j.text)}<small>AI explanation · Cloudflare Workers AI · it only rewords the numbers above</small>`; } catch { out.innerHTML = 'Could not reach the AI explainer. The statistics above still stand.'; } };
+  }
+  function open() { if (R === null) { R = false; fetch('regional.json').then(r => r.json()).then(j => { R = j; if (!lab.hidden) render(); }).catch(() => { R = {}; }); } lab.hidden = false; document.body.style.overflow = 'hidden'; render(); lab.scrollTop = 0; }
+  function close() { lab.hidden = true; document.body.style.overflow = ''; }
+  function showOnMap() {
+    const V = VARS[S.v]; close(); state.layer = V.layer; state.rel = []; setTime(V.layer === 'fire' ? FL : NOW);
+    const cs = placeCells(V.regional ? 'Whole study area' : S.place); const lon = cs.reduce((a, c) => a + c.lon, 0) / cs.length, lat = cs.reduce((a, c) => a + c.lat, 0) / cs.length;
+    flyTo(toX(lon), toZ(lat), cs.length > 100 ? 14 : 7, cs.length > 100 ? 14 : 7); $('hint').style.opacity = 0;
+  }
+  $('labBtn').onclick = open;
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !lab.hidden) close(); });
+  if (new URLSearchParams(location.search).get('lab')) { const q = new URLSearchParams(location.search); if (VARS[q.get('lab')]) S.v = q.get('lab'); open(); }
+})();
+
 window.__app = { select, setTime, cells, state, pickTown: n => document.querySelector(`[data-town="${n}"]`)?.click(), setLayer: k => { state.layer = k; paint(); renderLayers(); } };
 }
 </script>

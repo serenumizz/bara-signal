@@ -14,6 +14,7 @@ python analysis/02_process.py      # tidy monthly tables, 0.25° fire grid, coas
 python analysis/03_analysis.py     # trends, change point, FDR map, chain model, analogs -> web/data/*.json
 python analysis/04_regions.py      # every fire point -> province/regency (geoBoundaries), regency trends + FDR
 python analysis/05_explore_data.py # real-data build of the "Jejak Api" 3D explorer -> web/explore/data.json
+python analysis/06_regional_series.py # monthly Tmax / humidity / wind for the Trend Lab -> web/explore/regional.json
 ```
 
 `web/explore/` is the "Jejak Api · Explore the Islands" map, adapted from a prototype whose numbers were placeholders.
@@ -73,3 +74,7 @@ Local test without Workers AI: `npx wrangler dev -c wrangler.test.toml` (real D1
 - `web/` is deployed by Vercel on every push to `main`.
 - `.github/workflows/cloudflare.yml` deploys the Cloudflare side: the Worker when `worker/` changes, the D1 seed when `worker/db/seed.sql` changes, and the R2 files when `web/data/*.json` or `web/explore/data.json` change. It needs the repository secret `CF_GITHUB_TOKEN` (a Cloudflare API token with Workers Scripts, D1, R2 and KV edit rights on the account); without it the jobs are skipped.
 - Run it by hand with `gh workflow run cloudflare.yml -f everything=true`.
+
+### Trend Lab (Explore map, button "📈 Trend Lab")
+
+Pick a place (15 provinces, an island or the whole study area), a way to look at each year (Jul–Oct fire season or whole year), a start year and a variable. The lab draws the yearly values with a trend line and 95% confidence band and runs three tests in the browser: Mann–Kendall (Z, p), a t-test on the regression slope, and the 95% confidence interval of the rate per decade, plus Sen's slope and R². Fires, smoke, rainfall, soil moisture and tree-cover loss are per province; temperature, humidity, wind, ONI and the Dipole index exist only for the whole study area and are labelled so. The "Ask the AI" box sends the computed numbers to the Worker (`mode: "stat"`), which only rewords them.
