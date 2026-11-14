@@ -78,6 +78,36 @@
   </div>
 </section>
 
+<!-- ============================================================ TREND SCOUT -->
+<section class="scout" id="scout" aria-labelledby="scoutH">
+  <div class="wrap">
+    <p class="eyebrow">Trend scout · built-in guide + optional AI</p>
+    <h2 id="scoutH">Not sure which variable to look at?</h2>
+    <p class="lede">Pick a kind of place, or paste a news headline, a paper title, or a few words about a region. The scout suggests NASA variables that could show a trend there, explains each in plain words, and points to the tool in the challenge's resource list where you can get the time series.</p>
+    <div class="scards" id="scoutCards" role="group" aria-label="Kinds of place">
+        <button type="button" class="scard" data-arch="desert"><i aria-hidden="true">🏜️</i><b>Desert</b></button>
+        <button type="button" class="scard" data-arch="rainforest"><i aria-hidden="true">🌴</i><b>Rain forest</b></button>
+        <button type="button" class="scard" data-arch="estuary"><i aria-hidden="true">🌊</i><b>Tidal estuary / coast</b></button>
+        <button type="button" class="scard" data-arch="city"><i aria-hidden="true">🏙️</i><b>Atmosphere above a big city</b></button>
+        <button type="button" class="scard" data-arch="peat"><i aria-hidden="true">🔥</i><b>Peat swamp (this site)</b></button>
+    </div>
+    <div class="gq-ask">
+      <input id="scoutText" type="text" maxlength="300" autocomplete="off" aria-label="Describe a place, headline or paper" placeholder="…or paste a headline or paper title, e.g. “Mangrove loss threatens the Mekong delta” / “Polusi udara Jakarta makin parah”">
+      <button class="btn primary" type="button" id="scoutGo">Suggest</button>
+    </div>
+    <p class="gq-hint" id="scoutHint" aria-live="polite"></p>
+    <div class="scout-out" id="scoutOut" hidden></div>
+    <p class="scout-src">Tools from the challenge resources:
+      <a href="https://giovanni.gsfc.nasa.gov/" target="_blank" rel="noopener">Giovanni</a> ·
+      <a href="https://disc.gsfc.nasa.gov/information/tools?title=Hydrology%20Time%20Series" target="_blank" rel="noopener">Hydrology Time Series</a> ·
+      <a href="https://appeears.earthdatacloud.nasa.gov/" target="_blank" rel="noopener">AppEEARS</a> ·
+      <a href="https://www.ncei.noaa.gov/cdo-web/" target="_blank" rel="noopener">NOAA Climate Data Online</a> ·
+      <a href="https://climexp.knmi.nl/" target="_blank" rel="noopener">KNMI Climate Explorer</a> ·
+      <a href="https://www.asc-csa.gc.ca/eng/satellites/swot/" target="_blank" rel="noopener">SWOT</a> ·
+      <a href="https://donnees-data.asc-csa.gc.ca/en/dataset/rcm" target="_blank" rel="noopener">RADARSAT Constellation</a></p>
+  </div>
+</section>
+
 <!-- ============================================================ INVESTIGATE POPUP -->
 <dialog class="gqdlg" id="gqDlg" aria-labelledby="gqDlgH">
   <button class="gqx" type="button" id="gqDlgClose" aria-label="Close">✕</button>
