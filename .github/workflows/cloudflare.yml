@@ -3,7 +3,7 @@
 #   worker/**                      -> wrangler deploy   (the Worker: Workers AI, D1, KV, R2 bindings)
 #   worker/db/seed.sql             -> re-seed the D1 database
 #   web/data/*.json, web/explore/data.json -> re-upload the files served from R2
-# Needs one repository secret: CLOUDFLARE_API_TOKEN (see README). Without it the jobs are skipped.
+# Needs one repository secret: CF_GITHUB_TOKEN (a Cloudflare API token) (see README). Without it the jobs are skipped.
 name: Cloudflare
 
 on:
@@ -49,9 +49,9 @@ jobs:
               - "web/explore/data.json"
       - id: t
         env:
-          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TOKEN: ${{ secrets.CF_GITHUB_TOKEN }}
         run: |
-          if [ -n "$TOKEN" ]; then echo "has=true" >> "$GITHUB_OUTPUT"; else echo "has=false" >> "$GITHUB_OUTPUT"; echo "::notice::CLOUDFLARE_API_TOKEN is not set, so the Cloudflare jobs are skipped. See the README."; fi
+          if [ -n "$TOKEN" ]; then echo "has=true" >> "$GITHUB_OUTPUT"; else echo "has=false" >> "$GITHUB_OUTPUT"; echo "::notice::CF_GITHUB_TOKEN is not set, so the Cloudflare jobs are skipped. See the README."; fi
 
   worker:
     needs: changes
@@ -66,7 +66,7 @@ jobs:
         run: node --check worker/src/index.js
       - uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_GITHUB_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
           command: deploy
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_GITHUB_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
           command: d1 execute ember-signal --remote --file=db/seed.sql --yes
@@ -93,7 +93,7 @@ jobs:
       - name: Upload JSON files to R2
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_GITHUB_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
           command: |
@@ -105,4 +105,4 @@ jobs:
             npx --yes wrangler r2 object put "ember-signal-data/$f.json" --file "../web/data/$f.json" --content-type application/json --remote
           done
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_GITHUB_TOKEN }}
