@@ -1,0 +1,11 @@
+numpy
+pandas
+scipy
+scikit-learn
+requests
+shapely
+pillow
+xarray
+h5netcdf
+h5py
+scikit-image

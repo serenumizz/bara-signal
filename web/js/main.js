@@ -35,8 +35,8 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 // ------------------------------------------------------------------ hero
 const y2015 = T.find((d) => d.year === 2015);
 $("#heroStat").textContent = `Niño 3.4 hit +${O.nino34_max_2026.toFixed(2)} °C in ${MONTHS[O.nino34_monthly.at(-1)[0] - 1]} 2026.`;
-$("#heroSub").innerHTML = `The previous record since satellite SSTs began (1982) was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. That year, satellites counted <b>${fmt(y2015.fires_season)} fires</b> across Sumatra and Kalimantan in four months, and the haze crossed borders.`;
-$("#liveLine").textContent = `Live · ${A.live.n} MODIS fire detections in the study area, ${A.live.from} → ${A.live.to} (NASA FIRMS NRT)`;
+$("#heroSub").innerHTML = `The previous high in the NOAA ERSSTv5 record since 1950 was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire pixels</b> across Sumatra and Borneo in four months, and the haze crossed borders.`;
+$("#liveLine").textContent = `Latest · ${A.live.n} MODIS fire pixels in the study area, ${A.live.from} → ${A.live.to} (8-day composite, NASA AppEEARS)`;
 $("#genTime").textContent = A.generated.replace("T", " ");
 
 const hero = new MapScene($("#heroScene"), { terrain, grid: A.grid, autoRotate: true, camera: "hero", labels: false, interactive: false, rotate: true });
@@ -95,12 +95,14 @@ const pf = (p) => (p < 0.001 ? "<0.001" : p.toFixed(3));
 const coefRows = [
   ["Rain ← ENSO + IOD", "rain (mm/d)", ch.climate_to_rain, ["oni", "dmi"]],
   ["Soil ← rain", "GWETROOT", ch.rain_to_soil, ["rain"]],
-  ["ln(fire) ← soil + regime", "ln detections", ch.soil_to_fires, ["soil", "regime"]],
+  ["ln(fire) ← soil + regime", "ln fire pixels", ch.soil_to_fires, ["soil", "regime"]],
   ["AOD ← ln(fire)", "AOD Aug–Oct", ch.fires_to_aod, ["ln_fires"]],
 ];
 $("#coefTable").innerHTML = `<thead><tr><th>Link</th><th>Term</th><th class="num">Coef.</th><th class="num">p</th><th class="num">R²</th><th class="num">LOO R²</th></tr></thead><tbody>${
   coefRows.map(([nm, , L, terms]) => terms.map((t, i) => `<tr><td>${i ? "" : nm}</td><td>${t}</td><td class="num">${d3.format("+.3f")(L.coef[t])}</td><td class="num">${pf(L.p[t])}</td><td class="num">${i ? "" : L.r2.toFixed(2)}</td><td class="num">${i ? "" : L.r2_loo.toFixed(2)}</td></tr>`).join("")).join("")}</tbody>`;
 const seasonShare = d3.sum(fit, (d) => d.fires_season) / d3.sum(fit, (d) => d.fires_year);
+$("#seasonSharePct").textContent = Math.round(100 * seasonShare);
+$("#aquaTrend").textContent = `${tr.fires_aqua_season.pct_per_decade.toFixed(0)}%/decade, p = ${pf(tr.fires_aqua_season.p)}; combined ${tr.fires_season.pct_per_decade.toFixed(0)}%/decade`;
 $("#keyResults").innerHTML = [
   `Fire-season detections: Sen slope ${fmt(tr.fires_season.sen_slope)} per year (${tr.fires_season.pct_per_decade.toFixed(0)}%/decade), p = ${pf(tr.fires_season.p)}. Aqua-only: p = ${pf(tr.fires_aqua_season.p)}. Terra-only 2001–2025: p = ${pf(tr.fires_terra_year.p)}.`,
   `Root-zone soil wetness trended up ${tr.soil.pct_per_decade.toFixed(1)}%/decade (p = ${pf(tr.soil.p)}), but rainfall (p = ${pf(tr.rain.p)}), Tmax (p = ${pf(tr.tmax.p)}), ONI and DMI show no significant trend.`,
@@ -191,7 +193,7 @@ setNavH(); window.addEventListener("resize", setNavH);
     const hit = TOPICS.find(([, re]) => re.test(t)); if (hit) out.what = hit[0];
     if (/\b(hot|hotter|heat|temperature|warm|panas|suhu|gerah)\b/i.test(t)) { out.what = out.what || "drought"; out.heat = true; }
     const town = TOWNS_ALL.find((n) => low.includes(n.toLowerCase().replace(/ \(.*\)/, "")));
-    if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Kalimantan";
+    if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Borneo";
     else { const prov = { riau: "Pekanbaru", jambi: "Jambi", aceh: "Banda Aceh", lampung: "Bandar Lampung", bengkulu: "Bengkulu", "sumatera utara": "Medan", "north sumatra": "Medan", "south sumatra": "Palembang", "sumatera selatan": "Palembang", "central kalimantan": "Palangka Raya", "kalimantan tengah": "Palangka Raya", "west kalimantan": "Pontianak", "kalimantan barat": "Pontianak", "south kalimantan": "Banjarmasin", "kalimantan selatan": "Banjarmasin", "east kalimantan": "Samarinda", "kalimantan timur": "Samarinda" };
       const k = Object.keys(prov).find((p) => low.includes(p)); if (k) out.where = prov[k]; }
     const y = t.match(/\b(20(?:0[3-9]|1\d|2[0-6]))\b/); if (y) out.year = y[1] === "2026" ? "now" : y[1];

@@ -12,9 +12,22 @@ node_modules/
 .env
 .env.*
 *.pem
+.dev.vars
+
+# NASA Earthdata login & session files (the real login lives in ~/.netrc, outside this project)
+.netrc
+_netrc
+*.netrc
+.urs_cookies
+*cookies*.txt
+.edl_token
+*token*.json
 
 # python / os
 __pycache__/
 *.pyc
 .DS_Store
 docs_private/
+
+# python environment
+.venv/
