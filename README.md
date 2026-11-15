@@ -1,4 +1,4 @@
-# Ember Signal: Earth System Trend Detective (NASA Space Apps 2026)
+# Bara: Earth System Trend Detective (NASA Space Apps 2026)
 
 Live: https://web-zeta-six-76.vercel.app
 

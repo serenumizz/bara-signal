@@ -1,4 +1,4 @@
-// Ember Signal API on Cloudflare: Worker + Workers AI + D1 + KV (+ R2 for the big JSON files).
+// Bara API on Cloudflare: Worker + Workers AI + D1 + KV (+ R2 for the big JSON files).
 //
 //   POST /            {mode: "explain" | "ask" | "scout" | "trend", ...}  -> plain-language AI answers (cached in KV)
 //   GET  /api/regencies                                                   -> regencies in D1
