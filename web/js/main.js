@@ -47,7 +47,24 @@ hero.setFires(y2015.cells);
 hero.setClimate({ dryness: dryOf(y2015.soil), warm: warmOf(y2015.oni), smoke: smokeOf(y2015.aod) * 0.9 });
 hero.start();
 window.addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 60), { passive: true });
-const setNavH = () => document.documentElement.style.setProperty("--navh", $("#nav").offsetHeight + "px");
+// ------------------------------------------------------------------ tabs: Question · Trend scout · Map (the fourth, Case, evidence & methods, is its own page)
+const TABIDS = ["landing", "trend", "map"], ALIAS = { scout: "trend", guide: "landing", top: "landing", question: "landing" };
+function showTab(id, { scroll = true } = {}) {
+  id = ALIAS[id] || id; if (!TABIDS.includes(id)) return;
+  TABIDS.forEach((t) => $("#" + t).classList.toggle("active", t === id));
+  $$(".nav-links [data-tab]").forEach((a) => { const on = a.dataset.tab === id; a.classList.toggle("on", on); a.setAttribute("aria-selected", on); });
+  history.replaceState(null, "", "#" + id);
+  if (scroll) window.scrollTo({ top: 0, behavior: "instant" });
+}
+document.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  const id = ALIAS[a.getAttribute("href").slice(1)] || a.getAttribute("href").slice(1);
+  if (TABIDS.includes(id)) { e.preventDefault(); showTab(id); }
+});
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1), { scroll: false }));
+showTab(location.hash.slice(1) || "landing", { scroll: false });
+
+const setNavH =() => document.documentElement.style.setProperty("--navh", $("#nav").offsetHeight + "px");
 setNavH(); window.addEventListener("resize", setNavH);
 
 // ------------------------------------------------------------------ guided questions → the answer opens right below, on the map
@@ -113,7 +130,7 @@ setNavH(); window.addEventListener("resize", setNavH);
     form.elements.what.value = what;
     if (TOWNS_ALL.includes(w)) { form.elements.where.value = "place"; place.value = w; } else form.elements.where.value = w;
     year.value = y; sync(); showStep(3); form.requestSubmit();
-    box.scrollIntoView({ block: "start", behavior: "smooth" });
+    showTab("map");
   });
   $("#gqGo").addEventListener("click", askGo);
   $("#gqText").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); askGo(); } });
@@ -125,7 +142,7 @@ setNavH(); window.addEventListener("resize", setNavH);
     frame.src = url; $("#gqFull").href = url;
     dlg.close();
     $("#gqResultTitle").textContent = summary(a);
-    box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    showTab("map");
   });
   // the Trend Lab (inside the map frame) asks the page to pop the frame out while it is open, and to put it back
   const setLabPopup = (open) => { box.classList.toggle("lab-popup", open); document.body.classList.toggle("lab-open", open); };

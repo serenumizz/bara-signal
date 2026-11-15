@@ -22,14 +22,17 @@
 <body>
 
 <nav class="nav" id="nav">
-  <a href="#top" class="brand"><span class="flame"></span>Ember Signal</a>
-  <div class="nav-links">
-    <a href="#scout">The question</a>
-    <a href="#guide">Optional: investigate</a>
-    <a href="background.html">Case, evidence &amp; methods ↗</a>
+  <a href="#landing" data-tab="landing" class="brand"><span class="flame"></span>Ember Signal</a>
+  <div class="nav-links" role="tablist" aria-label="Sections">
+    <a href="#landing" data-tab="landing" role="tab">Question</a>
+    <a href="#trend" data-tab="trend" role="tab">Trend scout</a>
+    <a href="#map" data-tab="map" role="tab">Map</a>
+    <a href="background.html" role="tab">Case, evidence &amp; methods</a>
   </div>
 </nav>
 
+<main id="panels">
+<div class="tabpanel active" id="landing" role="tabpanel">
 <!-- ============================================================ HERO -->
 <header class="hero" id="top">
   <div class="scene" id="heroScene" aria-hidden="true"></div>
@@ -51,6 +54,19 @@
   </div>
 </header>
 
+<!-- ============================================================ GUIDED QUESTIONS -->
+<section class="guide" id="guide" aria-labelledby="guideH">
+  <div class="wrap">
+    <p class="eyebrow">Optional · investigate it yourself</p>
+    <h2 id="guideH">Did a decade of peat-fire governance change the story?</h2>
+    <p class="lede" id="heroStat">&nbsp;</p>
+    <div class="rq-card opt"><span class="rq-label">Optional research question</span><p class="rq">Has a decade of peat-fire governance broken the chain that turns <em>ocean heat</em> into <em>drought</em>, drought into <em>fire</em>, and fire into <em>haze</em>? Is the decline significant, and does it survive once the climate is taken into account? The full reasoning is on the <a href="background.html">Case, evidence &amp; methods</a> page.</p></div>
+    <p class="lede">Start a guided investigation: pick a topic, a place and a year in three short steps. The Map tab opens on exactly what you asked about, with the clues that matter highlighted.</p>
+    <p><button class="btn primary" type="button" id="gqOpen">🔎 New investigate</button></p>
+      </div>
+</section>
+</div>
+<div class="tabpanel" id="trend" role="tabpanel">
 <!-- ============================================================ TREND SCOUT -->
 <section class="scout" id="scout" aria-labelledby="scoutH">
   <div class="wrap">
@@ -121,15 +137,13 @@
 </section>
 
 <!-- ============================================================ INVESTIGATE POPUP -->
-<!-- ============================================================ GUIDED QUESTIONS -->
-<section class="guide" id="guide" aria-labelledby="guideH">
+</div>
+<div class="tabpanel" id="map" role="tabpanel">
+<section class="section mapsec" id="mapsec" aria-labelledby="mapH">
   <div class="wrap">
-    <p class="eyebrow">Optional · the governance question</p>
-    <h2 id="guideH">Did a decade of peat-fire governance change the story?</h2>
-    <p class="lede" id="heroStat">&nbsp;</p>
-    <div class="rq-card opt"><span class="rq-label">Optional research question</span><p class="rq">Has a decade of peat-fire governance broken the chain that turns <em>ocean heat</em> into <em>drought</em>, drought into <em>fire</em>, and fire into <em>haze</em>? Is the decline significant, and does it survive once the climate is taken into account? The full reasoning is on the <a href="background.html">Case, evidence &amp; methods</a> page.</p></div>
-    <p class="lede">Explore Sumatra and Kalimantan below, or start a guided investigation: pick a topic, a place and a year, and the map jumps to exactly what you asked about with the clues that matter highlighted.</p>
-    <p><button class="btn primary" type="button" id="gqOpen">🔎 New investigate</button></p>
+    <p class="eyebrow">The map</p>
+    <h2 id="mapH">Explore Sumatra and Kalimantan in 3D</h2>
+    <p class="lede">Fire detections, smoke (AOD) and surface PM₂.₅, rain, soil dryness, forest loss and the ocean, month by month from 2003 to 2025. Click any place for its case file, or start a guided investigation from the first tab.</p>
     <div class="gq-result" id="gqResult">
       <div class="gq-result-head">
         <b id="gqResultTitle">The full map · explore freely</b>
@@ -140,6 +154,8 @@
     </div>
   </div>
 </section>
+</div>
+</main>
 
 <dialog class="gqdlg" id="gqDlg" aria-labelledby="gqDlgH">
   <button class="gqx" type="button" id="gqDlgClose" aria-label="Close">✕</button>
