@@ -1,6 +1,6 @@
-// The two questions of the judging one-pager, answered from data/questions.json (built by analysis/08_questions.py):
-//   Q1  have fire hotspots, AOD (550 nm) and surface PM2.5 changed 2003-2025, and are the trends significant?
-//   Q2  do seasons with more fire hotspots coincide with higher AOD and PM2.5?
+// The question of the site, answered from data/questions.json (built by analysis/08_questions.py):
+//   have fire hotspots, AOD (550 nm) and surface PM2.5 changed 2003-2025 in Sumatra and Kalimantan, and are the trends significant?
+// The high-fire vs low-fire comparison is kept only as a one-paragraph summary inside the answer.
 import * as d3 from "d3";
 
 const VARS = [
@@ -52,7 +52,7 @@ function miniChart(host, years, vals, tr, color, fmt, ymax, mark) {
 }
 
 export async function initQuestions() {
-  const p1 = $("#qPanel1"), p2 = $("#qPanel2"); if (!p1 || !p2) return;
+  const p1 = $("#qPanel1"); if (!p1) return;
   let Q; try { Q = await (await fetch("data/questions.json")).json(); } catch { p1.textContent = "Could not load the results."; return; }
   const st = { q: 1, area: "Both islands", plain: false }, years = Q.years;
   // every answer comes in two versions: technical (statistics) and plain words (no jargon); the choice is kept across both questions
@@ -88,15 +88,19 @@ export async function initQuestions() {
     const word = (v) => (v.k === "fire" ? "fire hotspots" : v.k === "aod" ? "AOD" : "surface PM₂.₅");
     const phrase = (n, v) => { const t = Q.areas[n].trend[v.k]; return `${word(v)} ${t.direction === "down" ? "fell" : "rose"} ${Math.abs(t.pct_per_decade).toFixed(0)}% per decade (p = ${pTxt(t.p_adjusted)}, ${t.significant ? "significant" : "not significant"})`; };
     const ansIsl = ISL1.map((n) => `<b>${n}:</b> ${joinList(VARS.map((v) => phrase(n, v)))}.`).join(" ");
+    const link = ISL1.map((n) => { const C = Q.areas[n].compare; return { n, a: C.aod.ratio, p: C.pm25.ratio, ra: C.aod.spearman_rho, rp: C.pm25.spearman_rho, k: C.k }; });
+    const linkTech = `<b>Related check.</b> In each island's ${link[0].k} highest-fire seasons the Jul–Oct AOD and PM₂.₅ were, relative to the ${link[0].k} lowest-fire seasons, ${link.map((l) => `×${l.a.toFixed(1)} and ×${l.p.toFixed(1)} in ${l.n}`).join(" and ")} (Mann–Whitney p < 0.001; Spearman ρ ${link.map((l) => `${l.ra.toFixed(2)} / ${l.rp.toFixed(2)}`).join(" and ")} over all ${years.length} seasons). Association, not causation: AOD and PM₂.₅ do not identify fire as the only source, and both come from the same MERRA-2 aerosol model.`;
+    const linkPlain = `<b>Fire and haze move together.</b> The ${link[0].k} worst fire years were also the smokiest: haze was about ${link.map((l) => `${l.a.toFixed(1)} times as high in ${l.n}`).join(" and ")} as in the ${link[0].k} calmest years, and fine particles about ${link.map((l) => `${l.p.toFixed(1)} times`).join(" and ")}. That shows they rise together, not that fire is the only cause.`;
     const fall = (n, v) => { const t = Q.areas[n].trend[v.k]; return `${Math.abs(t.pct_per_decade).toFixed(0)}% ${t.direction === "down" ? "lower" : "higher"} each decade in ${n} (${sure(t)})`; };
     const plain1 = `<b>In short:</b> fires have clearly gone down, while smoke haze and fine particles have gone down too, but we are less sure about them.<ul class="q-plain">${VARS.map((v) => `<li><b>${v.k === "fire" ? "Fires" : v.k === "aod" ? "Smoke haze (AOD)" : "Fine particles near the ground (PM₂.₅)"}:</b> ${ISL1.map((n) => fall(n, v)).join("; ")}.</li>`).join("")}</ul>
       “Too uncertain” does not mean nothing changed. It means these years of data are too bumpy to be sure, and a longer record could settle it. One very smoky year is not a rising trend.`;
     p1.innerHTML = `<h3 class="q-title">Have fire hotspots, AOD and surface PM₂.₅ changed in Sumatra and Kalimantan, ${years[0]}–${years.at(-1)}? Side by side</h3>
       <div class="q1-rows"></div>
-      ${answerBlock(`${ansIsl} Where p ≥ 0.05 the data cannot rule out no change; a trend that is not yet significant is still a finding, and a longer record could settle it. A recurring pollution peak does not necessarily indicate an increasing trend.`, plain1)}
+      ${answerBlock(`${ansIsl} Where p ≥ 0.05 the data cannot rule out no change; a trend that is not yet significant is still a finding, and a longer record could settle it. A recurring pollution peak does not necessarily indicate an increasing trend.<br><br>${linkTech}`, plain1 + `<br><br>${linkPlain}`)}
       <h4 class="q-sub">Sumatra vs Kalimantan vs both islands</h4>
       <div class="q-tablewrap"><table class="qtable"><thead><tr><th>Variable</th><th>Sumatra</th><th>Kalimantan</th><th>Both islands</th></tr></thead><tbody>${VARS.map((v) => `<tr><td><b>${v.name}</b></td>${["Sumatra", "Kalimantan", "Both islands"].map((a) => { const t = Q.areas[a].trend[v.k]; return `<td class="${t.significant ? "qsig" : ""}">${pc(t.pct_per_decade)} <small>p = ${pTxt(t.p_adjusted)}${t.significant ? " ✓" : ""}</small></td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
-      <p class="q-method">${Q.method.trend}. ✓ = significant at 5%. Values are one Jul–Oct summary per year (23 complete seasons, no missing months). Both panels of a variable share the same y axis; hover a year to compare the islands. ${Q.method.pm25}: model-based, and it can overestimate inside fire plumes.</p>`;
+      <p class="q-method">${Q.method.trend}. ✓ = significant at 5%. Values are one Jul–Oct summary per year (23 complete seasons, no missing months). Both panels of a variable share the same y axis; hover a year to compare the islands. <button class="q-link" type="button" id="qMap">See the 2015 haze on the map →</button> ${Q.method.pm25}: model-based, and it can overestimate inside fire plumes.</p>`;
+    $("#qMap")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("gq:run", { detail: { what: "smoke", where: "Kalimantan", year: "2015" } })));
     const host = p1.querySelector(".q1-rows");
     VARS.forEach((v) => {
       const ymax = d3.max(ISL1, (n) => d3.max(Q.areas[n].series[v.k])) * 1.06;
@@ -109,54 +113,7 @@ export async function initQuestions() {
     });
   }
 
-  function renderQ2() {
-    const ISL = ["Sumatra", "Kalimantan"], idx = (ys) => ys.map((y) => years.indexOf(y));
-    const mean = (S, k, ys) => d3.mean(idx(ys).map((i) => S[k][i]));
-    const k8 = Q.areas.Sumatra.compare.k;
-    const rowsHtml = ISL.map((n) => { const C = Q.areas[n].compare, S = Q.areas[n].series; return `
-        <tr class="grp"><td colspan="6">${n}</td></tr>
-        <tr><td><b>Fire hotspots</b></td><td>${VARS[0].fmt(mean(S, "fire", C.high_years))}</td><td>${VARS[0].fmt(mean(S, "fire", C.low_years))}</td><td>×${(mean(S, "fire", C.high_years) / mean(S, "fire", C.low_years)).toFixed(1)}</td><td>—</td><td>—</td></tr>
-        ${["aod", "pm25"].map((k, i) => { const x = C[k], v = VARS[i + 1]; return `<tr><td><b>${v.name}</b></td><td>${v.fmt(x.high_mean)}</td><td>${v.fmt(x.low_mean)}</td><td>×${x.ratio.toFixed(1)}</td><td>${pTxt(x.mannwhitney_p)}</td><td>${x.spearman_rho.toFixed(2)} <small>p ${pTxt(x.spearman_p)}</small></td></tr>`; }).join("")}`; }).join("");
-    const ans = ISL.map((n) => { const C = Q.areas[n].compare; return `<b>${n}</b>: AOD <b>×${C.aod.ratio.toFixed(1)}</b> and surface PM₂.₅ <b>×${C.pm25.ratio.toFixed(1)}</b> (both p ${pTxt(Math.max(C.aod.mannwhitney_p, C.pm25.mannwhitney_p))}; Spearman ρ = ${C.aod.spearman_rho.toFixed(2)} for AOD, ${C.pm25.spearman_rho.toFixed(2)} for PM₂.₅)`; }).join("; ");
-    const plain2 = `<b>In short: yes.</b> The years with the most fires were also the smokiest years, in both islands.<ul class="q-plain">${ISL.map((n) => { const C = Q.areas[n].compare; return `<li><b>${n}:</b> in the ${k8} worst fire years the haze was ${timesWord(C.aod.ratio)} and the fine particles ${timesWord(C.pm25.ratio)} as high as in the ${k8} calmest years.</li>`; }).join("")}</ul>
-      This is a very strong pattern, but it shows that fire and smoke rise together, not that fire is the only cause. Dust, other burning and weather also add particles.`;
-    p2.innerHTML = `<h3 class="q-title">Do seasons with more fire hotspots coincide with higher AOD and surface PM₂.₅? Sumatra and Kalimantan side by side</h3>
-      <div class="q-legend"><span><i class="dot" style="background:${HIGH}"></i>${k8} highest-fire seasons</span><span><i class="dot" style="background:${LOW}"></i>${k8} lowest-fire seasons</span><span><i class="dot" style="background:${MID}"></i>other seasons</span><span>Same y axis in both panels · hover a year to see it in every chart</span></div>
-      <div class="q1-rows"></div>
-      <div class="q-tablewrap"><table class="qtable"><thead><tr><th></th><th>${k8} highest-fire seasons</th><th>${k8} lowest-fire seasons</th><th>Ratio</th><th>Mann–Whitney p</th><th>Spearman ρ, all ${years.length} seasons</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
-      ${answerBlock(`Yes, in both. In the highest-fire seasons the Jul–Oct level was ${ans}, relative to the lowest-fire seasons.`, plain2)}
-      <p class="q-method"><b>Association, not causation.</b> AOD and PM₂.₅ do not identify fire as the only source of particles, and both come from the same MERRA-2 aerosol model, so they are not independent evidence of each other. High-fire years: Sumatra ${Q.areas.Sumatra.compare.high_years.join(", ")}; Kalimantan ${Q.areas.Kalimantan.compare.high_years.join(", ")}. <button class="q-link" type="button" id="qMap">Open 2015 on the map →</button></p>`;
-    const host = p2.querySelector(".q1-rows"), all = [];
-    VARS.forEach((v) => {
-      const ymax = d3.max(ISL, (n) => d3.max(Q.areas[n].series[v.k])) * 1.06;
-      const row = document.createElement("div"); row.className = "q1-row";
-      row.innerHTML = `<div class="q1-var" style="color:${v.color}"><b>${v.name}</b> <span class="q1-info" tabindex="0" data-tip="${DESC[v.k]}">ⓘ</span> <small>${v.unit} · ${v.src}</small></div><div class="q1-pair"></div>`;
-      ISL.forEach((n) => {
-        const A = Q.areas[n], C = A.compare, el = document.createElement("div"); el.className = "qcard";
-        const stat = v.k === "fire" ? { big: `×${(mean(A.series, "fire", C.high_years) / mean(A.series, "fire", C.low_years)).toFixed(1)}`, badge: "", tip: "Average fire hotspots in the highest-fire seasons divided by the lowest-fire seasons." }
-          : { big: `×${C[v.k].ratio.toFixed(1)}`, badge: `Spearman ${C[v.k].spearman_rho.toFixed(2)} · p ${pTxt(C[v.k].mannwhitney_p)}`, tip: `Average ${v.name} in the highest-fire seasons divided by the lowest-fire seasons. Mann–Whitney p compares the two groups; Spearman ρ is the rank correlation with fire over all ${years.length} seasons.` };
-        el.innerHTML = `<div class="qc-top"><div class="qc-head"><b>${n}</b><small>${A.n_cells} cells</small></div>
-          <div class="qc-big up" data-tip="${stat.tip}">${stat.big}<small>high vs low-fire seasons</small></div>${stat.badge ? `<span class="qbadge sig" data-tip="${stat.tip}">${stat.badge}</span>` : ""}</div><div class="qc-chart"></div>`;
-        const ctl = miniChart(el.querySelector(".qc-chart"), years, A.series[v.k], null, v.color, v.fmt, ymax, { hi: new Set(C.high_years), lo: new Set(C.low_years) });
-        all.push(ctl); row.querySelector(".q1-pair").append(el);
-      });
-      host.append(row);
-    });
-    // one hover shows the same season in all six charts
-    host.addEventListener("qyear", (e) => all.forEach((c) => (e.detail < 0 ? c.hide() : c.show(e.detail))));
-    $("#qMap")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("gq:run", { detail: { what: "smoke", where: "Kalimantan", year: "2015" } })));
-  }
-
-  function render() {
-    $("#qt1").setAttribute("aria-selected", st.q === 1); $("#qt2").setAttribute("aria-selected", st.q === 2);
-    document.querySelectorAll("[data-area]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.area === st.area));
-    p1.hidden = st.q !== 1; p2.hidden = st.q !== 2;
-    const ar = document.querySelector(".qarea"); if (ar) ar.hidden = true;   // both questions show the two islands side by side
-    (st.q === 1 ? renderQ1 : renderQ2)();
-  }
-  $("#qt1").addEventListener("click", () => { st.q = 1; render(); });
-  $("#qt2").addEventListener("click", () => { st.q = 2; render(); });
-  document.querySelectorAll("[data-area]").forEach((b) => b.addEventListener("click", () => { st.area = b.dataset.area; render(); }));
+  function render() { renderQ1(); }
   render();
 
   // data quality, coverage, missing observations
