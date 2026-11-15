@@ -55,6 +55,9 @@
   .lit.off { color: var(--muted); border: 1px solid var(--line); }
   .legend { padding: 8px 10px 4px; font-size: 11.5px; color: var(--text-2); border-top: 1px solid var(--line); margin-top: 4px; }
   .legend .bar { height: 8px; border-radius: 3px; margin: 6px 0 3px; }
+  .legend .seg { display: flex; gap: 4px; margin: 6px 0 2px; }
+  .legend .seg button { flex: 1; font: inherit; font-size: 10.5px; padding: 5px 6px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--text-2); cursor: pointer; }
+  .legend .seg button[aria-pressed="true"] { background: #b39ddb; color: #17141f; border-color: #b39ddb; font-weight: 600; }
   .legend .ends { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted); }
 
   /* headline */
@@ -353,6 +356,7 @@ cells.forEach(c => {
 const soilOf = (c, t) => c.s.soil[t] / 1000;
 const lossOf = (c, t) => (c.s.loss[t] == null ? null : c.s.loss[t] / 10);
 const aodOf = (c, t) => (c.s.aod[t] == null ? null : c.s.aod[t] / 1000);
+const pmOf = (c, t) => (c.s.pm == null || c.s.pm[t] == null ? null : c.s.pm[t] / 10);
 const dmiOf = t => DATA.dmi[t];
 const fmtIdx = v => (v == null ? 'n/a' : (v >= 0 ? '+' : '') + v.toFixed(1));
 const sigm = z => 1 / (1 + Math.exp(-z));
@@ -408,10 +412,12 @@ const LAYERS = {
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,#2a2026,#5e2440,#c5426f,#ee8ab0,#ffd1e3)"></div><div class="ends"><span>0.95 wet</span><span>${THR_B.toFixed(2)}</span><span>0.60 dry</span></div>NASA POWER root-zone soil wetness (MERRA-2).` },
   C: { k: 'C', name: 'Forest loss', d: 'Tree cover lost since 2001 (Hansen/GFW)', color: '#c9a26b',
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,#26301f,#5e4a14,#a8781c,#e0a94a,#ffe3a1)"></div><div class="ends"><span>0%</span><span>${THR_C}%</span><span>80%+</span></div>Hansen/UMD tree-cover loss since 2001, through ${DATA.lossLast}.` },
-  E: { k: 'E', name: 'Smoke from space', d: 'Aerosol optical depth (NASA MERRA-2)', color: '#b39ddb',
-    legend: () => `<div class="bar" style="background:linear-gradient(90deg,${ATM.aod.ramp.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',')})"></div>
-      <div class="ends"><span>0.1 clear</span><span>1.0</span><span>2.0+ AOD</span></div>
-      <b>${ATM.aod.name}</b> on a sheet above the islands. ${ATM.aod.note}<br><span style="color:var(--muted)">${ATM.aod.inst}</span>` },
+  E: { k: 'E', name: 'Smoke from space', d: 'Haze (AOD) or surface PM₂.₅ (NASA MERRA-2)', color: '#b39ddb',
+    legend: () => { const A = ATM[state.atm], pm = state.atm === 'pm25';
+      return `<div class="seg" role="group" aria-label="Smoke measure"><button type="button" data-atm="aod" aria-pressed="${!pm}">AOD · whole air column</button><button type="button" data-atm="pm25" aria-pressed="${pm}">PM₂.₅ · near the ground</button></div>
+      <div class="bar" style="background:linear-gradient(90deg,${A.ramp.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',')})"></div>
+      <div class="ends">${pm ? '<span>0 clean</span><span>75</span><span>150+ µg/m³</span>' : '<span>0.1 clear</span><span>1.0</span><span>2.0+ AOD</span>'}</div>
+      <b>${A.name}</b> on a sheet above the islands. ${A.def}<br>${A.note}<br><span style="color:var(--muted)">${A.inst}</span>`; } },
   D: { k: 'D', name: 'Ocean: El Niño & IOD', d: 'Cooler seas around Indonesia = less rain', color: '#5fa8ff',
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,#0d2233,#0f3550,#1c5a8a,#3f8fd6,#9fd0ff)"></div><div class="ends"><span>normal</span><span>strong drought pressure</span></div>Brighter sea = El Niño / positive IOD pulling rain away.` }
 };
@@ -419,7 +425,7 @@ const layerLit = (k, t) => {
   const zone = cells.filter(c => c.s.fire[NOW] >= 0); // all
   if (k === 'fire') return null;
   if (k === 'D') return dangerD(t);
-  if (k === 'E') { const m = atmMaxNow(); return m.p == null ? null : m.p > 1.0; }
+  if (k === 'E') { const m = atmMaxNow('aod'); return m.p == null ? null : m.p > 1.0; }
   const share = f => zone.filter(f).length / zone.length;
   if (k === 'A') return share(c => c.s.rain[t] < 40) > 0.25;
   if (k === 'B') return share(c => soilOf(c, t) < THR_B) > 0.3;
@@ -768,13 +774,14 @@ function renderLayers() {
     return `<button class="layer${state.rel.includes(k) ? ' rel' : ''}" data-k="${k}" aria-pressed="${state.layer === k}"><span class="k" style="background:${L.color}">${L.k}</span><span><span class="t">${L.name}</span><span class="d">${L.d}</span></span>${lit == null ? '' : `<span class="lit ${lit ? 'on' : 'off'}">${lit ? '● LIT' : '○ off'}</span>`}</button>`; }).join('')
     + `<div class="legend"><b style="color:var(--text)">${LAYERS[state.layer].name}</b>${LAYERS[state.layer].legend()}</div>`;
   $('layers').querySelectorAll('.layer').forEach(b => b.onclick = () => { state.layer = b.dataset.k; paint(); renderLayers(); renderHeadline(); });
+  $('layers').querySelectorAll('[data-atm]').forEach(b => b.onclick = () => { state.atm = b.dataset.atm; paint(); renderLayers(); renderHeadline(); });
 }
 function renderHeadline() {
   const t = state.t, f = cells.reduce((s, c) => s + c.s.fire[t], 0);
   const lit = ['D', 'A', 'B', 'C', 'E'].filter(k => layerLit(k, t));
   $('hM').textContent = mlab(t) + (t === NOW ? ' · latest' : '');
-  const am = atmMaxNow();
-  $('hS').innerHTML = `${fireOK(t) ? `<b>${f.toLocaleString()}</b> fire detections` : '<span class="pending">fire archive not yet published (NASA FIRMS)</span>'} · clues lit: ${lit.length ? lit.map(k => `<b style="color:var(--clue)">${k}</b>`).join(' ') : 'none'} · 🛰 AOD peak <b style="color:#c9b6ff">${am.p == null ? 'n/a' : am.p.toFixed(2)}</b>`;
+  const am = atmMaxNow('aod'), pk = atmMaxNow('pm25');
+  $('hS').innerHTML = `${fireOK(t) ? `<b>${f.toLocaleString()}</b> fire detections` : '<span class="pending">fire archive not yet published (NASA FIRMS)</span>'} · clues lit: ${lit.length ? lit.map(k => `<b style="color:var(--clue)">${k}</b>`).join(' ') : 'none'} · 🛰 AOD peak <b style="color:#c9b6ff">${am.p == null ? 'n/a' : am.p.toFixed(2)}</b> · PM₂.₅ peak <b style="color:#e6a8c8">${pk.p == null ? 'n/a' : pk.p.toFixed(0) + ' µg/m³'}</b>`;
   $('nowLbl').textContent = mlab(t);
 }
 function renderTimeline() {
@@ -865,14 +872,19 @@ const AG = { lon0: 95.25, lat1: 6.25, nx: 49, ny: 26, res: 0.5 };
 const aodGrid = new Map(); cells.forEach(c => aodGrid.set(`${Math.round((c.lon - AG.lon0) / AG.res)},${Math.round((AG.lat1 - c.lat) / AG.res)}`, c));
 const atmCache = new Map();
 function atmField(t) {
-  if (atmCache.has(t)) return atmCache.get(t);
+  const key = state.atm + ':' + t, of = state.atm === 'pm25' ? pmOf : aodOf;
+  if (atmCache.has(key)) return atmCache.get(key);
   const F = new Float32Array(AG.nx * AG.ny).fill(NaN);
-  for (let j = 0; j < AG.ny; j++) for (let i = 0; i < AG.nx; i++) { const c = aodGrid.get(`${i},${j}`); if (c) { const v = aodOf(c, t); if (v != null) F[j * AG.nx + i] = v; } }
-  atmCache.set(t, F); return F;
+  for (let j = 0; j < AG.ny; j++) for (let i = 0; i < AG.nx; i++) { const c = aodGrid.get(`${i},${j}`); if (c) { const v = of(c, t); if (v != null) F[j * AG.nx + i] = v; } }
+  atmCache.set(key, F); return F;
 }
 const ATM = {
   aod: { name: 'Smoke (aerosol optical depth, 550 nm)', unit: 'AOD', inst: 'NASA POWER · MERRA-2 AOD_55 (monthly)', f: v => v, fmt: v => v.toFixed(2), norm: v => v / 2,
-         ramp: ['#1e1b18', '#4a4038', '#8a7a68', '#c9b9a3', '#f4ece0'].map(hex), note: 'Above ~1 the sky turns hazy brown; smoke this thick blocks the sun.' }
+         ramp: ['#1e1b18', '#4a4038', '#8a7a68', '#c9b9a3', '#f4ece0'].map(hex), note: 'Above ~1 the sky turns hazy brown; smoke this thick blocks the sun.',
+         def: 'AOD is a <b>column</b> measure: how much sunlight all the particles in the air, from the ground to the top of the atmosphere, block. It is unitless and also counts smoke high above the surface.' },
+  pm25: { name: 'Surface PM₂.₅ (fine particles near the ground)', unit: 'µg/m³', inst: 'NASA GES DISC · MERRA-2 aerosol components (monthly), PM₂.₅ derived', f: v => v, fmt: v => v.toFixed(0), norm: v => v / 150,
+         ramp: ['#1b1d24', '#3b3550', '#7a4f8f', '#d0707a', '#ffd6a8'].map(hex), note: 'Monthly means: they understate daily spikes. The WHO 24-hour guideline is 15 µg/m³, so even a monthly mean above 35 is unhealthy.',
+         def: 'PM₂.₅ is a <b>surface</b> measure: the mass of particles smaller than 2.5 µm in the air people breathe, in µg/m³. Here it is computed from MERRA-2 dust, sea salt, black carbon, organic carbon and sulfate (Buchard et al. 2016), so it is a model estimate, not a ground monitor.' }
 };
 state.atm = 'aod';
 const atmVal = (k, v) => v;
@@ -888,13 +900,13 @@ const frame = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeomet
   new THREE.LineBasicMaterial({ color: 0xb39ddb, transparent: true, opacity: 0.5 }));
 frame.position.copy(sheet.position); frame.visible = false; scene.add(frame);
 function paintAtm() {
-  const F = atmField(state.t), A = ATM.aod;
+  const F = atmField(state.t), A = ATM[state.atm];
   for (let k = 0; k < F.length; k++) { const raw = F[k], v = isNaN(raw) ? 0 : clamp(A.norm(raw), 0, 1); const c = ramp(A.ramp, v);
     aimg.data[k * 4] = c[0] * 255; aimg.data[k * 4 + 1] = c[1] * 255; aimg.data[k * 4 + 2] = c[2] * 255; aimg.data[k * 4 + 3] = isNaN(raw) ? 0 : (0.15 + 0.8 * Math.min(1, v * 1.6)) * 255; }
   actx.putImageData(aimg, 0, 0); atex.needsUpdate = true;
   sheet.visible = frame.visible = state.layer === 'E';
 }
-function atmMaxNow() { let m = null, best = null; for (const c of cells) { const v = aodOf(c, state.t); if (v != null && (m == null || v > m)) { m = v; best = c; } }
+function atmMaxNow(k) { const of = (k || state.atm) === 'pm25' ? pmOf : aodOf; let m = null, best = null; for (const c of cells) { const v = of(c, state.t); if (v != null && (m == null || v > m)) { m = v; best = c; } }
   return { p: m, lon: best?.lon, lat: best?.lat }; }
 
 // ================= evidence from NASA (published measurements, linked to their source) =================
@@ -1192,6 +1204,8 @@ setTime(NOW); renderPanel(); loop();
       get: (cs, t) => t <= FL ? cs.reduce((s, c) => s + c.s.fire[t], 0) : null },
     aod:   { nonneg: true, g: 'Fires & haze', name: 'Smoke in the air', sub: 'NASA POWER · MERRA-2 AOD_55', unit: 'AOD', agg: 'mean', layer: 'E', def: 'How hazy the sky is (aerosol optical depth). Above about 1 it is visibly brown.', dec: 2,
       get: (cs, t) => { const v = cs.map(c => aodOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
+    pm25:  { nonneg: true, g: 'Fires & haze', name: 'Fine particles near the ground (PM₂.₅)', sub: 'NASA GES DISC · MERRA-2 aerosol components', unit: 'µg/m³', agg: 'mean', layer: 'E', def: 'Mass of particles under 2.5 µm in the air people breathe (surface, not the whole column like AOD). Model estimate from MERRA-2 components.', dec: 1,
+      get: (cs, t) => { const v = cs.map(c => pmOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
     rain:  { nonneg: true, g: 'Drought & rain', name: 'Rainfall', sub: 'NASA POWER · MERRA-2 PRECTOTCORR', unit: 'mm/day', agg: 'mean', layer: 'A', def: 'How much rain falls on average each day.', dec: 2,
       get: (cs, t) => cs.reduce((s, c) => s + c.s.rain[t] / 10, 0) / cs.length },
     soil:  { nonneg: true, g: 'Drought & rain', name: 'Soil moisture', sub: 'NASA POWER · MERRA-2 GWETROOT', unit: 'wetness 0–1', agg: 'mean', layer: 'B', def: 'How wet the root zone is, from 0 (dry) to 1 (saturated). Fire danger rises below about 0.87.', dec: 3,
