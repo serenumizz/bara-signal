@@ -1,7 +1,6 @@
 import * as d3 from "d3";
 import { MapScene, nearestTown } from "./scene.js";
 import { EXPLAIN_URL } from "./config.js";
-import { ARCH, VARS, SOURCES, GUIDES, matchText } from "./scout.js";
 import { initQuestions } from "./questions.js";
 import * as charts from "./charts.js";
 
@@ -156,60 +155,6 @@ setNavH(); window.addEventListener("resize", setNavH);
   frame.addEventListener("load", () => setLabPopup(false));
   $("#gqClose").addEventListener("click", () => { frame.src = "explore/"; $("#gqFull").href = "explore/"; $("#gqResultTitle").textContent = "The full map · explore freely"; });
   sync();
-})();
-
-// ------------------------------------------------------------------ trend scout: which variables could trend for this kind of place?
-(() => {
-  const out = $("#scoutOut"), hint = $("#scoutHint");
-  const esc = (t) => String(t).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
-  const link = (k) => `<a href="${SOURCES[k].url}" target="_blank" rel="noopener">${esc(SOURCES[k].name)} ↗</a>`;
-  let current = null;
-  function render({ kind, items, note, ai, picked }) {
-    const a = ARCH[kind];
-    const rows = items.map(([id, why]) => { const v = VARS[id]; return `<li>
-      <div class="sv-h"><b>${esc(v.name)}</b></div>
-      <p class="sv-def">${esc(v.def)}</p>
-      <p class="sv-why">${esc(why || v.def)}</p>
-      <p class="sv-src"><span>${esc(v.product)}</span> ${v.src.map(link).join(" · ")}</p></li>`; }).join("");
-    out.innerHTML = `<h3>${a ? a.emoji + " " + esc(a.label) : "Your region"} · ${items.length} variables worth checking</h3>
-      ${picked ? `<p class="sv-note">I picked up: <b>${esc(picked)}</b></p>` : ""}
-      ${note ? `<p class="sv-note ${ai ? "ai" : ""}">${ai ? "✨ " : ""}${esc(note)}${ai ? ' <span>AI note · Cloudflare Workers AI · the variables are chosen from a fixed NASA/NOAA list</span>' : ""}</p>` : ""}
-      <ol class="sv">${rows}</ol>
-      <div class="sv-how"><b>Then test it like a data detective.</b> Download the monthly series (daily and monthly data are the easiest), remove the seasonal cycle, then run a Mann–Kendall test and Sen's slope for the size of the trend. A trend that is not yet significant is still a finding: a longer record can make it significant. Guides: ${GUIDES.map((g) => `<a href="${g.url}" target="_blank" rel="noopener">${esc(g.name)} ↗</a>`).join(" · ")}</div>
-      <div class="sv-act">
-        ${a?.site ? `<button class="btn primary" type="button" id="svSite">${esc(a.site.text)} →</button>` : `<span class="sv-none">This site maps Sumatra and Kalimantan; use the tools above for your region.</span>`}
-        ${EXPLAIN_URL ? `<button class="btn" type="button" id="svAi">✨ Tailor with AI</button>` : ""}
-      </div>`;
-    out.hidden = false;
-    current = { kind, text: $("#scoutText").value.trim() };
-    $("#svSite")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("gq:run", { detail: a.site })));
-    $("#svAi")?.addEventListener("click", tailor);
-  }
-  const fromKind = (kind, extra = {}) => render({ kind, items: ARCH[kind].vars, ...extra });
-  function suggest() {
-    const t = $("#scoutText").value.trim(); if (!t) { hint.textContent = "Pick a kind of place above, or type a few words."; return; }
-    const kinds = matchText(t);
-    if (!kinds.length) { hint.textContent = "I could not match that to a kind of place. Pick a card above" + (EXPLAIN_URL ? ", or press “Tailor with AI” after choosing one." : "."); return; }
-    hint.textContent = "";
-    fromKind(kinds[0], { picked: kinds.map((k) => ARCH[k].label).join(", ") });
-  }
-  async function tailor() {
-    const btn = $("#svAi"); btn.disabled = true; btn.textContent = "✨ Asking the AI…";
-    const text = current.text || ARCH[current.kind].label;
-    try {
-      const r = await fetch(EXPLAIN_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "scout", text, lang: "en" }) });
-      const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
-      const kind = ARCH[j.kind] ? j.kind : current.kind;
-      render({ kind, items: j.ids.filter((i) => VARS[i]).map((i) => [i, (ARCH[kind].vars.find((v) => v[0] === i) || [])[1]]), note: j.note, ai: true });
-    } catch { btn.disabled = false; btn.textContent = "✨ Tailor with AI"; hint.textContent = "Could not reach the AI. The built-in suggestions above still apply."; }
-  }
-  $("#scoutCards").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-arch]"); if (!b) return;
-    $$("#scoutCards .scard").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    hint.textContent = ""; $("#scoutText").value = ""; fromKind(b.dataset.arch);
-  });
-  $("#scoutGo").addEventListener("click", suggest);
-  $("#scoutText").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); suggest(); } });
 })();
 
 // ------------------------------------------------------------------ ask the data: regency trends from Cloudflare D1 (via the Worker)
