@@ -75,7 +75,7 @@ const coefRows = [
   ["Rain ← ENSO + IOD", "rain (mm/d)", ch.climate_to_rain, ["oni", "dmi"]],
   ["Soil ← rain", "GWETROOT", ch.rain_to_soil, ["rain"]],
   ["ln(fire) ← soil + regime", "ln fire detections", ch.soil_to_fires, ["soil", "regime"]],
-  ["AOD ← ln(fire)", "AOD Aug–Oct", ch.fires_to_aod, ["ln_fires"]],
+  ["AOD ← ln(fire)", "AOD Jul–Oct", ch.fires_to_aod, ["ln_fires"]],
 ];
 $("#coefTable").innerHTML = `<thead><tr><th>Link</th><th>Term</th><th class="num">Coef.</th><th class="num">p</th><th class="num">R²</th><th class="num">LOO R²</th></tr></thead><tbody>${
   coefRows.map(([nm, , L, terms]) => terms.map((t, i) => `<tr><td>${i ? "" : nm}</td><td>${t}</td><td class="num">${d3.format("+.3f")(L.coef[t])}</td><td class="num">${pf(L.p[t])}</td><td class="num">${i ? "" : L.r2.toFixed(2)}</td><td class="num">${i ? "" : L.r2_loo.toFixed(2)}</td></tr>`).join("")).join("")}</tbody>`;

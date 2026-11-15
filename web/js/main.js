@@ -31,7 +31,8 @@ const tipHead = (d) => `<b>near ${d.town.name}</b> <span class="tk">· ${d.lat.t
 
 const warmOf = (oni) => Math.max(0, Math.min(1, (oni ?? 0) / 2.4));
 const dryOf = (soil) => Math.max(0, Math.min(1, (0.9 - soil) / 0.26));
-const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6));
+// calibrated to MERRA-2 TOTEXTTAU (Jul–Oct island mean, 2015 = 0.57); the scene looks the same as with the former POWER AOD scale (2015 = 1.12)
+const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.2) - 0.15) / 0.36));
 
 // ------------------------------------------------------------------ hero
 const y2015 = T.find((d) => d.year === 2015);
