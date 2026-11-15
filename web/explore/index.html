@@ -243,7 +243,7 @@
 
 <div class="leftcol"><div class="brand glass">
   <h1>Jejak <span>Api</span> · Explore the Islands</h1>
-  <p>Fly over Sumatra and Kalimantan on real terrain. Click any place to open its case file: the clues A–E measured from orbit, the fires, and the same spot in past fire years.</p>
+  <p>Fly over Sumatra and Kalimantan on real terrain. Click any place to open its case file: the clues (rain, soil dryness, forest loss, smoke) measured from orbit, the fires, and the same spot in past fire years.</p>
   <span class="proto real">REAL DATA · NASA FIRMS · NASA POWER · NOAA · GFW</span>
   <button class="pill" id="aboutBtn" style="margin-left:6px">Data &amp; sources</button>
 </div>
@@ -259,7 +259,7 @@
     <button class="pill play" id="playBtn">▶ Play</button>
     <span class="now" id="nowLbl"></span>
     <button class="pill" id="labBtn" title="Is it really changing? Test a trend with statistics">📈 Trend Lab</button> <button class="pill" id="contourBtn" aria-pressed="true" title="Show or hide elevation contour lines">⛰ Contours</button> <button class="pill" id="spaceBtn" title="Fly up to look down like a satellite">🛰 Space view</button><span class="spacer"></span>
-    <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:3px;background:#5fa8ff;vertical-align:middle"></span> D lit &nbsp; <span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
+    <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
     <span id="jumps"></span>
   </div>
   <svg id="tl" role="img" aria-label="Monthly NASA FIRMS fire detections across Sumatra and Kalimantan, 2003 to 2025"></svg>
@@ -340,7 +340,7 @@ const NOW = T - 1;
 const FIRST_YEAR = +MONTHS[0].slice(0, 4), NOW_YEAR = +MONTHS[NOW].slice(0, 4);
 const state = { t: NOW, layer: 'fire', sel: null, playing: false, rel: [] };
 // which clues matter for each guided question (set from the landing page)
-const REL = { fire: ['A', 'B'], drought: ['A', 'B', 'D'], smoke: ['E', 'fire'], forest: ['C'], ocean: ['D'] };
+const REL = { fire: ['A', 'B'], drought: ['A', 'B'], smoke: ['E', 'fire'], forest: ['C'] };
 const hl = k => state.rel.includes(k) ? ' hl' : '';
 
 // ---- real-data plumbing ----
@@ -418,8 +418,6 @@ const LAYERS = {
       <div class="bar" style="background:linear-gradient(90deg,${A.ramp.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',')})"></div>
       <div class="ends">${pm ? '<span>0 clean</span><span>75</span><span>150+ µg/m³</span>' : '<span>0.1 clear</span><span>1.0</span><span>2.0+ AOD</span>'}</div>
       <b>${A.name}</b> on a sheet above the islands. ${A.def}<br>${A.note}<br><span style="color:var(--muted)">${A.inst}</span>`; } },
-  D: { k: 'D', name: 'Ocean: El Niño & IOD', d: 'Cooler seas around Indonesia = less rain', color: '#5fa8ff',
-    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#0d2233,#0f3550,#1c5a8a,#3f8fd6,#9fd0ff)"></div><div class="ends"><span>normal</span><span>strong drought pressure</span></div>Brighter sea = El Niño / positive IOD pulling rain away.` }
 };
 const layerLit = (k, t) => {
   const zone = cells.filter(c => c.s.fire[NOW] >= 0); // all
@@ -778,7 +776,7 @@ function renderLayers() {
 }
 function renderHeadline() {
   const t = state.t, f = cells.reduce((s, c) => s + c.s.fire[t], 0);
-  const lit = ['D', 'A', 'B', 'C', 'E'].filter(k => layerLit(k, t));
+  const lit = ['A', 'B', 'C', 'E'].filter(k => layerLit(k, t));
   $('hM').textContent = mlab(t) + (t === NOW ? ' · latest' : '');
   const am = atmMaxNow('aod'), pk = atmMaxNow('pm25');
   $('hS').innerHTML = `${fireOK(t) ? `<b>${f.toLocaleString()}</b> fire detections` : '<span class="pending">fire archive not yet published (NASA FIRMS)</span>'} · clues lit: ${lit.length ? lit.map(k => `<b style="color:var(--clue)">${k}</b>`).join(' ') : 'none'} · 🛰 AOD peak <b style="color:#c9b6ff">${am.p == null ? 'n/a' : am.p.toFixed(2)}</b> · PM₂.₅ peak <b style="color:#e6a8c8">${pk.p == null ? 'n/a' : pk.p.toFixed(0) + ' µg/m³'}</b>`;
@@ -984,7 +982,7 @@ function renderPanel() {
   if (!state.sel) {
     P.innerHTML = `<div class="intro"><h2 style="margin-top:0">Case file</h2><div class="place">Pick a place to investigate</div>
       <p>Every 0.5° cell (~55 km) of Sumatra and Kalimantan carries ${NOW_YEAR - FIRST_YEAR + 1} years of satellite measurements. Click anywhere to see:</p>
-      <p>🔥 <b>The effect:</b> MODIS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
+      <p>🔥 <b>The effect:</b> MODIS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil dryness, C forest loss<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
       <h2>Or start with a fire hotspot</h2><div class="quick">${['Palangka Raya','Pekanbaru','Kayu Agung (OKI)','Pontianak','Jambi','Ketapang'].map(n => `<button class="pill" data-town="${n}">${n}</button>`).join('')}</div>
       <h2>Evidence from NASA</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
 </div>`;
@@ -1106,7 +1104,7 @@ setTime(NOW); renderPanel(); loop();
 // ================= guided question from the landing page: ?layer=&where=&year= =================
 (function applyGuide() {
   const q = new URLSearchParams(location.search), what = q.get('layer');
-  const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind' };
+  const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests' };
   if (!GL[what]) return;
   const where = (q.get('where') || 'Kalimantan').replace(/^Borneo$/, 'Kalimantan'), yr = q.get('year') || 'now';
   const town = TOWNS.find(x => x[0] === where), cellOf = town && nearestCell(town[1], town[2]);
