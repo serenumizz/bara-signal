@@ -556,3 +556,6 @@ html.intro-open, html.intro-open body { overflow: hidden; }
 .intro-start span { display: inline-block; margin-left: 6px; animation: introBob 1.4s ease-in-out infinite; }
 @keyframes introBob { 50% { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .intro, .intro-bg, .intro-copy, .intro-start span { transition: none; animation: none; } }
+
+.rq b { color: var(--fire-1); margin-right: 2px; }
+.rq-line { display: block; } .rq-line + .rq-line { margin-top: 10px; }
