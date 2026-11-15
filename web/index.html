@@ -78,22 +78,25 @@
 <!-- ============================================================ TREND SCOUT -->
 <section class="scout" id="scout" aria-labelledby="scoutH">
   <div class="wrap">
-    <p class="eyebrow">Trend scout · built-in guide + optional AI</p>
-    <h2 id="scoutH">Not sure which variable to look at?</h2>
-    <p class="lede">Pick a kind of place, or paste a news headline, a paper title, or a few words about a region. The scout suggests NASA variables that could show a trend there, explains each in plain words, and points to the tool in the challenge's resource list where you can get the time series.</p>
-    <div class="scards" id="scoutCards" role="group" aria-label="Kinds of place">
-        <button type="button" class="scard" data-arch="desert"><i aria-hidden="true">🏜️</i><b>Desert</b></button>
-        <button type="button" class="scard" data-arch="rainforest"><i aria-hidden="true">🌴</i><b>Rain forest</b></button>
-        <button type="button" class="scard" data-arch="estuary"><i aria-hidden="true">🌊</i><b>Tidal estuary / coast</b></button>
-        <button type="button" class="scard" data-arch="city"><i aria-hidden="true">🏙️</i><b>Atmosphere above a big city</b></button>
-        <button type="button" class="scard" data-arch="peat"><i aria-hidden="true">🔥</i><b>Peat swamp (this site)</b></button>
+    <p class="eyebrow">Trend scout · the two questions</p>
+    <h2 id="scoutH">Are fire and haze really going down?</h2>
+    <p class="lede">How have satellite-detected fire hotspots, aerosol optical depth at 550 nm (AOD) and surface PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and are the trends statistically significant? And do the seasons with more fire hotspots coincide with higher AOD and PM₂.₅?</p>
+    <div class="qbar">
+      <div class="qtabs" role="tablist" aria-label="Question">
+        <button type="button" role="tab" id="qt1" aria-selected="true"><span>1</span>Has it changed? Is it significant?</button>
+        <button type="button" role="tab" id="qt2" aria-selected="false"><span>2</span>Do high-fire seasons bring more haze?</button>
+      </div>
+      <div class="qarea" role="group" aria-label="Area">
+        <button type="button" data-area="Sumatra" aria-pressed="false">Sumatra</button>
+        <button type="button" data-area="Kalimantan" aria-pressed="false">Kalimantan</button>
+        <button type="button" data-area="Both islands" aria-pressed="true">Both islands</button>
+      </div>
     </div>
-    <div class="gq-ask">
-      <input id="scoutText" type="text" maxlength="300" autocomplete="off" aria-label="Describe a place, headline or paper" placeholder="…or paste a headline or paper title, e.g. “Mangrove loss threatens the Mekong delta” / “Polusi udara Jakarta makin parah”">
-      <button class="btn primary" type="button" id="scoutGo">Suggest</button>
-    </div>
-    <p class="gq-hint" id="scoutHint" aria-live="polite"></p>
-    <div class="scout-out" id="scoutOut" hidden></div>
+    <div class="qpanel" id="qPanel1" role="tabpanel" aria-labelledby="qt1"></div>
+    <div class="qpanel" id="qPanel2" role="tabpanel" aria-labelledby="qt2" hidden></div>
+
+    <details class="more">
+      <summary>Drill down: fire in one regency <small>(Cloudflare D1 database)</small></summary>
     <div class="tq" id="tq" hidden>
       <h3>Ask the data: is fire in a regency going up or down?</h3>
       <p class="tq-lede">Pick a regency and a period. The trend (Mann–Kendall test and Sen's slope) is computed on the fly from fire counts stored in a Cloudflare D1 database, then explained in plain words.</p>
@@ -107,6 +110,24 @@
       <p class="gq-hint" id="tqHint" aria-live="polite"></p>
       <div class="tq-out" id="tqOut" hidden></div>
     </div>
+    </details>
+    <details class="more">
+      <summary>Looking at another kind of place? Variable suggestions <small>(built-in guide + AI)</small></summary>
+      <p class="lede">Pick a kind of place, or paste a news headline, a paper title, or a few words about a region. The scout suggests NASA variables that could show a trend there, explains each in plain words, and points to the tool in the challenge's resource list where you can get the time series.</p>
+    <div class="scards" id="scoutCards" role="group" aria-label="Kinds of place">
+        <button type="button" class="scard" data-arch="desert"><i aria-hidden="true">🏜️</i><b>Desert</b></button>
+        <button type="button" class="scard" data-arch="rainforest"><i aria-hidden="true">🌴</i><b>Rain forest</b></button>
+        <button type="button" class="scard" data-arch="estuary"><i aria-hidden="true">🌊</i><b>Tidal estuary / coast</b></button>
+        <button type="button" class="scard" data-arch="city"><i aria-hidden="true">🏙️</i><b>Atmosphere above a big city</b></button>
+        <button type="button" class="scard" data-arch="peat"><i aria-hidden="true">🔥</i><b>Peat swamp (this site)</b></button>
+    </div>
+    <div class="gq-ask">
+      <input id="scoutText" type="text" maxlength="300" autocomplete="off" aria-label="Describe a place, headline or paper" placeholder="…or paste a headline or paper title, e.g. “Mangrove loss threatens the Mekong delta” / “Polusi udara Jakarta makin parah”">
+      <button class="btn primary" type="button" id="scoutGo">Suggest</button>
+    </div>
+    <p class="gq-hint" id="scoutHint" aria-live="polite"></p>
+    <div class="scout-out" id="scoutOut" hidden></div>
+    </details>
     <p class="scout-src">Tools from the challenge resources:
       <a href="https://giovanni.gsfc.nasa.gov/" target="_blank" rel="noopener">Giovanni</a> ·
       <a href="https://disc.gsfc.nasa.gov/information/tools?title=Hydrology%20Time%20Series" target="_blank" rel="noopener">Hydrology Time Series</a> ·
@@ -310,6 +331,7 @@
           <tr><td>Root-zone / surface soil wetness</td><td>NASA POWER · GWETROOT, GWETTOP (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Main fire driver (fraction 0–1).</td></tr>
           <tr><td>Aerosol optical depth 550 nm</td><td>NASA POWER · AOD_55 (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Haze response (Aug–Oct).</td></tr>
           <tr><td>Tmax (trend tests)</td><td>NASA POWER · T2M_MAX</td><td>0.5°</td><td>Trend tests and context.</td></tr>
+          <tr><td>AOD and surface PM₂.₅ (Trend scout: the two questions)</td><td>MERRA-2 TOTEXTTAU, and PM₂.₅ derived from the aerosol components DUSMASS25, SSSMASS25, BCSMASS, 1.4 × OCSMASS, 1.375 × SO4SMASS · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly 2003–2025</td><td>Jul–Oct summaries per island: Sen's slope, Hamed–Rao autocorrelation-adjusted Mann–Kendall, and high- vs low-fire seasons (web/data/questions.json). PM₂.₅ is model-based, not a measurement.</td></tr>
           <tr><td>Air temperature, humidity, wind (Trend Lab)</td><td>MERRA-2 T2M, RH2M, SPEED · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly 2000–2025</td><td>Whole-study-area series in the Trend Lab (web/explore/regional.json).</td></tr>
           <tr><td>ENSO</td><td>NOAA CPC · Oceanic Niño Index (ERSSTv5) and Niño 3.4 (OISST)</td><td>monthly, 1950 → 2025</td><td>Upstream driver.</td></tr>
           <tr><td>Indian Ocean Dipole</td><td>NOAA PSL · DMI (HadISST)</td><td>monthly, 1870 → 2025</td><td>Upstream driver.</td></tr>

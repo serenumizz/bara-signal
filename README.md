@@ -13,7 +13,7 @@ Live: https://web-zeta-six-76.vercel.app
 | Active fires | NASA FIRMS · MODIS C6.1, Terra + Aqua (type 0, confidence ≥ 30) | all fire counts, trends, risk models |
 | Rain, root-zone wetness, aerosol optical depth (map cells, Evidence tab) | NASA POWER (MERRA-2): PRECTOTCORR, GWETROOT, AOD_55 | clues A, B, E |
 | Air temperature, humidity, wind (Trend Lab, whole study area) | MERRA-2 via NASA Giovanni / GES DISC: T2M, RH2M, SPEED | `web/explore/regional.json` |
-| Surface PM2.5 (in progress) | MERRA-2 aerosol components via NASA Giovanni (`analysis/07_pm25.py`) | PM2.5 layer and Trend Lab |
+| AOD at 550 nm and surface PM2.5 (the two questions) | MERRA-2 TOTEXTTAU and aerosol components via NASA Giovanni (`analysis/07_pm25.py`, `08_questions.py`) | Trend scout: trends and significance, and high- vs low-fire seasons |
 | ENSO and Indian Ocean Dipole | NOAA CPC Oceanic Niño Index, NOAA PSL Dipole Mode Index | clue D |
 | Tree-cover loss | Hansen/UMD Global Forest Change via Global Forest Watch | clue C |
 | Peat extent | PEATMAP (Xu et al. 2018) | model feature (peat fraction per cell) |
@@ -41,6 +41,7 @@ cd analysis
 ../.venv/bin/python 02_process.py indices merra2   # -> data/processed/drivers_monthly*.csv, merra2_grid.npz, indices_monthly.csv
 ../.venv/bin/python 06_regional_series.py       # monthly T2M / humidity / wind for the Trend Lab -> web/explore/regional.json
 ../.venv/bin/python 07_pm25.py                  # surface PM2.5 from MERRA-2 aerosol components -> data/processed/pm25_grid.npz
+../.venv/bin/python 08_questions.py             # the one-pager's two questions per island -> web/data/questions.json (needs pymannkendall)
 ```
 
 | Folder | Contents |

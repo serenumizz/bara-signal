@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { MapScene, nearestTown } from "./scene.js";
 import { EXPLAIN_URL } from "./config.js";
 import { ARCH, VARS, SOURCES, GUIDES, matchText } from "./scout.js";
+import { initQuestions } from "./questions.js";
 import * as charts from "./charts.js";
 
 const $ = (s) => document.querySelector(s);
@@ -353,3 +354,6 @@ setNavH(); window.addEventListener("resize", setNavH);
   }
   $("#tqGo").addEventListener("click", go);
 })();
+
+// the two questions of the one-pager (Trend scout section)
+initQuestions().catch((e) => console.error("questions", e));
