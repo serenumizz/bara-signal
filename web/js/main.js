@@ -37,7 +37,6 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 // ------------------------------------------------------------------ hero
 const y2015 = T.find((d) => d.year === 2015);
 const fireTr = A.trends.find((t) => t.key === "fires_season");
-$("#heroStat").textContent = `fire detections are down ${Math.abs(fireTr.pct_per_decade).toFixed(0)}% per decade. Is that real?`;
 $("#heroSub").innerHTML = `NASA satellites count fire hotspots (FIRMS), smoke haze (aerosol optical depth, AOD) and fine particles near the ground (surface PM₂.₅, MERRA-2) over Sumatra and Kalimantan, 2003–2025. Below we test whether each one changed and whether it is significant, and whether the seasons with the most fire also have the worst pollution. For scale: in 2015 MODIS counted <b>${fmt(y2015.fires_season)} fire detections</b> in four months.`;
 $("#liveLine").textContent = "NASA FIRMS MODIS fire detections, 2003–2025 (Terra + Aqua)";
 $("#genTime").textContent = A.generated.replace("T", " ");
@@ -70,7 +69,7 @@ setNavH(); window.addEventListener("resize", setNavH);
 // ------------------------------------------------------------------ guided questions → the answer opens right below, on the map
 (() => {
   const form = $("#gq"), place = $("#gqPlace"), year = $("#gqYear"), box = $("#gqResult"), frame = $("#gqFrame"), dlg = $("#gqDlg");
-  const LBL = { fire: "Fires & haze", drought: "Drought & rain", smoke: "Air from space", forest: "Forests", ocean: "Ocean & wind" };
+  const LBL = { fire: "Fires & haze", drought: "Drought & rain", smoke: "Air from space", forest: "Forests" };
   const read = () => {
     const f = new FormData(form), w = f.get("where");
     return { what: f.get("what"), where: w === "place" ? place.value : w, year: year.value };
@@ -82,7 +81,6 @@ setNavH(); window.addEventListener("resize", setNavH);
   // ---- "ask in your own words": English + Indonesian keywords → topic, place and year
   const TOWNS_ALL = [...place.options].map((o) => o.value);
   const TOPICS = [
-    ["ocean", /ocean|sea\b|wind|el ni|la ni|enso|iod|dipole|laut|angin|samudra/i],
     ["smoke", /smoke|haze|air quality|aerosol|asap|kabut|udara|polusi/i],
     ["drought", /drought|dry|rain|water|peat|moist|kering|kemarau|hujan|gambut|air tanah|lembap/i],
     ["forest", /forest|tree|deforest|logging|hutan|pohon|tebang|tutupan/i],
@@ -103,7 +101,7 @@ setNavH(); window.addEventListener("resize", setNavH);
   const askGo = () => {
     const t = $("#gqText").value.trim(), hint = $("#gqHint"); if (!t) { hint.textContent = "Type a question, or pick a topic above."; return; }
     const p = parseAsk(t);
-    if (!p.what) { hint.textContent = "I could not tell the topic. Mention fires, drought, smoke, forests or the ocean, or pick a card above."; return; }
+    if (!p.what) { hint.textContent = "I could not tell the topic. Mention fires, drought, smoke or forests, or pick a card above."; return; }
     form.elements.what.value = p.what;
     if (p.where) { if (TOWNS_ALL.includes(p.where)) { form.elements.where.value = "place"; place.value = p.where; } else form.elements.where.value = p.where; }
     if (p.year) year.value = p.year;
