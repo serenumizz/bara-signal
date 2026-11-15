@@ -5,18 +5,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bara</title>
-<meta name="description" content="Have fires, AOD and PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and do high-fire seasons have higher pollution? Built on NASA FIRMS and MERRA-2.">
+<meta name="description" content="How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and are the trends significant? Built on NASA FIRMS and MERRA-2.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Bara">
 <meta property="og:title" content="Bara">
-<meta property="og:description" content="Have fires, AOD and PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and do high-fire seasons have higher pollution? Built on NASA FIRMS and MERRA-2.">
+<meta property="og:description" content="How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and are the trends significant? Built on NASA FIRMS and MERRA-2.">
 <meta property="og:url" content="https://web-zeta-six-76.vercel.app/">
 <meta property="og:image" content="https://web-zeta-six-76.vercel.app/assets/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Bara">
-<meta name="twitter:description" content="Have fires, AOD and PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and do high-fire seasons have higher pollution? Built on NASA FIRMS and MERRA-2.">
+<meta name="twitter:description" content="How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and are the trends significant? Built on NASA FIRMS and MERRA-2.">
 <meta name="twitter:image" content="https://web-zeta-six-76.vercel.app/assets/og-image.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2c2 6 9 9 9 17a9 9 0 0 1-18 0c0-5 3-7 4-11 1 3 2 4 4 5-1-4 0-8 1-11z' fill='%23ff7a2f'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,13 +81,13 @@
   <div class="hero-copy">
     <p class="kicker">NASA Space Apps 2026 · Earth System Trend Detective</p>
     <h1>
-      <span class="line">Have fires, AOD, and PM<sub>2.5</sub> changed,</span>
-      <span class="line accent">and do high-fire seasons have higher pollution?</span>
+      <span class="line">Have fire hotspots, AOD and PM<sub>2.5</sub> changed across Sumatra and Kalimantan,</span>
+      <span class="line accent">and are the trends significant?</span>
     </h1>
     <p class="hero-sub" id="heroSub">&nbsp;</p>
     <div class="rq-card">
-      <span class="rq-label">Two questions</span>
-      <p class="rq"><span class="rq-line"><b>1.</b> How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan, and are the trends significant?</span><span class="rq-line"><b>2.</b> Do seasons with more fire hotspots also have higher AOD and PM₂.₅?</span></p>
+      <span class="rq-label">The question</span>
+      <p class="rq">How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan, and are the trends significant?</p>
     </div>
   </div>
   <div class="hero-foot">
@@ -100,7 +100,7 @@
   <div class="wrap">
     <p class="eyebrow">Optional · investigate it yourself</p>
     <h2 id="guideH">Investigate it yourself</h2>
-    <div class="rq-card opt"><span class="rq-label">The question</span><p class="rq">Have fires, AOD, and PM₂.₅ changed, and do high-fire seasons have higher pollution?</p></div>
+    <div class="rq-card opt"><span class="rq-label">The question</span><p class="rq">How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan, and are the trends significant?</p></div>
     <p class="lede">Start a guided investigation: pick a topic, a place and a year in three short steps. The Map tab opens on exactly what you asked about, with the clues that matter highlighted.</p>
     <p><button class="btn primary" type="button" id="gqOpen">🔎 New investigate</button></p>
       </div>
@@ -127,26 +127,14 @@
 <!-- ============================================================ TREND SCOUT -->
 <section class="scout" id="scout" aria-labelledby="scoutH">
   <div class="wrap">
-    <p class="eyebrow">Findings · the two questions</p>
+    <p class="eyebrow">Findings · the question</p>
     <h2 id="scoutH">Are fire and haze really going down?</h2>
-    <p class="lede">How have satellite-detected fire hotspots, aerosol optical depth at 550 nm (AOD) and surface PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and are the trends statistically significant? And do the seasons with more fire hotspots coincide with higher AOD and PM₂.₅?</p>
+    <p class="lede">How have fire hotspots, AOD (smoke haze) and surface PM₂.₅ changed across Sumatra and Kalimantan, and are the trends significant? Below: the trend for each variable in each island, with the answer in technical and in plain words, plus a short check of whether high-fire seasons also bring more haze.</p>
     <div class="defs" aria-label="What the two haze measures mean">
       <div><b>AOD · aerosol optical depth, 550 nm</b><span>A <em>column</em> measure: how much sunlight all particles between the ground and space block. Unitless; includes smoke high in the air and does not say what people breathe.</span></div>
       <div><b>PM₂.₅ · surface fine particles</b><span>A <em>near-ground</em> measure: mass of particles under 2.5 µm in the air at the surface, in µg/m³. Here a MERRA-2 model estimate (dust + sea salt + black carbon + organic carbon + sulfate), not a ground monitor.</span></div>
     </div>
-    <div class="qbar">
-      <div class="qtabs" role="tablist" aria-label="Question">
-        <button type="button" role="tab" id="qt1" aria-selected="true"><span>1</span>Has it changed? Is it significant?</button>
-        <button type="button" role="tab" id="qt2" aria-selected="false"><span>2</span>Do high-fire seasons bring more haze?</button>
-      </div>
-      <div class="qarea" role="group" aria-label="Area">
-        <button type="button" data-area="Sumatra" aria-pressed="false">Sumatra</button>
-        <button type="button" data-area="Kalimantan" aria-pressed="false">Kalimantan</button>
-        <button type="button" data-area="Both islands" aria-pressed="true">Both islands</button>
-      </div>
-    </div>
-    <div class="qpanel" id="qPanel1" role="tabpanel" aria-labelledby="qt1"></div>
-    <div class="qpanel" id="qPanel2" role="tabpanel" aria-labelledby="qt2" hidden></div>
+    <div class="qpanel" id="qPanel1"></div>
     <details class="more" id="qQuality"><summary>Data quality, coverage and missing observations</summary><div id="qQualityBody"></div></details>
 
     <details class="more">
