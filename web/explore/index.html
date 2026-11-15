@@ -339,6 +339,7 @@ const hl = k => state.rel.includes(k) ? ' hl' : '';
 const FL = DATA.fireLast;                       // last month covered by MODIS 8-day fire composites
 const fireOK = t => t <= FL;
 const THR_B = DATA.thrB;                        // root-zone wetness danger line (fitted)
+const THR_C = DATA.thrC ?? 35;                   // forest-loss danger line: fitted in the Resources-tab build, fixed 35% in the previous one
 cells.forEach(c => {
   c.s.fire = c.s.fire.map(v => Math.max(0, v)); // -1 = not yet archived → handled via fireOK()
   const fill = a => { let last = null; return a.map(v => (v == null ? last : (last = v))); };
@@ -351,6 +352,10 @@ const dmiOf = t => DATA.dmi[t];
 const fmtIdx = v => (v == null ? 'n/a' : (v >= 0 ? '+' : '') + v.toFixed(1));
 const sigm = z => 1 / (1 + Math.exp(-z));
 const logit = (M, x) => sigm(M.b + x.reduce((s, v, i) => s + M.coef[i] * (v - M.mu[i]) / M.sd[i], 0));
+// A model's input vector is built by feature NAME. The previous build's models have a peatFrac feature, the Resources-tab build's do not;
+// passing values by position silently mixes up the coefficients.
+const featVec = (M, v) => M.features.map(f => v[f] ?? 0);
+const hasPeatFeature = M => M.features.includes('peatFrac');
 const fireTxt = (c, t) => (fireOK(t) ? String(c.s.fire[t]) : 'n/a');
 
 // cell lookup on the 0.5° grid
@@ -364,7 +369,8 @@ function nearestCell(lon, lat) {
 const dangerD = t => (DATA.oni[t] ?? -9) >= 0.5 || (DATA.dmi[t] ?? -9) >= 0.4;
 // monthly fire-risk: logistic regression fitted on 2003–2025 cell-months (P of ≥10 fire pixels)
 const burnedBefore = (c, t) => { for (let k = 0; k < t && k <= FL; k++) if (c.s.fire[k] >= 10) return 1; return 0; };
-const riskOf = (c, t) => Math.round(100 * logit(DATA.riskModel, [c.s.rain[t] / 10, soilOf(c, t), DATA.oni[t] ?? 0, (lossOf(c, t) ?? 0) / 100, burnedBefore(c, t)]));
+const riskOf = (c, t) => Math.round(100 * logit(DATA.riskModel, featVec(DATA.riskModel, { rain: c.s.rain[t] / 10, soil: soilOf(c, t), oni: DATA.oni[t] ?? 0, peatFrac: c.peatFrac ?? 0,
+  lossFrac: (lossOf(c, t) ?? (hasPeatFeature(DATA.riskModel) ? 17 : 0)) / 100, burnedBefore: burnedBefore(c, t) })));
 
 const TOWNS = [
   ['Banda Aceh',95.32,5.55,1],['Meulaboh',96.13,4.14,0],['Medan',98.67,3.59,1],['Sibolga',98.78,1.74,0],['Padang',100.35,-0.95,1],
@@ -396,7 +402,7 @@ const LAYERS = {
   B: { k: 'B', name: 'Soil dryness', d: `Danger when root-zone wetness < ${THR_B.toFixed(2)}`, color: '#e0689a',
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,#2a2026,#5e2440,#c5426f,#ee8ab0,#ffd1e3)"></div><div class="ends"><span>0.95 wet</span><span>${THR_B.toFixed(2)}</span><span>0.60 dry</span></div>MERRA-2 root-zone soil wetness (NASA Giovanni).` },
   C: { k: 'C', name: 'Forest loss', d: 'Tree cover decline since 2001 (MODIS VCF)', color: '#c9a26b',
-    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#26301f,#5e4a14,#a8781c,#e0a94a,#ffe3a1)"></div><div class="ends"><span>0%</span><span>${DATA.thrC}%</span><span>80%+</span></div>MODIS MOD44B % tree cover, decline since 2001, through ${DATA.lossLast}.` },
+    legend: () => `<div class="bar" style="background:linear-gradient(90deg,#26301f,#5e4a14,#a8781c,#e0a94a,#ffe3a1)"></div><div class="ends"><span>0%</span><span>${THR_C}%</span><span>80%+</span></div>MODIS MOD44B % tree cover, decline since 2001, through ${DATA.lossLast}.` },
   E: { k: 'E', name: 'Smoke from space', d: 'Aerosol optical depth (NASA MERRA-2)', color: '#b39ddb',
     legend: () => `<div class="bar" style="background:linear-gradient(90deg,${ATM.aod.ramp.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',')})"></div>
       <div class="ends"><span>0.1 clear</span><span>1.0</span><span>2.0+ AOD</span></div>
@@ -412,7 +418,7 @@ const layerLit = (k, t) => {
   const share = f => zone.filter(f).length / zone.length;
   if (k === 'A') return share(c => c.s.rain[t] < 40) > 0.25;
   if (k === 'B') return share(c => soilOf(c, t) < THR_B) > 0.3;
-  if (k === 'C') return share(c => (lossOf(c, t) ?? 0) >= DATA.thrC) > 0.3;
+  if (k === 'C') return share(c => (lossOf(c, t) ?? 0) >= THR_C) > 0.3;
 };
 
 // ================= three.js scene =================
@@ -814,7 +820,7 @@ function caseRows(c) {
       D: big ? leadMonths(P, dangerD) : null,
       A: big ? leadMonths(P, i => c.s.rain[i] < 40) : null,
       B: big ? leadMonths(P, i => soilOf(c, i) < THR_B) : null,
-      C: big ? ((lossOf(c, P) ?? 0) >= DATA.thrC) : null,
+      C: big ? ((lossOf(c, P) ?? 0) >= THR_C) : null,
       firstLit: big ? Math.max(0, P - Math.max(leadMonths(P, dangerD), leadMonths(P, i => c.s.rain[i] < 40), leadMonths(P, i => soilOf(c, i) < THR_B))) : null };
   });
 }
@@ -923,11 +929,12 @@ function yearCheck(c, y) {
   const D = dangerD(iJul) || dangerD(iJun);
   const rain = (c.s.rain[iJun] + c.s.rain[iJul]) / 20, rainNorm = c._clim.rain, A = rain < 0.75 * rainNorm;
   const soil = (soilOf(c, iJun) + soilOf(c, iJul)) / 2, B = soil <= c._clim.soilQ25;
-  const loss = lossOf(c, iJul), C = loss != null && loss >= DATA.thrC;
+  const loss = lossOf(c, iJul), C = loss != null && loss >= THR_C;
   const H = c.s.fire.slice(0, iJun).some(v => v >= 10);
   // chance = logistic model fitted on every cell and July 2003–2025 (leave-one-year-out AUC in DATA.julyModel)
   const oniJJ = ((DATA.oni[iJun] ?? 0) + (DATA.oni[iJul] ?? 0)) / 2;
-  const p = logit(DATA.julyModel, [oniJJ, rain / rainNorm, (soil - c._clim.soilMean) / (c._clim.soilSd || 1), (loss ?? 0) / 100, H ? 1 : 0]);
+  const JM = DATA.julyModel, p = logit(JM, featVec(JM, { oniJJ, rainRatioJJ: rain / rainNorm, soilZJJ: (soil - c._clim.soilMean) / (c._clim.soilSd || 1), peatFrac: c.peatFrac ?? 0,
+    lossFrac: (loss ?? (hasPeatFeature(JM) ? 17 : 0)) / 100, burnedBefore: (hasPeatFeature(JM) && c.peat) || H ? 1 : 0 }));
   const chance = Math.round(100 * p), cut = Math.round(100 * DATA.julyModel.cut);
   const pending = iJul + 4 > FL;
   let peak = 0, pi = iJul; for (let k = iJul + 1; k <= Math.min(FL, iJul + 4); k++) if (c.s.fire[k] > peak) { peak = c.s.fire[k]; pi = k; }
@@ -1026,8 +1033,8 @@ function renderPanel() {
       spark('spA', c.s.rain.map(v => v / 10), { color: '#f2b33d', thr: 4, dir: 'below', lo: 0, hi: 15, fmt: v => v.toFixed(1), unit: 'mm/day' }))}
     ${clue('B', '#e0689a', 'Root-zone soil wetness', soil.toFixed(2), '0–1', soil < THR_B, `Danger below ${THR_B.toFixed(2)} (fitted)`,
       spark('spB', c.s.soil.map(v => v / 1000), { color: '#e0689a', thr: THR_B, dir: 'below', lo: 0.55, hi: 1, fmt: v => v.toFixed(3), unit: 'root-zone wetness' }))}
-    ${clue('C', '#c9a26b', 'Tree cover decline since 2001', loss == null ? '—' : loss.toFixed(0), loss == null ? '' : '%', (loss ?? 0) >= DATA.thrC, `Danger at ${DATA.thrC}%+ (fitted) · MODIS VCF through ${DATA.lossLast}`,
-      loss == null ? '' : spark('spC', c.s.loss.map(v => (v ?? 0) / 10), { color: '#c9a26b', thr: DATA.thrC, dir: 'above', lo: 0, hi: 90, fmt: v => v.toFixed(0), unit: '% decline' }), loss == null)}
+    ${clue('C', '#c9a26b', 'Tree cover decline since 2001', loss == null ? '—' : loss.toFixed(0), loss == null ? '' : '%', (loss ?? 0) >= THR_C, `Danger at ${THR_C}%+ (fitted) · MODIS VCF through ${DATA.lossLast}`,
+      loss == null ? '' : spark('spC', c.s.loss.map(v => (v ?? 0) / 10), { color: '#c9a26b', thr: THR_C, dir: 'above', lo: 0, hi: 90, fmt: v => v.toFixed(0), unit: '% decline' }), loss == null)}
     <div class="src">Orange bands = fire seasons of 2015, 2019, 2023, 2026. Dashed line = danger line. Click any line to travel to that month.</div>
 
     <h2>🛰 The air above · seen from space</h2>
@@ -1078,7 +1085,7 @@ function loop() {
   if (pin.visible) { const s = 1 + 0.35 * ((et * 0.8) % 1); ring.scale.set(s, s, s); ring.material.opacity = 0.8 * (1 - (et * 0.8) % 1); }
   controls.update(); renderer.render(scene, camera); updateLabels(); updateEvPins();
 }
-$('thrBLbl').textContent = THR_B.toFixed(2); $('thrCLbl').textContent = DATA.thrC; $('lossLastLbl').textContent = DATA.lossLast;
+$('thrBLbl').textContent = THR_B.toFixed(2); $('thrCLbl').textContent = THR_C; $('lossLastLbl').textContent = DATA.lossLast;
 $('lastLbl').textContent = mlab(NOW); $('fireLastLbl').textContent = mlab(FL);
 $('modelLbl').textContent = `Monthly risk AUC ${DATA.riskModel.auc_loyo} · July check AUC ${DATA.julyModel.auc_loyo}`;
 setTime(NOW); renderPanel(); loop();
