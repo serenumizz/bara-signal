@@ -502,3 +502,5 @@ html { scroll-behavior: smooth; }
 .q-quality { margin: 10px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
 .q-quality li { margin-bottom: 8px; }
 .q-quality b { color: var(--text); }
+
+.gq-hint.oos { color: #ffb4a0; border: 1px solid #ff7a2f66; background: #ff7a2f14; border-radius: 8px; padding: 8px 10px; line-height: 1.45; }

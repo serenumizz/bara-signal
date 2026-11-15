@@ -98,10 +98,13 @@ setNavH(); window.addEventListener("resize", setNavH);
     else if (/\b(now|latest|current|today|sekarang|terbaru|saat ini)\b/i.test(t)) out.year = "2025"; // the latest year covered
     return out;
   }
+  const OUT_OF_SCOPE = "Out of scope: this site only answers questions about fire hotspots, smoke haze (AOD) and surface PM₂.₅ in Sumatra and Kalimantan, 2003–2025. Try “Where did fires peak in 2015?” or “How bad was the smoke in Kalimantan in 2019?”, or pick a topic above.";
   const askGo = () => {
-    const t = $("#gqText").value.trim(), hint = $("#gqHint"); if (!t) { hint.textContent = "Type a question, or pick a topic above."; return; }
+    const t = $("#gqText").value.trim(), hint = $("#gqHint"); if (!t) { hint.classList.remove("oos"); hint.textContent = "Type a question, or pick a topic above."; return; }
     const p = parseAsk(t);
-    if (!p.what) { hint.textContent = "I could not tell the topic. Mention fires, drought, smoke or forests, or pick a card above."; return; }
+    const outside = /\b(19\d\d|20(?:0[0-2]|2[6-9]|[3-9]\d))\b/.test(t) || /java|jawa|jakarta|bali\b|sulawesi|papua|maluku|lombok|singapore|malaysia|thailand|vietnam|australia|amazon|california|africa|europe|america/i.test(t);
+    if (!p.what || outside) { hint.classList.add("oos"); hint.textContent = OUT_OF_SCOPE; return; }
+    hint.classList.remove("oos");
     form.elements.what.value = p.what;
     if (p.where) { if (TOWNS_ALL.includes(p.where)) { form.elements.where.value = "place"; place.value = p.where; } else form.elements.where.value = p.where; }
     if (p.year) year.value = p.year;
