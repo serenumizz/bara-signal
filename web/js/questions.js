@@ -14,18 +14,19 @@ const pc = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(0)}%`;
 const joinList = (a) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a.at(-1)}` : a[0] ?? "");
 const $ = (s) => document.querySelector(s);
 
-function miniChart(host, years, vals, tr, color, fmt) {
-  const W = 300, H = 120, m = { l: 38, r: 6, t: 8, b: 20 };
-  const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Yearly values with the Sen's slope trend line");
-  const x = d3.scaleBand().domain(years).range([m.l, W - m.r]).padding(0.18), y = d3.scaleLinear().domain([0, d3.max(vals) * 1.06]).nice().range([H - m.b, m.t]);
+function miniChart(host, years, vals, tr, color, fmt, ymax) {
+  const W = 300, H = 130, m = { l: 38, r: 8, t: 8, b: 20 };
+  const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Yearly line chart with the Sen's slope trend line");
+  const x = d3.scalePoint().domain(years).range([m.l + 4, W - m.r - 4]), y = d3.scaleLinear().domain([0, ymax ?? d3.max(vals) * 1.06]).nice().range([H - m.b, m.t]);
   svg.append("g").selectAll("line").data(y.ticks(3)).join("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y).attr("stroke", "rgba(255,255,255,.08)");
   svg.append("g").selectAll("text").data(y.ticks(3)).join("text").attr("x", m.l - 5).attr("y", (d) => y(d) + 3).attr("text-anchor", "end").attr("fill", "#8d8c84").attr("font-size", 9).attr("font-family", "monospace").text((d) => (d >= 1000 ? d3.format(".2s")(d) : d));
-  svg.append("g").selectAll("rect").data(years).join("rect").attr("x", (d) => x(d)).attr("width", x.bandwidth()).attr("y", (d, i) => y(vals[i])).attr("height", (d, i) => y(0) - y(vals[i])).attr("rx", 1.5).attr("fill", color).attr("opacity", 0.75)
+  svg.append("path").datum(vals).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).attr("stroke-linejoin", "round").attr("d", d3.line().x((d, i) => x(years[i])).y((d) => y(d)));
+  svg.append("g").selectAll("circle").data(years).join("circle").attr("cx", (d) => x(d)).attr("cy", (d, i) => y(vals[i])).attr("r", 2.6).attr("fill", color).attr("stroke", "#0b0e14").attr("stroke-width", 0.8)
     .append("title").text((d, i) => `${d}: ${fmt(vals[i])}`);
   const med = d3.median(vals.map((v, i) => v - tr.sen_per_year * i)), n = vals.length - 1;
-  svg.append("line").attr("x1", x(years[0]) + x.bandwidth() / 2).attr("x2", x(years.at(-1)) + x.bandwidth() / 2).attr("y1", y(Math.max(0, med))).attr("y2", y(Math.max(0, med + tr.sen_per_year * n)))
+  svg.append("line").attr("x1", x(years[0])).attr("x2", x(years.at(-1))).attr("y1", y(Math.max(0, med))).attr("y2", y(Math.max(0, med + tr.sen_per_year * n)))
     .attr("stroke", "#f0efec").attr("stroke-width", 2).attr("stroke-dasharray", "5 3");
-  [years[0], years[Math.floor(n / 2)], years.at(-1)].forEach((d) => svg.append("text").attr("x", x(d) + x.bandwidth() / 2).attr("y", H - 6).attr("text-anchor", "middle").attr("fill", "#8d8c84").attr("font-size", 9).attr("font-family", "monospace").text(d));
+  [years[0], years[Math.floor(n / 2)], years.at(-1)].forEach((d) => svg.append("text").attr("x", x(d)).attr("y", H - 6).attr("text-anchor", "middle").attr("fill", "#8d8c84").attr("font-size", 9).attr("font-family", "monospace").text(d));
 }
 
 export async function initQuestions() {
@@ -33,32 +34,38 @@ export async function initQuestions() {
   let Q; try { Q = await (await fetch("data/questions.json")).json(); } catch { p1.textContent = "Could not load the results."; return; }
   const st = { q: 1, area: "Both islands" }, years = Q.years;
 
-  function trendCard(v, A) {
-    const t = A.trend[v.k], s = A.series[v.k];
+  const ISL1 = ["Sumatra", "Kalimantan"];
+  function trendCard(v, name, ymax) {
+    const A = Q.areas[name], t = A.trend[v.k], s = A.series[v.k];
     const el = document.createElement("div"); el.className = "qcard";
-    el.innerHTML = `<div class="qc-head"><b>${v.name}</b><small>${v.unit}</small></div>
+    el.innerHTML = `<div class="qc-head"><b>${name}</b><small>${Q.areas[name].n_cells} cells</small></div>
       <div class="qc-big ${t.direction}">${pc(t.pct_per_decade)}<small>per decade</small></div>
       <span class="qbadge ${t.significant ? "sig" : "ns"}">${t.significant ? "Significant" : "Not significant"} · p = ${pTxt(t.p_adjusted)}</span>
       <div class="qc-chart"></div>
-      <p class="qc-fine">Sen's slope ${t.sen_per_year > 0 ? "+" : "−"}${v.fmt(Math.abs(t.sen_per_year))} per year · autocorrelation-adjusted Mann–Kendall · <span>${v.src}</span></p>`;
-    miniChart(el.querySelector(".qc-chart"), years, s, t, v.color, v.fmt);
+      <p class="qc-fine">Sen's slope ${t.sen_per_year > 0 ? "+" : "−"}${(v.k === "aod" ? d3.format(".3f") : v.k === "pm25" ? d3.format(".2f") : v.fmt)(Math.abs(t.sen_per_year))} per year · dashed line = trend</p>`;
+    miniChart(el.querySelector(".qc-chart"), years, s, t, v.color, v.fmt, ymax);
     return el;
   }
 
   function renderQ1() {
-    const A = Q.areas[st.area], tr = A.trend;
     const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-    const phrase = (v) => { const t = tr[v.k]; return `${v.k === "fire" ? "fire hotspots" : v.k === "aod" ? "AOD" : "surface PM₂.₅"} ${t.direction === "down" ? "fell" : "rose"} ${Math.abs(t.pct_per_decade).toFixed(0)}% per decade (p = ${pTxt(t.p_adjusted)})`; };
-    const sig = VARS.filter((v) => tr[v.k].significant), ns = VARS.filter((v) => !tr[v.k].significant);
-    p1.innerHTML = `<h3 class="q-title">Have fire hotspots, AOD and surface PM₂.₅ changed in ${st.area === "Both islands" ? "Sumatra and Kalimantan" : st.area}, ${years[0]}–${years.at(-1)}?</h3>
-      <div class="qgrid"></div>
-      <p class="q-answer"><b>Answer.</b> ${cap(joinList(sig.map(phrase)) || "No variable shows a statistically significant trend")}${sig.length ? ` — ${sig.length === 1 ? "this trend is" : "these trends are"} statistically significant at 5%` : ""}.
-        ${ns.length ? `${cap(joinList(ns.map(phrase)))} — ${ns.length === 1 ? "this trend is" : "these trends are"} <b>not</b> significant at 5%, so the data cannot rule out no change. A trend that is not yet significant is still a finding: a longer record could settle it.` : ""}
-        A recurring pollution peak does not necessarily indicate an increasing trend.</p>
-      <h4 class="q-sub">Sumatra vs Kalimantan</h4>
-      <div class="q-tablewrap"><table class="qtable"><thead><tr><th>Variable</th><th>Sumatra</th><th>Kalimantan</th><th>Both islands</th></tr></thead><tbody>${VARS.map((v) => `<tr><td><b>${v.name}</b></td>${["Sumatra", "Kalimantan", "Both islands"].map((a) => { const t = Q.areas[a].trend[v.k]; return `<td class="${t.significant ? "sig" : ""}">${pc(t.pct_per_decade)} <small>p = ${pTxt(t.p_adjusted)}${t.significant ? " ✓" : ""}</small></td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
-      <p class="q-method">${Q.method.trend}. ✓ = significant at 5%. Values are one Jul–Oct summary per year (23 complete seasons, no missing months). ${Q.method.pm25}: model-based, and it can overestimate inside fire plumes.</p>`;
-    const g = p1.querySelector(".qgrid"); VARS.forEach((v) => g.append(trendCard(v, A)));
+    const word = (v) => (v.k === "fire" ? "fire hotspots" : v.k === "aod" ? "AOD" : "surface PM₂.₅");
+    const phrase = (n, v) => { const t = Q.areas[n].trend[v.k]; return `${word(v)} ${t.direction === "down" ? "fell" : "rose"} ${Math.abs(t.pct_per_decade).toFixed(0)}% per decade (p = ${pTxt(t.p_adjusted)}, ${t.significant ? "significant" : "not significant"})`; };
+    const ansIsl = ISL1.map((n) => `<b>${n}:</b> ${joinList(VARS.map((v) => phrase(n, v)))}.`).join(" ");
+    p1.innerHTML = `<h3 class="q-title">Have fire hotspots, AOD and surface PM₂.₅ changed in Sumatra and Kalimantan, ${years[0]}–${years.at(-1)}? Side by side</h3>
+      <div class="q1-rows"></div>
+      <p class="q-answer"><b>Answer.</b> ${ansIsl} Where p ≥ 0.05 the data cannot rule out no change; a trend that is not yet significant is still a finding, and a longer record could settle it. A recurring pollution peak does not necessarily indicate an increasing trend.</p>
+      <h4 class="q-sub">Sumatra vs Kalimantan vs both islands</h4>
+      <div class="q-tablewrap"><table class="qtable"><thead><tr><th>Variable</th><th>Sumatra</th><th>Kalimantan</th><th>Both islands</th></tr></thead><tbody>${VARS.map((v) => `<tr><td><b>${v.name}</b></td>${["Sumatra", "Kalimantan", "Both islands"].map((a) => { const t = Q.areas[a].trend[v.k]; return `<td class="${t.significant ? "qsig" : ""}">${pc(t.pct_per_decade)} <small>p = ${pTxt(t.p_adjusted)}${t.significant ? " ✓" : ""}</small></td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
+      <p class="q-method">${Q.method.trend}. ✓ = significant at 5%. Values are one Jul–Oct summary per year (23 complete seasons, no missing months). Both panels of a variable share the same y axis. ${Q.method.pm25}: model-based, and it can overestimate inside fire plumes.</p>`;
+    const host = p1.querySelector(".q1-rows");
+    VARS.forEach((v) => {
+      const ymax = d3.max(ISL1, (n) => d3.max(Q.areas[n].series[v.k])) * 1.06;
+      const row = document.createElement("div"); row.className = "q1-row";
+      row.innerHTML = `<div class="q1-var" style="color:${v.color}"><b>${v.name}</b> <small>${v.unit} · ${v.src}</small></div><div class="q1-pair"></div>`;
+      ISL1.forEach((n) => row.querySelector(".q1-pair").append(trendCard(v, n, ymax)));
+      host.append(row);
+    });
   }
 
   function renderQ2() {
@@ -116,7 +123,7 @@ export async function initQuestions() {
     $("#qt1").setAttribute("aria-selected", st.q === 1); $("#qt2").setAttribute("aria-selected", st.q === 2);
     document.querySelectorAll("[data-area]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.area === st.area));
     p1.hidden = st.q !== 1; p2.hidden = st.q !== 2;
-    const ar = document.querySelector(".qarea"); if (ar) ar.hidden = st.q === 2;   // question 2 always shows both islands side by side
+    const ar = document.querySelector(".qarea"); if (ar) ar.hidden = true;   // both questions show the two islands side by side
     (st.q === 1 ? renderQ1 : renderQ2)();
   }
   $("#qt1").addEventListener("click", () => { st.q = 1; render(); });
