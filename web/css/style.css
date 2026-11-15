@@ -484,3 +484,9 @@ details.more[open] > summary { border-bottom: 1px solid var(--line); }
 details.more > .lede, details.more > .scards, details.more > .gq-ask, details.more > .gq-hint, details.more > .scout-out, details.more > .tq { margin-left: 20px; margin-right: 20px; }
 details.more > .tq { border: 0; padding: 18px 0 8px; background: none; margin-top: 0; }
 details.more > .lede { margin-top: 16px; font-size: 15px; } details.more > .scout-out { margin-bottom: 20px; }
+
+/* AOD vs PM2.5 definitions */
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 0 0 18px; }
+.defs > div { border: 1px solid var(--line, rgba(255,255,255,.14)); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
+.defs b { display: block; margin-bottom: 4px; }
+.defs span { color: var(--muted, #9aa0a6); }
