@@ -25,8 +25,8 @@
   <a href="#landing" data-tab="landing" class="brand"><span class="flame"></span>Ember Signal</a>
   <div class="nav-links" role="tablist" aria-label="Sections">
     <a href="#landing" data-tab="landing" role="tab">Question</a>
-    <a href="#trend" data-tab="trend" role="tab">Trend scout</a>
     <a href="#map" data-tab="map" role="tab">Map</a>
+    <a href="#findings" data-tab="findings" role="tab">Findings</a>
     <a href="background.html" role="tab">Case, evidence &amp; methods</a>
   </div>
 </nav>
@@ -65,11 +65,28 @@
       </div>
 </section>
 </div>
-<div class="tabpanel" id="trend" role="tabpanel">
+<div class="tabpanel" id="map" role="tabpanel">
+<section class="section mapsec" id="mapsec" aria-labelledby="mapH">
+  <div class="wrap">
+    <p class="eyebrow">The map · see the event</p>
+    <h2 id="mapH">Explore Sumatra and Kalimantan in 3D</h2>
+    <p class="lede">Fire detections, smoke (AOD) and surface PM₂.₅, rain, soil dryness and forest loss, month by month from 2003 to 2025. Click any place for its case file, or start a guided investigation from the first tab. Then open <a href="#findings">Findings</a> to see whether the trends are significant and whether high-fire seasons have higher pollution.</p>
+    <div class="gq-result" id="gqResult">
+      <div class="gq-result-head">
+        <b id="gqResultTitle">The full map · explore freely</b>
+        <span><a id="gqFull" href="explore/" target="_blank" rel="noopener">Open full screen ↗</a><button type="button" id="gqClose" aria-label="Reset the map">Reset map</button></span>
+      </div>
+      <div class="gq-frame-wrap"><iframe id="gqFrame" title="Jejak Api: explore the islands in 3D" src="explore/" loading="lazy" allow="fullscreen"></iframe></div>
+      <p class="note">Drag to rotate · right-drag to pan · scroll to zoom · click any place for its case file. ▶ Play animates the months, 🛰 Space view looks down at the smoke, and ⛰ Contours toggles elevation lines. After you answer the questions above, the chips at the top of the map explain why that year happened, whether the clues warned us, and how it compares with other years.</p>
+    </div>
+  </div>
+</section>
+</div>
+<div class="tabpanel" id="findings" role="tabpanel">
 <!-- ============================================================ TREND SCOUT -->
 <section class="scout" id="scout" aria-labelledby="scoutH">
   <div class="wrap">
-    <p class="eyebrow">Trend scout · the two questions</p>
+    <p class="eyebrow">Findings · the two questions</p>
     <h2 id="scoutH">Are fire and haze really going down?</h2>
     <p class="lede">How have satellite-detected fire hotspots, aerosol optical depth at 550 nm (AOD) and surface PM₂.₅ changed across Sumatra and Kalimantan from 2003 to 2025, and are the trends statistically significant? And do the seasons with more fire hotspots coincide with higher AOD and PM₂.₅?</p>
     <div class="defs" aria-label="What the two haze measures mean">
@@ -136,23 +153,6 @@
 </section>
 
 <!-- ============================================================ INVESTIGATE POPUP -->
-</div>
-<div class="tabpanel" id="map" role="tabpanel">
-<section class="section mapsec" id="mapsec" aria-labelledby="mapH">
-  <div class="wrap">
-    <p class="eyebrow">The map</p>
-    <h2 id="mapH">Explore Sumatra and Kalimantan in 3D</h2>
-    <p class="lede">Fire detections, smoke (AOD) and surface PM₂.₅, rain, soil dryness and forest loss, month by month from 2003 to 2025. Click any place for its case file, or start a guided investigation from the first tab.</p>
-    <div class="gq-result" id="gqResult">
-      <div class="gq-result-head">
-        <b id="gqResultTitle">The full map · explore freely</b>
-        <span><a id="gqFull" href="explore/" target="_blank" rel="noopener">Open full screen ↗</a><button type="button" id="gqClose" aria-label="Reset the map">Reset map</button></span>
-      </div>
-      <div class="gq-frame-wrap"><iframe id="gqFrame" title="Jejak Api: explore the islands in 3D" src="explore/" loading="lazy" allow="fullscreen"></iframe></div>
-      <p class="note">Drag to rotate · right-drag to pan · scroll to zoom · click any place for its case file. ▶ Play animates the months, 🛰 Space view looks down at the smoke, and ⛰ Contours toggles elevation lines. After you answer the questions above, the chips at the top of the map explain why that year happened, whether the clues warned us, and how it compares with other years.</p>
-    </div>
-  </div>
-</section>
 </div>
 </main>
 

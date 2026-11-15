@@ -46,8 +46,8 @@ hero.setFires(y2015.cells);
 hero.setClimate({ dryness: dryOf(y2015.soil), warm: warmOf(y2015.oni), smoke: smokeOf(y2015.aod) * 0.9 });
 hero.start();
 window.addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 60), { passive: true });
-// ------------------------------------------------------------------ tabs: Question · Trend scout · Map (the fourth, Case, evidence & methods, is its own page)
-const TABIDS = ["landing", "trend", "map"], ALIAS = { scout: "trend", guide: "landing", top: "landing", question: "landing" };
+// ------------------------------------------------------------------ tabs: Question · Map · Findings (the fourth, Case, evidence & methods, is its own page)
+const TABIDS = ["landing", "map", "findings"], ALIAS = { scout: "findings", trend: "findings", guide: "landing", top: "landing", question: "landing" };
 function showTab(id, { scroll = true } = {}) {
   id = ALIAS[id] || id; if (!TABIDS.includes(id)) return;
   TABIDS.forEach((t) => $("#" + t).classList.toggle("active", t === id));
