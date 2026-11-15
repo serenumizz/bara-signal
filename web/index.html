@@ -21,6 +21,35 @@
 </head>
 <body>
 
+<!-- ============================================================ INTRO -->
+<section class="intro" id="intro" aria-label="Welcome">
+  <div class="intro-bg" aria-hidden="true"></div>
+  <div class="intro-copy">
+    <h1 class="intro-title">This is <span>BARA!</span></h1>
+    <p class="intro-sub">Fires, smoke haze and fine particles over Sumatra and Kalimantan, 2003–2025.</p>
+    <button type="button" class="intro-start" id="introStart">Start <span aria-hidden="true">↑</span></button>
+  </div>
+</section>
+<script>
+(function () {
+  var el = document.getElementById("intro"), btn = document.getElementById("introStart");
+  var seen = false; try { seen = sessionStorage.getItem("introSeen") === "1"; } catch (e) {}
+  // deep links (#map, #findings, ...) and returning visitors skip the intro
+  if (seen || location.hash.length > 1) { el.remove(); return; }
+  document.documentElement.classList.add("intro-open");
+  function go() {
+    try { sessionStorage.setItem("introSeen", "1"); } catch (e) {}
+    el.classList.add("leave");
+    document.documentElement.classList.remove("intro-open");
+    var done = function () { el.remove(); };
+    el.addEventListener("transitionend", done, { once: true });
+    setTimeout(done, 1400);
+  }
+  btn.addEventListener("click", go);
+  document.addEventListener("keydown", function (e) { if (document.getElementById("intro") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); go(); } });
+})();
+</script>
+
 <nav class="nav" id="nav">
   <a href="#landing" data-tab="landing" class="brand"><span class="flame"></span>Ember Signal</a>
   <div class="nav-links" role="tablist" aria-label="Sections">
