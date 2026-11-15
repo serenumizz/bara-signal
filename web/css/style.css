@@ -504,3 +504,11 @@ html { scroll-behavior: smooth; }
 .q-quality b { color: var(--text); }
 
 .gq-hint.oos { color: #ffb4a0; border: 1px solid #ff7a2f66; background: #ff7a2f14; border-radius: 8px; padding: 8px 10px; line-height: 1.45; }
+
+/* Q2: Sumatra and Kalimantan side by side */
+.q-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 8px; }
+@media (max-width: 860px) { .q-compare { grid-template-columns: 1fr; } }
+.q-isl { font: 700 15px var(--display); margin: 2px 6px 4px; } .q-isl small { font: 400 12px var(--font); color: var(--text-3); margin-left: 6px; }
+.q-legend i.dot { border-radius: 50%; }
+.qtable tr.grp td { font: 600 11.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--fire-2); padding-top: 16px; }
+.qarea[hidden] { display: none; }
