@@ -5,7 +5,7 @@ compatibility_date = "2025-01-01"
 [vars]
 AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
 # comma-separated list of sites allowed to call this Worker from a browser (CORS)
-ALLOWED_ORIGINS = "https://web-zeta-six-76.vercel.app,http://localhost:8000"
+ALLOWED_ORIGINS = "https://web-zeta-six-76.vercel.app,https://bara-signal.vercel.app,http://localhost:8000"
 
 # Workers AI: plain-language explanations (no API key or secret to manage)
 [ai]
