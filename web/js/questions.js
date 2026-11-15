@@ -15,18 +15,36 @@ const joinList = (a) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a.at
 const $ = (s) => document.querySelector(s);
 
 function miniChart(host, years, vals, tr, color, fmt, ymax) {
-  const W = 300, H = 130, m = { l: 38, r: 8, t: 8, b: 20 };
-  const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Yearly line chart with the Sen's slope trend line");
+  const W = 440, H = 118, m = { l: 40, r: 8, t: 8, b: 20 };
+  const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Yearly line chart with the Sen's slope trend line; hover a year for its value");
   const x = d3.scalePoint().domain(years).range([m.l + 4, W - m.r - 4]), y = d3.scaleLinear().domain([0, ymax ?? d3.max(vals) * 1.06]).nice().range([H - m.b, m.t]);
   svg.append("g").selectAll("line").data(y.ticks(3)).join("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y).attr("stroke", "rgba(255,255,255,.08)");
   svg.append("g").selectAll("text").data(y.ticks(3)).join("text").attr("x", m.l - 5).attr("y", (d) => y(d) + 3).attr("text-anchor", "end").attr("fill", "#8d8c84").attr("font-size", 9).attr("font-family", "monospace").text((d) => (d >= 1000 ? d3.format(".2s")(d) : d));
-  svg.append("path").datum(vals).attr("fill", "none").attr("stroke", color).attr("stroke-width", 2).attr("stroke-linejoin", "round").attr("d", d3.line().x((d, i) => x(years[i])).y((d) => y(d)));
-  svg.append("g").selectAll("circle").data(years).join("circle").attr("cx", (d) => x(d)).attr("cy", (d, i) => y(vals[i])).attr("r", 2.6).attr("fill", color).attr("stroke", "#0b0e14").attr("stroke-width", 0.8)
-    .append("title").text((d, i) => `${d}: ${fmt(vals[i])}`);
-  const med = d3.median(vals.map((v, i) => v - tr.sen_per_year * i)), n = vals.length - 1;
-  svg.append("line").attr("x1", x(years[0])).attr("x2", x(years.at(-1))).attr("y1", y(Math.max(0, med))).attr("y2", y(Math.max(0, med + tr.sen_per_year * n)))
-    .attr("stroke", "#f0efec").attr("stroke-width", 2).attr("stroke-dasharray", "5 3");
+  const med = d3.median(vals.map((v, i) => v - tr.sen_per_year * i)), n = vals.length - 1, trendAt = (i) => Math.max(0, med + tr.sen_per_year * i);
+  svg.append("line").attr("x1", x(years[0])).attr("x2", x(years.at(-1))).attr("y1", y(trendAt(0))).attr("y2", y(trendAt(n)))
+    .attr("stroke", "#f0efec").attr("stroke-width", 1.6).attr("stroke-dasharray", "5 3").attr("opacity", 0.85);
+  svg.append("path").datum(vals).attr("fill", "none").attr("stroke", color).attr("stroke-width", 1.8).attr("stroke-linejoin", "round").attr("d", d3.line().x((d, i) => x(years[i])).y((d) => y(d)));
+  const dots = svg.append("g").selectAll("circle").data(years).join("circle").attr("cx", (d) => x(d)).attr("cy", (d, i) => y(vals[i])).attr("r", 2.2).attr("fill", color).attr("stroke", "#0b0e14").attr("stroke-width", 0.8);
+  const peak = vals.indexOf(d3.max(vals));
+  svg.append("text").attr("x", x(years[peak])).attr("y", y(vals[peak]) - 5).attr("text-anchor", "middle").attr("fill", "#c9c7bd").attr("font-size", 8.5).attr("font-family", "monospace").text(years[peak]);
   [years[0], years[Math.floor(n / 2)], years.at(-1)].forEach((d) => svg.append("text").attr("x", x(d)).attr("y", H - 6).attr("text-anchor", "middle").attr("fill", "#8d8c84").attr("font-size", 9).attr("font-family", "monospace").text(d));
+  const cur = svg.append("line").attr("y1", m.t).attr("y2", H - m.b).attr("stroke", "rgba(255,255,255,.45)").style("display", "none");
+  const mark = svg.append("circle").attr("r", 5).attr("fill", "none").attr("stroke", "#fff").attr("stroke-width", 1.5).style("display", "none");
+  const tip = document.createElement("div"); tip.className = "qtip"; host.append(tip);
+  const idxAt = (ev) => { const [mx] = d3.pointer(ev, svg.node()); return Math.max(0, Math.min(n, Math.round(((mx - x.range()[0]) / (x.range()[1] - x.range()[0])) * n))); };
+  function show(i) {
+    const cx = x(years[i]), t = trendAt(i), dv = t ? ((vals[i] - t) / t) * 100 : 0;
+    cur.attr("x1", cx).attr("x2", cx).style("display", ""); mark.attr("cx", cx).attr("cy", y(vals[i])).style("display", "");
+    dots.attr("r", (d, k) => (k === i ? 3.6 : 2.2));
+    tip.style.display = "block";
+    tip.innerHTML = `<b>${years[i]}</b> · ${fmt(vals[i])}${i === peak ? " <em>(peak season)</em>" : ""}<br><span>trend line: ${fmt(t)} → this season is ${Math.abs(dv).toFixed(0)}% ${dv >= 0 ? "above" : "below"} trend</span>`;
+    const r = svg.node().getBoundingClientRect(), hr = host.getBoundingClientRect(), left = (r.left - hr.left) + (cx / W) * r.width;
+    tip.style.left = Math.max(0, Math.min(hr.width - 200, left - 100)) + "px";
+  }
+  function hide() { cur.style("display", "none"); mark.style("display", "none"); dots.attr("r", 2.2); tip.style.display = "none"; }
+  svg.append("rect").attr("x", m.l).attr("y", 0).attr("width", W - m.l).attr("height", H).attr("fill", "transparent")
+    .on("mousemove", (ev) => host.dispatchEvent(new CustomEvent("qyear", { bubbles: true, detail: idxAt(ev) }))).on("mouseleave", () => host.dispatchEvent(new CustomEvent("qyear", { bubbles: true, detail: -1 })));
+  return { show, hide };
 }
 
 export async function initQuestions() {
@@ -35,16 +53,21 @@ export async function initQuestions() {
   const st = { q: 1, area: "Both islands" }, years = Q.years;
 
   const ISL1 = ["Sumatra", "Kalimantan"];
+  const DESC = {
+    fire: "Active-fire detections by the MODIS satellites (Terra + Aqua), summed over the area's cells for July–October each year.",
+    aod: "Aerosol optical depth: how much sunlight airborne particles block through the whole air column, from ground to space. Above about 1 the sky looks hazy.",
+    pm25: "Surface PM₂.₅: mass of particles smaller than 2.5 µm in the air near the ground (µg/m³), estimated from MERRA-2 aerosol components.",
+  };
   function trendCard(v, name, ymax) {
     const A = Q.areas[name], t = A.trend[v.k], s = A.series[v.k];
     const el = document.createElement("div"); el.className = "qcard";
-    el.innerHTML = `<div class="qc-head"><b>${name}</b><small>${Q.areas[name].n_cells} cells</small></div>
-      <div class="qc-big ${t.direction}">${pc(t.pct_per_decade)}<small>per decade</small></div>
-      <span class="qbadge ${t.significant ? "sig" : "ns"}">${t.significant ? "Significant" : "Not significant"} · p = ${pTxt(t.p_adjusted)}</span>
-      <div class="qc-chart"></div>
-      <p class="qc-fine">Sen's slope ${t.sen_per_year > 0 ? "+" : "−"}${(v.k === "aod" ? d3.format(".3f") : v.k === "pm25" ? d3.format(".2f") : v.fmt)(Math.abs(t.sen_per_year))} per year · dashed line = trend</p>`;
-    miniChart(el.querySelector(".qc-chart"), years, s, t, v.color, v.fmt, ymax);
-    return el;
+    const sen = (v.k === "aod" ? d3.format(".3f") : v.k === "pm25" ? d3.format(".2f") : v.fmt)(Math.abs(t.sen_per_year));
+    el.innerHTML = `<div class="qc-top"><div class="qc-head"><b>${name}</b><small>${A.n_cells} cells</small></div>
+      <div class="qc-big ${t.direction}" data-tip="Change per decade = Sen's slope ÷ the average, ×10. Slope: ${t.sen_per_year > 0 ? "+" : "−"}${sen} per year.">${pc(t.pct_per_decade)}<small>per decade</small></div>
+      <span class="qbadge ${t.significant ? "sig" : "ns"}" data-tip="${t.significant ? "Significant: p < 0.05, so a change this large would be unlikely by chance alone." : "Not significant: p ≥ 0.05, so the data cannot rule out no change."} Autocorrelation-adjusted Mann–Kendall.">${t.significant ? "Significant" : "Not significant"} · p = ${pTxt(t.p_adjusted)}</span></div>
+      <div class="qc-chart"></div>`;
+    const ctl = miniChart(el.querySelector(".qc-chart"), years, s, t, v.color, v.fmt, ymax);
+    return { el, ctl };
   }
 
   function renderQ1() {
@@ -57,13 +80,15 @@ export async function initQuestions() {
       <p class="q-answer"><b>Answer.</b> ${ansIsl} Where p ≥ 0.05 the data cannot rule out no change; a trend that is not yet significant is still a finding, and a longer record could settle it. A recurring pollution peak does not necessarily indicate an increasing trend.</p>
       <h4 class="q-sub">Sumatra vs Kalimantan vs both islands</h4>
       <div class="q-tablewrap"><table class="qtable"><thead><tr><th>Variable</th><th>Sumatra</th><th>Kalimantan</th><th>Both islands</th></tr></thead><tbody>${VARS.map((v) => `<tr><td><b>${v.name}</b></td>${["Sumatra", "Kalimantan", "Both islands"].map((a) => { const t = Q.areas[a].trend[v.k]; return `<td class="${t.significant ? "qsig" : ""}">${pc(t.pct_per_decade)} <small>p = ${pTxt(t.p_adjusted)}${t.significant ? " ✓" : ""}</small></td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
-      <p class="q-method">${Q.method.trend}. ✓ = significant at 5%. Values are one Jul–Oct summary per year (23 complete seasons, no missing months). Both panels of a variable share the same y axis. ${Q.method.pm25}: model-based, and it can overestimate inside fire plumes.</p>`;
+      <p class="q-method">${Q.method.trend}. ✓ = significant at 5%. Values are one Jul–Oct summary per year (23 complete seasons, no missing months). Both panels of a variable share the same y axis; hover a year to compare the islands. ${Q.method.pm25}: model-based, and it can overestimate inside fire plumes.</p>`;
     const host = p1.querySelector(".q1-rows");
     VARS.forEach((v) => {
       const ymax = d3.max(ISL1, (n) => d3.max(Q.areas[n].series[v.k])) * 1.06;
       const row = document.createElement("div"); row.className = "q1-row";
-      row.innerHTML = `<div class="q1-var" style="color:${v.color}"><b>${v.name}</b> <small>${v.unit} · ${v.src}</small></div><div class="q1-pair"></div>`;
-      ISL1.forEach((n) => row.querySelector(".q1-pair").append(trendCard(v, n, ymax)));
+      row.innerHTML = `<div class="q1-var" style="color:${v.color}"><b>${v.name}</b> <span class="q1-info" tabindex="0" data-tip="${DESC[v.k]}">ⓘ</span> <small>${v.unit} · ${v.src}</small></div><div class="q1-pair"></div>`;
+      const cards = ISL1.map((n) => trendCard(v, n, ymax)); cards.forEach((c) => row.querySelector(".q1-pair").append(c.el));
+      // hovering a year in one island shows the same year in the other
+      row.addEventListener("qyear", (e) => cards.forEach((c) => (e.detail < 0 ? c.ctl.hide() : c.ctl.show(e.detail))));
       host.append(row);
     });
   }
