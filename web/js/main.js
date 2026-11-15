@@ -102,7 +102,11 @@ setNavH(); window.addEventListener("resize", setNavH);
   const askGo = () => {
     const t = $("#gqText").value.trim(), hint = $("#gqHint"); if (!t) { hint.classList.remove("oos"); hint.textContent = "Type a question, or pick a topic above."; return; }
     const p = parseAsk(t);
-    const outside = /\b(19\d\d|20(?:0[0-2]|2[6-9]|[3-9]\d))\b/.test(t) || /java|jawa|jakarta|bali\b|sulawesi|papua|maluku|lombok|singapore|malaysia|thailand|vietnam|australia|amazon|california|africa|europe|america/i.test(t);
+    // a place named in the question that is not on Sumatra or Kalimantan (known outside regions, or any unrecognised "in/at/di <place>")
+    const named = [...t.matchAll(/\b(?:in|at|near|around|di|ke|dari|sekitar)\s+([a-z][a-z-]+)/gi)].map((m) => m[1].toLowerCase());
+    const NOT_PLACE = /^(the|a|an|my|our|this|that|these|those|recent|last|past|each|every|all|general|total|both|two|many|most|some|any|what|which|how|why|when|where|season|seasons|year|years|tahun|musim|bulan|indonesia|sumatra|sumatera|kalimantan|borneo|asia|southeast|tropics|peatlands?|forests?|fires?|smoke|haze|drought|dry|wet|rain|air|space|total|decade|decades|time|general|summer|august|september|october|july|jun|june|november|december|january|february|march|april|may)$/i;
+    const unknownPlace = !p.where && named.some((w) => !NOT_PLACE.test(w));
+    const outside = /\b(19\d\d|20(?:0[0-2]|2[6-9]|[3-9]\d))\b/.test(t) || unknownPlace || /java|jawa|jakarta|bandung|surabaya|semarang|yogyakarta|bali\b|sulawesi|makassar|papua|maluku|ambon|lombok|ntt|ntb|flores|timor|singapore|malaysia|thailand|vietnam|myanmar|philippines|australia|amazon|california|africa|europe|america|china|india|japan/i.test(t);
     if (!p.what || outside) { hint.classList.add("oos"); hint.textContent = OUT_OF_SCOPE; return; }
     hint.classList.remove("oos");
     form.elements.what.value = p.what;
