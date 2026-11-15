@@ -70,7 +70,7 @@ async function regencyTrend(env, q) {
   const stats = trendStats(results.map((r) => r.year), results.map((r) => r.v));
   return { status: 200, body: { regency: { id: row.id, name: row.name, province: row.province, rank: row.rank }, from, to, metric: metric === "fires_total" ? "all-year fire detections" : "Jul–Oct fire detections",
     series: results.map((r) => [r.year, r.v]), stats, whole_period_from_pipeline: { pct_per_decade: row.pct_per_decade, p: row.p, significant: !!row.significant },
-    source: "MODIS fire detections counted per regency, 2003 onward (Terra + Aqua). Legacy table built from NASA FIRMS before the switch to AppEEARS; regency borders are not a Resources-tab source" } };
+    source: "NASA FIRMS (MODIS C6.1) fire detections counted per regency, 2003 onward (Terra + Aqua)" } };
 }
 
 // ---------------------------------------------------------------- AI modes
@@ -78,7 +78,7 @@ async function explain(env, b) {
   const d = { place: str(b.place, 60), lat: num(b.lat, -15, 15), lon: num(b.lon, 90, 125), elevation_m: num(b.elevation_m, 0, 5000), year: num(b.year, 1990, 2035), fires: num(b.fires, 0, 1e7), cell: num(b.cell_deg, 0.1, 2), lang: b.lang === "id" ? "Indonesian" : "English" };
   if (d.lat == null || d.lon == null) return { status: 400, body: { error: "missing coordinates" } };
   const text = await ai(env, `You explain one cell of a NASA satellite fire map of Sumatra and Kalimantan to a general reader. Use ONLY the numbers given and state only what they say (do not call a count high or low without a comparison). Never invent statistics or causes beyond well-established background (peat dries in El Niño years and burns; fires drive smoke haze). If a number is missing, say it is not available. Write ${d.lang}, 3 short sentences, no headings, no markdown.`,
-    `Place: near ${d.place || "unknown"} (${d.lat}°, ${d.lon}°E), elevation ${d.elevation_m ?? "n/a"} m\nYear: ${d.year ?? "n/a"}; MODIS fire detections in this ${d.cell ?? "?"}° cell for the Jul–Oct season: ${d.fires ?? "n/a"}\nSource: MODIS fire pixels (NASA AppEEARS).`);
+    `Place: near ${d.place || "unknown"} (${d.lat}°, ${d.lon}°E), elevation ${d.elevation_m ?? "n/a"} m\nYear: ${d.year ?? "n/a"}; MODIS fire detections in this ${d.cell ?? "?"}° cell for the Jul–Oct season: ${d.fires ?? "n/a"}\nSource: NASA FIRMS (MODIS C6.1).`);
   return text ? { status: 200, body: { text } } : { status: 502, body: { error: "model returned nothing" } };
 }
 
@@ -120,7 +120,7 @@ const CATALOG = {
   ndvi: "vegetation greenness NDVI/EVI (MODIS)", lst: "land-surface temperature (MODIS)", et: "evapotranspiration (MODIS)", aod: "aerosol optical depth / haze (MODIS, MERRA-2)",
   dust: "dust in the air (MODIS Deep Blue, MERRA-2)", no2: "nitrogen dioxide (OMI)", co: "carbon monoxide (AIRS, MOPITT)", chl: "ocean chlorophyll-a (MODIS-Aqua)",
   sst: "sea-surface temperature (MODIS-Aqua)", swh: "water-surface height (SWOT)", runoff: "river runoff (GLDAS)", sar: "radar change detection (RADARSAT Constellation)",
-  treecover: "tree cover and forest loss (MODIS MOD44B)", fire: "fire pixels (MODIS MOD14A2/MYD14A2, AppEEARS)", enso: "ENSO and Indian Ocean Dipole indices (NOAA ERSSTv5, KNMI)",
+  treecover: "tree cover and forest loss (MODIS MOD44B)", fire: "fire detections (NASA FIRMS MODIS C6.1)", enso: "ENSO and Indian Ocean Dipole indices (NOAA ONI, Dipole Mode Index)",
 };
 const KINDS = ["desert", "rainforest", "estuary", "city", "peat", "other"];
 
@@ -144,7 +144,7 @@ async function trendMode(env, b) {
   let text = "";
   try {
     text = await ai(env, `You explain a statistical trend to a high-school or college student. Use ONLY the numbers given and never invent any. Write ${b.lang === "id" ? "Indonesian" : "English"}, 3 short sentences, no markdown. Say clearly whether the trend is statistically significant (p < 0.05), and that a non-significant trend is still a finding because a longer record could make it significant.`,
-      `${regency.name}, ${regency.province}. ${metric}, ${from}–${to} (${stats.n} years). Sen's slope: ${stats.sen} detections per year (${dir}); ${stats.pct_per_decade ?? "n/a"}% per decade relative to the mean of ${stats.mean}. Mann–Kendall p = ${stats.p} (${stats.significant ? "significant" : "not significant"}). Source: MODIS fire detections per regency (legacy table).`);
+      `${regency.name}, ${regency.province}. ${metric}, ${from}–${to} (${stats.n} years). Sen's slope: ${stats.sen} detections per year (${dir}); ${stats.pct_per_decade ?? "n/a"}% per decade relative to the mean of ${stats.mean}. Mann–Kendall p = ${stats.p} (${stats.significant ? "significant" : "not significant"}). Source: NASA FIRMS (MODIS C6.1) fire detections per regency.`);
   } catch (e) { console.error("trend explanation failed:", String(e?.message || e)); }
   // never cache a trend whose explanation failed, so the next request can try the model again
   return { status: 200, body: { ...r.body, text }, nocache: !text };

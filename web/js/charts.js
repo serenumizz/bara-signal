@@ -63,7 +63,7 @@ export function trendMap(el, legendEl, cells, land) {
     .attr("width", s - 1).attr("height", s - 1).attr("rx", 1.5)
     .attr("fill", (c) => col(c.sen)).attr("opacity", (c) => (c.sig_fdr ? 1 : 0.35))
     .on("mousemove", (ev, c) => showTip(
-      `<span class="tk">${c.lon.toFixed(2)}°E, ${c.lat.toFixed(2)}°</span><br>Trend: <b>${d3.format("+.1f")(c.sen)}</b> fire pixels/yr<br>
+      `<span class="tk">${c.lon.toFixed(2)}°E, ${c.lat.toFixed(2)}°</span><br>Trend: <b>${d3.format("+.1f")(c.sen)}</b> fire detections/yr<br>
        Mean before 2016: <b>${fmt(c.pre)}</b> · after: <b>${fmt(c.post)}</b><br>p = ${c.p.toFixed(3)} · ${c.sig_fdr ? "<b>FDR significant</b>" : "not significant after FDR"}`, ev))
     .on("mouseleave", hideTip);
   // label a few places
@@ -74,7 +74,7 @@ export function trendMap(el, legendEl, cells, land) {
   });
   const dec = cells.filter((c) => c.sen < 0 && c.sig_fdr).length, inc = cells.filter((c) => c.sen > 0 && c.sig_fdr).length;
   legendEl.innerHTML = `<span>Falling</span><span class="divbar"></span><span>Rising</span>
-    <span class="note">±${lim.toFixed(0)} fire pixels/yr per cell · ${dec} cells significantly falling, ${inc} rising, ${cells.length} tested</span>`;
+    <span class="note">±${lim.toFixed(0)} fire detections/yr per cell · ${dec} cells significantly falling, ${inc} rising, ${cells.length} tested</span>`;
 }
 
 // ------------------------------------------------------------------ governance gap
@@ -102,7 +102,7 @@ export function gapChart(el, legendEl, T, A) {
     .on("mousemove", (ev, r) => showTip(`<span class="tk">${r.year}</span><br>Observed: <b>${fmt(r.obs)}</b><br>Expected from soil wetness, pre-2016 regime: <b>${fmt(r.pre)}</b><br>Ratio: <b>${(r.obs / r.pre).toFixed(2)}×</b>`, ev))
     .on("mouseleave", hideTip);
   const eff = Math.round(-100 * A.chain.regime_effect);
-  legendEl.innerHTML = `<span><i class="sw" style="background:${C.obs}"></i>Observed fire pixels</span><span><i class="sw line" style="background:${C.model}"></i>Expected from soil wetness alone (pre-2016 regime)</span><span class="note">At equal dryness, post-2016 seasons burn ${eff}% less (p &lt; 0.001)</span>`;
+  legendEl.innerHTML = `<span><i class="sw" style="background:${C.obs}"></i>Observed fire detections</span><span><i class="sw line" style="background:${C.model}"></i>Expected from soil wetness alone (pre-2016 regime)</span><span class="note">At equal dryness, post-2016 seasons burn ${eff}% less (p &lt; 0.001)</span>`;
 }
 
 // ------------------------------------------------------------------ lag small multiples

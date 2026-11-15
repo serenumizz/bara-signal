@@ -4,70 +4,43 @@ Live: https://web-zeta-six-76.vercel.app
 
 **Research question:** Has a decade of peat-fire governance broken the chain that turns ocean heat (ENSO/IOD) into drought, drought into fire, and fire into haze over Sumatra and Kalimantan? Is the decline significant, and is the record 2026 El Niño (Niño 3.4 = +3.25 °C in Oct 2026) putting it to the test?
 
-## Data status
+## Data
 
-The pipeline below uses only Resources-tab sources. What has been rebuilt so far: the MERRA-2 tables (`data/processed/drivers_monthly*.csv`, `merra2_grid.npz`), the ocean indices (`indices_monthly.csv`) and `web/explore/regional.json`. Still to run: the AppEEARS downloads (MODIS fire, tree cover, land/water mask, SRTM), then `02`, `03` and `05`. Until then `web/data/*.json` and `web/explore/data.json` still hold the previous build (fire from NASA FIRMS, tree cover from Hansen), so fire, tree-cover and the per-area rain / soil / smoke grids are not yet from the new sources.
+**Fire comes from NASA FIRMS** (MODIS Collection 6.1, Terra and Aqua active-fire detections, Indonesia archive), the source named in the team's judging one-pager. We also tried the Resources-tab route (MOD14A2/MYD14A2 8-day composites through AppEEARS, `analysis/` since the merge of `resources-tab-sources-only`) and compared the two: re-gridding the FIRMS points into 8-day 1 km composites gives 92% of the detection count (range 82–98%), r = 0.999 between yearly totals, the same top-5 fire years, and the same trend (−46%/decade, p = 0.015 vs −47%/decade, p = 0.011). The choice of product does not change the conclusion, so the AppEEARS requests were cancelled.
 
-## Data sources
-
-Every dataset comes from a source listed on the challenge
-[Resources tab](https://www.spaceappschallenge.org/2026/challenges/earth-system-trend-detective/?tab=resources).
-Nothing is synthetic, and there are no placeholder numbers.
-
-| Resources-tab source | Datasets | Used for |
+| Variable | Source | Where it is used |
 |---|---|---|
-| **NASA AppEEARS** | MODIS MOD14A2 / MYD14A2 (fire, 8-day, 1 km) | fire pixels, the fire trend, the latest fires |
-| | MODIS MOD44B (% tree cover, yearly, 250 m) | clue C: tree-cover decline since 2001 |
-| | MODIS MOD44W (land/water mask, 250 m) | coastlines, and which land belongs to Sumatra or Borneo |
-| | SRTM SRTMGL3 (elevation, 90 m) | terrain of the 3D maps |
-| **NASA Giovanni / GES DISC** | MERRA-2 monthly: PRECTOTCORR, GWETROOT, GWETTOP, TOTEXTTAU, T2M, QV2M, PS, SPEED | rain, soil wetness, haze (AOD), air temperature, humidity, wind |
-| **KNMI Climate Explorer** | Niño 3.4 and the Dipole Mode Index (NOAA ERSSTv5), daily Niño 3.4 (NOAA OISST) | ENSO/ONI and IOD; OISST only for the months after the last ERSSTv5 month |
+| Active fires | NASA FIRMS · MODIS C6.1, Terra + Aqua (type 0, confidence ≥ 30) | all fire counts, trends, risk models |
+| Rain, root-zone wetness, aerosol optical depth (map cells, Evidence tab) | NASA POWER (MERRA-2): PRECTOTCORR, GWETROOT, AOD_55 | clues A, B, E |
+| Air temperature, humidity, wind (Trend Lab, whole study area) | MERRA-2 via NASA Giovanni / GES DISC: T2M, RH2M, SPEED | `web/explore/regional.json` |
+| Surface PM2.5 (in progress) | MERRA-2 aerosol components via NASA Giovanni (`analysis/07_pm25.py`) | PM2.5 layer and Trend Lab |
+| ENSO and Indian Ocean Dipole | NOAA CPC Oceanic Niño Index, NOAA PSL Dipole Mode Index | clue D |
+| Tree-cover loss | Hansen/UMD Global Forest Change via Global Forest Watch | clue C |
+| Peat extent | PEATMAP (Xu et al. 2018) | model feature (peat fraction per cell) |
+| Terrain, coastlines, boundaries | AWS Terrain Tiles, Natural Earth, geoBoundaries | 3D map, province and regency names |
 
-Giovanni's own workflow lists the MERRA-2 files it reads for a variable. Step 1 asks Giovanni for that list,
-then fetches only the Sumatra–Borneo box from each file. These are the same numbers Giovanni would plot.
-
-The method references on the Resources tab (Mann–Kendall and significance testing) are the basis of the statistics below.
-
-### What could not be kept
-
-These earlier inputs are **not** on the Resources tab and were removed:
-
-- NASA FIRMS: replaced by MODIS fire through AppEEARS.
-- NASA POWER: replaced by MERRA-2 through Giovanni.
-- NOAA CPC/PSL index files: replaced by KNMI.
-- Hansen/Global Forest Watch: replaced by MODIS VCF.
-- Natural Earth and AWS Terrain Tiles: replaced by MOD44W and SRTM.
-- PEATMAP peat extent: removed. No listed source has peat extent.
-- geoBoundaries regencies: removed. No listed source has borders.
-
-As a result, "Borneo" includes Malaysia and Brunei, there is no regency-level atlas, and there is no near-real-time feed.
-The newest MODIS 8-day composite is the "latest fires" layer.
+**What is in the repository.** `web/data/*.json` and `web/explore/data.json` were built by the FIRMS / NASA POWER pipeline (`analysis/01`–`05` at commit `ca8a2b1`, `git checkout ca8a2b1 -- analysis/ data/processed/` restores it). Since the Resources-tab merge, `analysis/01`–`05` implement the AppEEARS / Giovanni / KNMI variant, which was never completed (no AppEEARS data was downloaded), and `data/processed/drivers_monthly*.csv`, `merra2_grid.npz` and `indices_monthly.csv` are that variant's MERRA-2 tables. `06_regional_series.py` and `07_pm25.py` work on those tables. Bringing the two pipelines back into one is open work.
 
 ## Login (NASA Earthdata)
 
-AppEEARS and Giovanni need a free NASA Earthdata account. Put the login in `~/.netrc`, outside this project:
+Giovanni / GES DISC (MERRA-2) needs a free NASA Earthdata account. Put the login in `~/.netrc`, outside this project:
 
 ```
 machine urs.earthdata.nasa.gov login YOUR_USER password YOUR_PASS
 ```
 
-The code reads it at run time and never prints or stores it (see `analysis/earthdata.py`).
-The username and password are only ever sent to NASA's login server, `urs.earthdata.nasa.gov`, and to the AppEEARS login API.
-KNMI needs no login, and it never receives any credentials.
+The code reads it at run time and never prints or stores it (see `analysis/earthdata.py`). The username and password are only sent to NASA's login server, `urs.earthdata.nasa.gov`. In Earthdata Login, approve the application **NASA GESDISC DATA ARCHIVE** once, or MERRA-2 downloads answer 403.
 
-## Pipeline
+## Pipeline for the new pieces
 
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cd analysis
-../.venv/bin/python 01_fetch_data.py submit     # send the AppEEARS requests (NASA prepares them; can take hours)
-../.venv/bin/python 01_fetch_data.py indices    # KNMI ocean indices
+../.venv/bin/python 01_fetch_data.py indices    # ocean indices
 ../.venv/bin/python 01_fetch_data.py merra2     # MERRA-2 monthly via Giovanni's file list
-../.venv/bin/python 01_fetch_data.py appeears   # wait for and download the AppEEARS results
-../.venv/bin/python 02_process.py               # islands, coastlines, fire tables, MERRA-2 tables, indices, tree cover, terrain
-../.venv/bin/python 03_analysis.py              # trends, change point, FDR map, chain model, analogs -> web/data/*.json
-../.venv/bin/python 05_explore_data.py          # the "Jejak Api" 3D explorer -> web/explore/data.json
-../.venv/bin/python 06_regional_series.py       # monthly Tmax / humidity / wind for the Trend Lab -> web/explore/regional.json
+../.venv/bin/python 02_process.py indices merra2   # -> data/processed/drivers_monthly*.csv, merra2_grid.npz, indices_monthly.csv
+../.venv/bin/python 06_regional_series.py       # monthly T2M / humidity / wind for the Trend Lab -> web/explore/regional.json
+../.venv/bin/python 07_pm25.py                  # surface PM2.5 from MERRA-2 aerosol components -> data/processed/pm25_grid.npz
 ```
 
 | Folder | Contents |
@@ -78,7 +51,7 @@ cd analysis
 
 ## Methods
 
-- **Fire index:** MODIS FireMask classes 8–9 (nominal and high confidence) in 8-day composites, summed per month and season.
+- **Fire index:** NASA FIRMS MODIS detections of type 0 (presumed vegetation fire) with confidence ≥ 30, Terra and Aqua, summed per month and season.
 - **Trends:** Mann–Kendall with the Hamed–Rao autocorrelation correction, plus Sen's slope.
 - **Spatial trends:** a test for each 0.5° cell, with Benjamini–Hochberg FDR control.
 - **Change point:** Pettitt test on raw counts and on the climate-adjusted residual.
@@ -98,7 +71,7 @@ cd web && vercel deploy --prod
 | Product | What it does here |
 |---|---|
 | **Workers AI** | Plain-language answers (`env.AI.run`, Llama 3.1 8B fp8): explain a map cell, answer a question about a year, suggest variables in the Trend scout, and explain a computed trend. No API key or secret. |
-| **D1** | Fire counts per regency and year plus the FDR-tested cell trends (legacy tables, built from NASA FIRMS and geoBoundaries before the switch to the Resources-tab sources; see `worker/scripts/build_seed.py`). `GET /api/trend?regency=Pulang Pisau&from=2003&to=2025` computes Mann–Kendall and Sen's slope on the fly. |
+| **D1** | Fire counts per regency and year plus the FDR-tested cell trends (built from NASA FIRMS and geoBoundaries; `worker/db/seed.sql` is the seed, and `worker/scripts/build_seed.py` rebuilds it from the old pipeline's tables). `GET /api/trend?regency=Pulang Pisau&from=2003&to=2025` computes Mann–Kendall and Sen's slope on the fly. |
 | **KV** | Caches every AI answer, so the same question is generated once. |
 | **R2** | Serves the big JSON files (`/data/explore.json`, ...) when the bucket is enabled; the site falls back to its own copies. |
 
@@ -106,7 +79,7 @@ The model can only reword numbers that the Worker supplies, and the Trend scout 
 
 ```
 cd worker
-# python3 scripts/build_seed.py                       # legacy: its inputs were removed; db/seed.sql is the last build
+# python3 scripts/build_seed.py                       # only with the old pipeline's tables (see Data); db/seed.sql is the last build
 npx wrangler d1 execute ember-signal --remote --file=db/seed.sql
 npx wrangler deploy
 ```

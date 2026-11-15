@@ -1,6 +1,6 @@
 """Build worker/db/seed.sql (D1) from the analysis outputs.
 
-LEGACY: the website does not run this script. The site only calls the deployed Worker, and the Worker reads the
+NOTE: the website does not run this script. The site only calls the deployed Worker, and the Worker reads the
 D1 database that this script's output (worker/db/seed.sql) already filled. Re-run it only to rebuild that seed.
 It needs data/processed/fires_regency_monthly.csv and the regency table of web/explore/data.json, which come from
 the old pipeline (NASA FIRMS points + geoBoundaries regencies). The Resources-tab pipeline has no regency
@@ -14,7 +14,7 @@ Tables:
 import csv, json, collections, pathlib
 root = pathlib.Path(__file__).resolve().parents[2]
 if not (root / "data/processed/fires_regency_monthly.csv").exists():
-    raise SystemExit("data/processed/fires_regency_monthly.csv is gone (the Resources-tab pipeline has no regency borders). "
+    raise SystemExit("data/processed/fires_regency_monthly.csv is gone (removed with the Resources-tab merge; restore the old pipeline's tables with `git checkout ca8a2b1 -- data/processed/`). "
                      "worker/db/seed.sql is the last seed built from it; keep using that file.")
 kabs = json.load(open(root / "web/explore/data.json"))["kabs"]
 spatial = json.load(open(root / "web/data/analysis.json"))["spatial"]

@@ -35,11 +35,8 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 // ------------------------------------------------------------------ hero
 const y2015 = T.find((d) => d.year === 2015);
 $("#heroStat").textContent = `Niño 3.4 hit +${O.nino34_max_2026.toFixed(2)} °C in ${MONTHS[O.nino34_monthly.at(-1)[0] - 1]} 2026.`;
-$("#heroSub").innerHTML = `The previous high in the NOAA ERSSTv5 record since 1950 was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire pixels</b> across Sumatra and Borneo in four months, and the haze crossed borders.`;
-// the AppEEARS build writes a "sensor" field and 8-day composites; the previous build carried the NASA FIRMS 7-day feed
-$("#liveLine").textContent = A.live.sensor
-  ? `Latest · ${A.live.n} MODIS fire pixels in the study area, ${A.live.from} → ${A.live.to} (8-day composite, NASA AppEEARS)`
-  : `Latest · ${A.live.n} MODIS fire detections in the study area, ${A.live.from} → ${A.live.to} (NASA FIRMS, 7-day feed)`;
+$("#heroSub").innerHTML = `The previous high in the NOAA ERSSTv5 record since 1950 was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire detections</b> across Sumatra and Borneo in four months, and the haze crossed borders.`;
+$("#liveLine").textContent = `Latest · ${A.live.n} MODIS fire detections in the study area, ${A.live.from} → ${A.live.to} (NASA FIRMS, 7-day feed)`;
 $("#genTime").textContent = A.generated.replace("T", " ");
 
 const hero = new MapScene($("#heroScene"), { terrain, grid: A.grid, autoRotate: true, camera: "hero", labels: false, interactive: false, rotate: true });
@@ -92,8 +89,8 @@ $("#now2026").innerHTML = [
   `Ocean: Niño 3.4 reached <b>+${O.nino34_max_2026.toFixed(2)} °C</b> in 2026, above the previous record (+${O.nino34_record_before_2026.toFixed(2)} °C in ${O.nino34_record_before_2026_when[0]}). ONI for Jul–Sep: <b>${d3.format("+.2f")(O.oni)}</b>.`,
   `Land: Jul–Oct root-zone soil wetness was <b>${O.soil.toFixed(3)}</b>. ${drierThan26.length ? `Only ${drierThan26.join(", ")} ${drierThan26.length === 1 ? "was" : "were"} drier in 2003–2025.` : "Drier than every season in 2003–2025."}`,
   `Haze: 2026 fire-season aerosol optical depth so far is <b>${O.aod.toFixed(2)}</b> (2003–2025 range ${A.ranges.aod[0].toFixed(2)}–${A.ranges.aod[1].toFixed(2)}).`,
-  `Fire: the 2026 fire-season count is still open, because the fire composites do not cover the whole season yet. Latest MODIS composite (${A.live.from} → ${A.live.to}): <b>${A.live.n}</b> fire pixels.`,
-  `When the 2026 composites are complete, the expected-vs-observed chart above will show whether the post-2016 gap survives a record El Niño.`,
+  `Fire: NASA FIRMS has not yet published the 2026 archive, so the fire count for this season is still open. Live detections for the last 7 days: <b>${A.live.n}</b>.`,
+  `When FIRMS publishes the 2026 archive, the expected-vs-observed chart above will show whether the post-2016 gap survives a record El Niño.`,
 ].map((s) => `<li>${s}</li>`).join("");
 
 // ------------------------------------------------------------------ methods
@@ -106,7 +103,7 @@ const pf = (p) => (p < 0.001 ? "<0.001" : p.toFixed(3));
 const coefRows = [
   ["Rain ← ENSO + IOD", "rain (mm/d)", ch.climate_to_rain, ["oni", "dmi"]],
   ["Soil ← rain", "GWETROOT", ch.rain_to_soil, ["rain"]],
-  ["ln(fire) ← soil + regime", "ln fire pixels", ch.soil_to_fires, ["soil", "regime"]],
+  ["ln(fire) ← soil + regime", "ln fire detections", ch.soil_to_fires, ["soil", "regime"]],
   ["AOD ← ln(fire)", "AOD Aug–Oct", ch.fires_to_aod, ["ln_fires"]],
 ];
 $("#coefTable").innerHTML = `<thead><tr><th>Link</th><th>Term</th><th class="num">Coef.</th><th class="num">p</th><th class="num">R²</th><th class="num">LOO R²</th></tr></thead><tbody>${

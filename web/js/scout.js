@@ -5,6 +5,7 @@ export const SOURCES = {
   giovanni: { name: "Giovanni", url: "https://giovanni.gsfc.nasa.gov/" },
   hydro: { name: "Hydrology Time Series", url: "https://disc.gsfc.nasa.gov/information/tools?title=Hydrology%20Time%20Series" },
   appeears: { name: "AppEEARS", url: "https://appeears.earthdatacloud.nasa.gov/" },
+  firms: { name: "NASA FIRMS", url: "https://firms.modaps.eosdis.nasa.gov/" },
   cdo: { name: "NOAA Climate Data Online", url: "https://www.ncei.noaa.gov/cdo-web/" },
   knmi: { name: "KNMI Climate Explorer", url: "https://climexp.knmi.nl/" },
   swot: { name: "SWOT mission (CSA / NASA / CNES)", url: "https://www.asc-csa.gc.ca/eng/satellites/swot/" },
@@ -36,8 +37,8 @@ export const VARS = {
   runoff: { name: "River runoff", product: "GLDAS runoff / streamflow tools", src: ["hydro", "giovanni"], def: "Fresh water flowing off the land into rivers and the sea." },
   sar: { name: "Radar change detection", product: "RADARSAT Constellation (SAR) imagery", src: ["rcm"], def: "Radar sees through cloud and night; it maps wetlands, coasts and forest change." },
   treecover: { name: "Tree cover and forest loss", product: "MODIS Vegetation Continuous Fields (MOD44B)", src: ["appeears"], def: "Share of the land under trees, and how much has been lost." },
-  fire: { name: "Active fires", product: "MODIS fire pixels (MOD14A2 / MYD14A2, 8-day)", src: ["appeears"], def: "Fire pixels the satellites spotted." },
-  enso: { name: "Ocean climate indices (ENSO, IOD)", product: "NOAA ERSSTv5 Niño 3.4 (ONI) and Dipole Mode Index", src: ["knmi"], def: "Slow ocean swings that change rain across the tropics." },
+  fire: { name: "Active fires", product: "NASA FIRMS MODIS C6.1 fire detections (Terra + Aqua); 8-day MOD14A2 also via AppEEARS", src: ["firms", "appeears"], def: "Fire pixels the satellites spotted." },
+  enso: { name: "Ocean climate indices (ENSO, IOD)", product: "NOAA ONI (Niño 3.4) and Dipole Mode Index", src: ["knmi"], def: "Slow ocean swings that change rain across the tropics." },
 };
 
 // kinds of place: variables to check (in order) and why each could trend there

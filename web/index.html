@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ember Signal</title>
-<meta name="description" content="An Earth System Trend Detective: how ocean heat, rain, soil moisture, fire and haze connect over Sumatra and Borneo, 2000–2030. Built only on the challenge's listed sources: NASA AppEEARS (MODIS, SRTM), NASA Giovanni (MERRA-2) and KNMI Climate Explorer.">
+<meta name="description" content="An Earth System Trend Detective: how ocean heat, rain, soil moisture, fire and haze connect over Sumatra and Borneo, 2000–2030. Built on NASA FIRMS (MODIS) fire detections, MERRA-2 aerosol and weather data, and NOAA ocean indices.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2c2 6 9 9 9 17a9 9 0 0 1-18 0c0-5 3-7 4-11 1 3 2 4 4 5-1-4 0-8 1-11z' fill='%23ff7a2f'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,7 +53,7 @@
     </div>
   </div>
   <div class="hero-foot">
-    <span class="live-dot"></span><span id="liveLine">Latest MODIS 8-day fire composite</span>
+    <span class="live-dot"></span><span id="liveLine">Latest NASA FIRMS MODIS fire detections</span>
   </div>
 </header>
 
@@ -128,11 +128,11 @@
       <fieldset class="gq-step" data-step="1">
         <legend><span class="num">1</span>What do you want to investigate?</legend>
         <div class="qcards">
-          <label class="qcard"><input type="radio" name="what" value="fire" checked><div class="qc"><i aria-hidden="true">🔥</i><b>Fires &amp; haze</b><small>MODIS fire (AppEEARS) · MERRA-2 smoke (Giovanni)</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="fire" checked><div class="qc"><i aria-hidden="true">🔥</i><b>Fires &amp; haze</b><small>NASA FIRMS (MODIS) · MERRA-2 smoke (NASA POWER)</small></div></label>
           <label class="qcard"><input type="radio" name="what" value="drought"><div class="qc"><i aria-hidden="true">🌧️</i><b>Drought &amp; rain</b><small>MERRA-2 rain · root-zone wetness (Giovanni)</small></div></label>
-          <label class="qcard"><input type="radio" name="what" value="forest"><div class="qc"><i aria-hidden="true">🌳</i><b>Forests</b><small>MODIS tree cover (AppEEARS)</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="forest"><div class="qc"><i aria-hidden="true">🌳</i><b>Forests</b><small>Hansen/UMD tree-cover loss (Global Forest Watch)</small></div></label>
           <label class="qcard"><input type="radio" name="what" value="smoke"><div class="qc"><i aria-hidden="true">🛰️</i><b>Air from space</b><small>MERRA-2 aerosol optical depth</small></div></label>
-          <label class="qcard"><input type="radio" name="what" value="ocean"><div class="qc"><i aria-hidden="true">🌊</i><b>Ocean &amp; wind</b><small>Niño 3.4 · Dipole Mode Index (KNMI)</small></div></label>
+          <label class="qcard"><input type="radio" name="what" value="ocean"><div class="qc"><i aria-hidden="true">🌊</i><b>Ocean &amp; wind</b><small>NOAA ONI · Dipole Mode Index</small></div></label>
         </div>
         <div class="gq-ask">
           <input id="gqText" type="text" maxlength="160" autocomplete="off" aria-label="Ask in your own words" placeholder="…or ask in your own words, e.g. “Is Riau getting drier?” / “Apakah asap di Palangka Raya makin parah?”">
@@ -180,13 +180,13 @@
     <p class="lede">Indonesia holds one of the largest tropical peat carbon stocks on Earth. When it's wet, peat doesn't burn. When it dries out, it can smoulder for weeks. Every link in that chain can be measured from orbit, so we treat it as a detective case: <b>what</b> is changing, <b>where</b>, <b>by how much</b>, and <b>is it significant</b>?</p>
 
     <div class="chain" id="chainDiagram">
-      <div class="node" data-k="oni"><span class="sphere">Ocean</span><b>ENSO / IOD</b><small>Niño 3.4, DMI (KNMI)</small></div>
+      <div class="node" data-k="oni"><span class="sphere">Ocean</span><b>ENSO / IOD</b><small>NOAA ONI, DMI</small></div>
       <div class="arrow"><span id="arr0">r = −0.79</span></div>
       <div class="node" data-k="rain"><span class="sphere">Atmosphere</span><b>Dry-season rain</b><small>MERRA-2 (Giovanni)</small></div>
       <div class="arrow"><span id="arr1">r = +0.93</span></div>
       <div class="node" data-k="soil"><span class="sphere">Land / hydrosphere</span><b>Root-zone soil wetness</b><small>MERRA-2 GWETROOT (Giovanni)</small></div>
       <div class="arrow"><span id="arr2">r = −0.86</span></div>
-      <div class="node" data-k="fire"><span class="sphere">Biosphere</span><b>Fire pixels</b><small>MODIS (AppEEARS)</small></div>
+      <div class="node" data-k="fire"><span class="sphere">Biosphere</span><b>Fire detections</b><small>NASA FIRMS MODIS</small></div>
       <div class="arrow"><span id="arr3">r = +0.75</span></div>
       <div class="node" data-k="aod"><span class="sphere">Atmosphere</span><b>Haze (aerosol)</b><small>MERRA-2 AOD 550 nm</small></div>
     </div>
@@ -220,7 +220,7 @@
       <div class="card">
         <div class="card-head">
           <h3>Where: the fire map is moving, not just shrinking</h3>
-          <p>Sen's slope of yearly fire pixels per 0.5° cell, 2003–2025. Solid cells pass the Benjamini–Hochberg false-discovery test (field significance, α = 0.05).</p>
+          <p>Sen's slope of yearly fire detections per 0.5° cell, 2003–2025. Solid cells pass the Benjamini–Hochberg false-discovery test (field significance, α = 0.05).</p>
         </div>
         <div id="trendMap" class="chart map"></div>
         <div class="div-legend" id="trendMapLegend"></div>
@@ -228,7 +228,7 @@
       <div class="card">
         <div class="card-head">
           <h3>Why: the climate explains the swings, but not the drop</h3>
-          <p>Observed fire pixels vs what soil wetness alone predicts under the <b>pre-2016</b> fire regime. The gap after 2016 is the change-point effect.</p>
+          <p>Observed fire detections vs what soil wetness alone predicts under the <b>pre-2016</b> fire regime. The gap after 2016 is the change-point effect.</p>
         </div>
         <div id="gapChart" class="chart"></div>
         <div class="legend" id="gapLegend"></div>
@@ -283,7 +283,7 @@
           <p>Has a decade of peat-fire governance broken the ocean → drought → fire → haze chain over Sumatra and Kalimantan? Is the decline significant, and is the record 2026 El Niño putting it to the test?</p>
           <h3>Hypotheses</h3>
           <ol>
-            <li><b>H1 (trend):</b> fire-season fire pixels show a significant monotonic trend over 2003–2025.</li>
+            <li><b>H1 (trend):</b> fire-season fire detections show a significant monotonic trend over 2003–2025.</li>
             <li><b>H2 (mechanism):</b> year-to-year variability is explained by a measurable chain: ENSO/IOD → rainfall → root-zone soil wetness → fire → aerosol.</li>
             <li><b>H3 (regime):</b> after removing the climate signal, fire shows a structural break consistent with the post-2015 policy response (peat restoration agency, moratoria, stronger enforcement).</li>
             <li><b>H4 (geography):</b> the trend is not uniform. Some regions decline while others hold or rise ("same driver, opposite signs").</li>
@@ -292,9 +292,9 @@
         <div>
           <h3>Modeling approach</h3>
           <ul>
-            <li><b>Domain:</b> Sumatra + Borneo (land from the MODIS MOD44W mask), 95–119.5° E, 6.5° S–7.5° N, 0.25° grid for fire and 0.5° grid for trend tests.</li>
+            <li><b>Domain:</b> Indonesian Sumatra + Kalimantan, 95–119° E, 6.5° S–6° N, 0.25° grid for fire and 0.5° grid for trend tests.</li>
             <li><b>Period:</b> 2000–2025 observed (2003–2025 for statistics, full Terra+Aqua years) and 2026 as far as the data reach.</li>
-            <li><b>Unit of analysis:</b> the Jul–Oct fire season (about <span id="seasonSharePct">—</span>% of all fire pixels in the domain).</li>
+            <li><b>Unit of analysis:</b> the Jul–Oct fire season (about <span id="seasonSharePct">—</span>% of all fire detections in the domain).</li>
             <li><b>Model:</b> a chain of four cross-validated regressions plus a structural-break term, used to explain past seasons, not to forecast.</li>
             <li><b>Comparisons:</b> before vs after 2016, El Niño vs neutral years, Sumatra vs Kalimantan.</li>
           </ul>
@@ -312,20 +312,23 @@
       <div class="table-wrap"><table class="dtable">
         <thead><tr><th>Variable</th><th>Source / mission</th><th>Resolution</th><th>Use</th></tr></thead>
         <tbody>
-          <tr><td>Fire pixels</td><td>MODIS Thermal Anomalies &amp; Fire, 8-day (MOD14A2 Terra, MYD14A2 Aqua, Collection 6.1) · <b>NASA AppEEARS</b></td><td>1 km, 8-day composites, 2000-11 → latest</td><td>Fire counts per season, island and 0.25° cell. FireMask classes 8–9 (nominal and high confidence).</td></tr>
-          <tr><td>Latest fires</td><td>Most recent MOD14A2/MYD14A2 composite · <b>NASA AppEEARS</b></td><td>1 km, 8-day</td><td>Hero ticker (replaces a near-real-time feed, which is not on the Resources list).</td></tr>
-          <tr><td>Precipitation</td><td>MERRA-2 PRECTOTCORR (bias-corrected) · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly 2000 → latest</td><td>Jul–Oct mean, mm/day, at 10 hotspot points and on the 0.5° explore grid.</td></tr>
-          <tr><td>Root-zone / surface soil wetness</td><td>MERRA-2 GWETROOT, GWETTOP · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly</td><td>Main fire driver (fraction 0–1).</td></tr>
-          <tr><td>Aerosol optical depth 550 nm</td><td>MERRA-2 TOTEXTTAU · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly</td><td>Haze response (Aug–Oct).</td></tr>
-          <tr><td>Air temperature, humidity, wind</td><td>MERRA-2 T2M, QV2M + PS (→ relative humidity), SPEED · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly</td><td>Trend tests and context.</td></tr>
-          <tr><td>ENSO</td><td>Niño 3.4 from NOAA ERSSTv5 (ONI = 3-month mean); latest months from NOAA OISST daily · <b>KNMI Climate Explorer</b></td><td>monthly, 1950 → latest</td><td>Upstream driver and 2026 record. Anomalies vs 1991–2020.</td></tr>
-          <tr><td>Indian Ocean Dipole</td><td>Dipole Mode Index from NOAA ERSSTv5 · <b>KNMI Climate Explorer</b></td><td>monthly, 1950 → latest</td><td>Upstream driver.</td></tr>
-          <tr><td>Land, coastlines, islands</td><td>MODIS Land/Water Mask (MOD44W) · <b>NASA AppEEARS</b></td><td>250 m</td><td>Coastlines, and which land belongs to Sumatra or Borneo.</td></tr>
-          <tr><td>Tree cover</td><td>MODIS Vegetation Continuous Fields (MOD44B) % tree cover · <b>NASA AppEEARS</b></td><td>250 m, yearly</td><td>Explore map, clue C (decline since 2001).</td></tr>
-          <tr><td>Elevation</td><td>NASA SRTM (SRTMGL3) · <b>NASA AppEEARS</b></td><td>90 m → 0.06°</td><td>Real relief in the 3D maps.</td></tr>
+          <tr><td>Active fire detections, FRP</td><td>NASA FIRMS · MODIS Collection 6.1 (Terra + Aqua), Indonesia country archive</td><td>1 km pixels, daily, 2000-11 → 2025-12</td><td>Fire counts per season, region and 0.25° cell. Filter: type = 0 (vegetation fire), confidence ≥ 30.</td></tr>
+          <tr><td>Live fires</td><td>NASA FIRMS · MODIS C6.1 NRT, SE Asia 7-day feed</td><td>1 km, near-real-time</td><td>Live layer and hero ticker.</td></tr>
+          <tr><td>Precipitation</td><td>NASA POWER · PRECTOTCORR (MERRA-2 bias-corrected)</td><td>0.5°, monthly 2000–2025, daily 2026</td><td>Jul–Oct mean, mm/day, averaged over 10 hotspot points.</td></tr>
+          <tr><td>Root-zone / surface soil wetness</td><td>NASA POWER · GWETROOT, GWETTOP (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Main fire driver (fraction 0–1).</td></tr>
+          <tr><td>Aerosol optical depth 550 nm</td><td>NASA POWER · AOD_55 (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Haze response (Aug–Oct).</td></tr>
+          <tr><td>Tmax (trend tests)</td><td>NASA POWER · T2M_MAX</td><td>0.5°</td><td>Trend tests and context.</td></tr>
+          <tr><td>Air temperature, humidity, wind (Trend Lab)</td><td>MERRA-2 T2M, RH2M, SPEED · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly 2000 → 2026-09</td><td>Whole-study-area series in the Trend Lab (web/explore/regional.json).</td></tr>
+          <tr><td>ENSO</td><td>NOAA CPC · Oceanic Niño Index (ERSSTv5) and Niño 3.4 (OISST)</td><td>monthly, 1950 → Oct 2026</td><td>Upstream driver and 2026 record.</td></tr>
+          <tr><td>Indian Ocean Dipole</td><td>NOAA PSL · DMI (HadISST)</td><td>monthly, 1870 → May 2026</td><td>Upstream driver.</td></tr>
+          <tr><td>Coastlines</td><td>Natural Earth 10 m land</td><td>vector</td><td>3D terrain base.</td></tr>
+          <tr><td>Regency boundaries</td><td>geoBoundaries IDN ADM1 (34) / ADM2 (519)</td><td>vector</td><td>Every fire point joined to its province and regency; per-regency Mann–Kendall trends with FDR.</td></tr>
+          <tr><td>Tree-cover loss</td><td>Hansen/UMD Global Forest Change via Global Forest Watch regency statistics (canopy &gt; 30%)</td><td>annual, 2001–2020</td><td>Explore map, clue C.</td></tr>
+          <tr><td>Peat extent</td><td>PEATMAP, South-East Asia layer (Xu et al. 2018, Univ. Leeds)</td><td>vector</td><td>Peat fraction per 0.5° cell.</td></tr>
+          <tr><td>Elevation</td><td>AWS Terrain Tiles (SRTM/GMTED-derived, Terrarium)</td><td>~2 km (z6)</td><td>Real relief in the explore map.</td></tr>
         </tbody>
       </table></div>
-      <p class="note">Every source above is listed on the Space Apps 2026 challenge Resources tab. Hotspot sampling points: Bengkalis and Pelalawan (Riau), Muaro Jambi, OKI and Banyuasin (South Sumatra), Kubu Raya (West Kalimantan), Palangka Raya, Pulang Pisau and Katingan (Central Kalimantan), Barito (South Kalimantan). All on the peat domes that dominate Indonesian fire emissions. Every number on this page comes from these files. Nothing is synthetic.</p>
+      <p class="note">Hotspot sampling points: Bengkalis and Pelalawan (Riau), Muaro Jambi, OKI and Banyuasin (South Sumatra), Kubu Raya (West Kalimantan), Palangka Raya, Pulang Pisau and Katingan (Central Kalimantan), Barito (South Kalimantan). All on the peat domes that dominate Indonesian fire emissions. Every number on this page comes from these files. Nothing is synthetic.</p>
     </div>
 
     <div class="mpanel" id="m-analysis">
@@ -334,9 +337,9 @@
           <h3>1 · Trend detection</h3>
           <p><b>Mann–Kendall</b> statistic <span class="eq">S = Σ<sub>i&lt;j</sub> sgn(x<sub>j</sub> − x<sub>i</sub>)</span>, with tie-corrected variance and the <b>Hamed–Rao (1998)</b> effective-sample-size correction for autocorrelated series. The magnitude is <b>Sen's slope</b> <span class="eq">β = median((x<sub>j</sub> − x<sub>i</sub>)/(j − i))</span>, reported per year and as % of the mean per decade. As a sensor check, the trend is repeated on Aqua-only and Terra-only counts.</p>
           <h3>2 · Where: field significance</h3>
-          <p>Each 0.5° cell with ≥ 50 fire pixels gets its own Mann–Kendall test. Hundreds of tests produce false positives by chance, so p-values are controlled with the <b>Benjamini–Hochberg false-discovery rate</b> (Wilks 2016), α = 0.05.</p>
+          <p>Each 0.5° cell with ≥ 50 fire detections gets its own Mann–Kendall test. Hundreds of tests produce false positives by chance, so p-values are controlled with the <b>Benjamini–Hochberg false-discovery rate</b> (Wilks 2016), α = 0.05.</p>
           <h3>3 · Change point</h3>
-          <p><b>Pettitt (1979)</b> test, on raw fire pixels and on residuals of ln(fire) regressed on soil wetness. Testing the residual asks whether fire dropped <i>beyond</i> what weather explains.</p>
+          <p><b>Pettitt (1979)</b> test, on raw fire detections and on residuals of ln(fire) regressed on soil wetness. Testing the residual asks whether fire dropped <i>beyond</i> what weather explains.</p>
         </div>
         <div>
           <h3>4 · Lagged links</h3>
@@ -368,10 +371,10 @@
         <div>
           <h3>Limitations</h3>
           <ul>
-            <li><b>Fire pixels ≠ burned area.</b> MODIS flags 1 km pixels with active fire at overpass time; an 8-day composite counts each burning pixel once. It misses fires under thick smoke or cloud, and smouldering peat with low radiative power. Treat counts as an index.</li>
+            <li><b>Fire detections ≠ burned area.</b> MODIS flags 1 km pixels with active fire at overpass time, and a fire seen on several overpasses is counted several times. It misses fires under thick smoke or cloud, and smouldering peat with low radiative power. Treat counts as an index.</li>
             <li><b>Orbit drift.</b> Terra and Aqua have drifted from their nominal overpass times since about 2020–2022. The Aqua-only trend (<span id="aquaTrend">—</span>) is shown next to the combined one; part of any late decline could be observational.</li>
             <li><b>Reanalysis climate.</b> MERRA-2 rainfall and soil wetness are model-assimilated fields at 0.5°, sampled at 10 points, not in-situ peat water tables.</li>
-            <li><b>No peat map.</b> None of the listed sources provides peat extent, so the analysis cannot separate peat fires from mineral-soil fires. Borneo includes its Malaysian and Bruneian parts, because no listed source provides national borders.</li>
+            <li><b>Peat is a cell-level share.</b> Peat extent (PEATMAP, Xu et al. 2018) is used as a fraction of each 0.5° cell, so fires on peat and on mineral soil inside one cell are not separated. The study area is Indonesian Sumatra and Kalimantan only.</li>
             <li><b>Small n.</b> 23 seasons (2003–2025). Coefficients are robust in cross-validation, but extreme inputs (e.g. ONI &gt; 2) are near or beyond the fitted range.</li>
             <li><b>Regime = attribution by elimination.</b> The post-2016 drop is what remains after climate. It is consistent with policy, but could also include land-use change (already-burned or converted peat).</li>
           </ul>
@@ -396,7 +399,7 @@
 <footer class="foot">
   <div class="wrap">
     <p><b>Ember Signal</b>, built for the NASA Space Apps Challenge 2026 ("Be an Earth System Trend Detective").</p>
-    <p class="note">Data, all from the challenge Resources tab: NASA AppEEARS (MODIS MOD14A2, MYD14A2, MOD44B, MOD44W; SRTM), NASA Giovanni / GES DISC (MERRA-2), KNMI Climate Explorer (NOAA ERSSTv5, OISST). Analysis generated <span id="genTime"></span>.</p>
+    <p class="note">Data: NASA FIRMS (MODIS C6.1), NASA POWER and NASA Giovanni (MERRA-2), NOAA CPC / PSL ocean indices, Hansen/UMD Global Forest Watch, Natural Earth, AWS Terrain Tiles. Analysis generated <span id="genTime"></span>.</p>
   </div>
 </footer>
 
