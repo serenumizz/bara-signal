@@ -536,3 +536,5 @@ html { scroll-behavior: smooth; }
 .q1-info { color: var(--text-3); font-size: 14px; cursor: help; }
 .q1-info:hover, .q1-info:focus { color: var(--text); outline: none; }
 .qcard:hover { border-color: #ffffff2a; }
+
+.q1-pair .qc-big.up { color: var(--fire-3); }
