@@ -1,6 +1,6 @@
 # Bara: Earth System Trend Detective (NASA Space Apps 2026)
 
-Live: https://web-zeta-six-76.vercel.app
+Live: https://bara-signal.vercel.app (the earlier address https://web-zeta-six-76.vercel.app still works)
 
 **Research question:** Has a decade of peat-fire governance broken the chain that turns ocean heat (ENSO/IOD) into drought, drought into fire, and fire into haze over Sumatra and Kalimantan? Is the decline significant, and does it survive once the climate is taken into account? Data cover 2003–2025.
 
