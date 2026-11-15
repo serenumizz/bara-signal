@@ -38,13 +38,13 @@
   <div class="hero-copy">
     <p class="kicker">NASA Space Apps 2026 · Earth System Trend Detective</p>
     <h1>
-      <span class="line">The Pacific just broke its fever record.</span>
+      <span class="line">Ten years after the 2015 haze,</span>
       <span class="line accent" id="heroStat">&nbsp;</span>
     </h1>
     <p class="hero-sub" id="heroSub">&nbsp;</p>
     <div class="rq-card">
       <span class="rq-label">Research question</span>
-      <p class="rq">Has a decade of peat-fire governance broken the chain that turns <em>ocean heat</em> into <em>drought</em>, drought into <em>fire</em>, and fire into <em>haze</em>? Is the decline significant, and is the record 2026 El Niño putting it to the test?</p>
+      <p class="rq">Has a decade of peat-fire governance broken the chain that turns <em>ocean heat</em> into <em>drought</em>, drought into <em>fire</em>, and fire into <em>haze</em>? Is the decline significant, and does it survive once the climate is taken into account?</p>
     </div>
     <div class="hero-cta">
       <a class="btn primary" href="#question">Follow the evidence</a>
@@ -53,7 +53,7 @@
     </div>
   </div>
   <div class="hero-foot">
-    <span class="live-dot"></span><span id="liveLine">Latest NASA FIRMS MODIS fire detections</span>
+    <span class="live-dot"></span><span id="liveLine">NASA FIRMS MODIS fire detections, 2003–2025</span>
   </div>
 </header>
 
@@ -151,7 +151,7 @@
       </fieldset>
       <fieldset class="gq-step" data-step="3" hidden>
         <legend><span class="num">3</span><label for="gqYear">When?</label></legend>
-        <div class="opts"><select id="gqYear" aria-label="Choose a year"><option value="now">2026 · now (latest data Oct 2026)</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015" selected>2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option><option value="2009">2009</option><option value="2008">2008</option><option value="2007">2007</option><option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option></select></div>
+        <div class="opts"><select id="gqYear" aria-label="Choose a year"><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option><option value="2015" selected>2015</option><option value="2014">2014</option><option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option><option value="2010">2010</option><option value="2009">2009</option><option value="2008">2008</option><option value="2007">2007</option><option value="2006">2006</option><option value="2005">2005</option><option value="2004">2004</option><option value="2003">2003</option></select></div>
       </fieldset>
       <div class="gq-go">
         <button class="btn" type="button" id="gqBack" hidden>← Back</button>
@@ -253,13 +253,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-head">
-        <h3>2026 is as hot as 2015. Will the decline hold?</h3>
-        <p>What the satellites measured this year, up to the latest data. We do not forecast; this is the open question the record leaves us with.</p>
-      </div>
-      <ul id="now2026"></ul>
-    </div>
   </div>
 </section>
 
@@ -280,7 +273,7 @@
       <div class="grid2 text">
         <div>
           <h3>Research question</h3>
-          <p>Has a decade of peat-fire governance broken the ocean → drought → fire → haze chain over Sumatra and Kalimantan? Is the decline significant, and is the record 2026 El Niño putting it to the test?</p>
+          <p>Has a decade of peat-fire governance broken the ocean → drought → fire → haze chain over Sumatra and Kalimantan? Is the decline significant, and does it survive once the climate is taken into account?</p>
           <h3>Hypotheses</h3>
           <ol>
             <li><b>H1 (trend):</b> fire-season fire detections show a significant monotonic trend over 2003–2025.</li>
@@ -293,7 +286,7 @@
           <h3>Modeling approach</h3>
           <ul>
             <li><b>Domain:</b> Indonesian Sumatra + Kalimantan, 95–119° E, 6.5° S–6° N, 0.25° grid for fire and 0.5° grid for trend tests.</li>
-            <li><b>Period:</b> 2000–2025 observed (2003–2025 for statistics, full Terra+Aqua years) and 2026 as far as the data reach.</li>
+            <li><b>Period:</b> 2000–2025 observed (2003–2025 for statistics, full Terra+Aqua years).</li>
             <li><b>Unit of analysis:</b> the Jul–Oct fire season (about <span id="seasonSharePct">—</span>% of all fire detections in the domain).</li>
             <li><b>Model:</b> a chain of four cross-validated regressions plus a structural-break term, used to explain past seasons, not to forecast.</li>
             <li><b>Comparisons:</b> before vs after 2016, El Niño vs neutral years, Sumatra vs Kalimantan.</li>
@@ -302,7 +295,6 @@
           <ol>
             <li>Trend + significance board, plus the FDR-tested spatial trend map (what, where, how much).</li>
             <li>Climate-expected vs observed fire (the regime gap) with the Pettitt change point.</li>
-            <li>A 2026 check: how this year's measured dryness compares with the record.</li>
           </ol>
         </div>
       </div>
@@ -314,13 +306,13 @@
         <tbody>
           <tr><td>Active fire detections, FRP</td><td>NASA FIRMS · MODIS Collection 6.1 (Terra + Aqua), Indonesia country archive</td><td>1 km pixels, daily, 2000-11 → 2025-12</td><td>Fire counts per season, region and 0.25° cell. Filter: type = 0 (vegetation fire), confidence ≥ 30.</td></tr>
           <tr><td>Live fires</td><td>NASA FIRMS · MODIS C6.1 NRT, SE Asia 7-day feed</td><td>1 km, near-real-time</td><td>Live layer and hero ticker.</td></tr>
-          <tr><td>Precipitation</td><td>NASA POWER · PRECTOTCORR (MERRA-2 bias-corrected)</td><td>0.5°, monthly 2000–2025, daily 2026</td><td>Jul–Oct mean, mm/day, averaged over 10 hotspot points.</td></tr>
+          <tr><td>Precipitation</td><td>NASA POWER · PRECTOTCORR (MERRA-2 bias-corrected)</td><td>0.5°, monthly 2000–2025</td><td>Jul–Oct mean, mm/day, averaged over 10 hotspot points.</td></tr>
           <tr><td>Root-zone / surface soil wetness</td><td>NASA POWER · GWETROOT, GWETTOP (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Main fire driver (fraction 0–1).</td></tr>
           <tr><td>Aerosol optical depth 550 nm</td><td>NASA POWER · AOD_55 (MERRA-2)</td><td>0.5°, monthly / daily</td><td>Haze response (Aug–Oct).</td></tr>
           <tr><td>Tmax (trend tests)</td><td>NASA POWER · T2M_MAX</td><td>0.5°</td><td>Trend tests and context.</td></tr>
-          <tr><td>Air temperature, humidity, wind (Trend Lab)</td><td>MERRA-2 T2M, RH2M, SPEED · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly 2000 → 2026-09</td><td>Whole-study-area series in the Trend Lab (web/explore/regional.json).</td></tr>
-          <tr><td>ENSO</td><td>NOAA CPC · Oceanic Niño Index (ERSSTv5) and Niño 3.4 (OISST)</td><td>monthly, 1950 → Oct 2026</td><td>Upstream driver and 2026 record.</td></tr>
-          <tr><td>Indian Ocean Dipole</td><td>NOAA PSL · DMI (HadISST)</td><td>monthly, 1870 → May 2026</td><td>Upstream driver.</td></tr>
+          <tr><td>Air temperature, humidity, wind (Trend Lab)</td><td>MERRA-2 T2M, RH2M, SPEED · <b>NASA Giovanni / GES DISC</b></td><td>0.5° × 0.625°, monthly 2000–2025</td><td>Whole-study-area series in the Trend Lab (web/explore/regional.json).</td></tr>
+          <tr><td>ENSO</td><td>NOAA CPC · Oceanic Niño Index (ERSSTv5) and Niño 3.4 (OISST)</td><td>monthly, 1950 → 2025</td><td>Upstream driver.</td></tr>
+          <tr><td>Indian Ocean Dipole</td><td>NOAA PSL · DMI (HadISST)</td><td>monthly, 1870 → 2025</td><td>Upstream driver.</td></tr>
           <tr><td>Coastlines</td><td>Natural Earth 10 m land</td><td>vector</td><td>3D terrain base.</td></tr>
           <tr><td>Regency boundaries</td><td>geoBoundaries IDN ADM1 (34) / ADM2 (519)</td><td>vector</td><td>Every fire point joined to its province and regency; per-regency Mann–Kendall trends with FDR.</td></tr>
           <tr><td>Tree-cover loss</td><td>Hansen/UMD Global Forest Change via Global Forest Watch regency statistics (canopy &gt; 30%)</td><td>annual, 2001–2020</td><td>Explore map, clue C.</td></tr>

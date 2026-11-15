@@ -259,7 +259,7 @@
     <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:3px;background:#5fa8ff;vertical-align:middle"></span> D lit &nbsp; <span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
     <span id="jumps"></span>
   </div>
-  <svg id="tl" role="img" aria-label="Monthly NASA FIRMS fire detections across Sumatra and Borneo, 2003 to 2026"></svg>
+  <svg id="tl" role="img" aria-label="Monthly NASA FIRMS fire detections across Sumatra and Borneo, 2003 to 2025"></svg>
 </div>
 
 <aside class="panel glass" id="panel"></aside>
@@ -289,8 +289,7 @@
     <a href="https://science.nasa.gov/earth/natural-disasters/wildfires/el-nino-a-key-player-in-severe-indonesia-fires/" target="_blank" rel="noopener">NASA: El Niño a key player</a> ·
     <a href="https://doi.org/10.1016/j.agrformet.2021.108738" target="_blank" rel="noopener">Taufik et al. 2022</a> ·
     <a href="https://doi.org/10.3390/su142215155" target="_blank" rel="noopener">Iskandar et al. 2022</a> ·
-    <a href="https://eprints.whiterose.ac.uk/id/eprint/225066/" target="_blank" rel="noopener">Salmayenti et al. 2025</a> ·
-    <a href="https://rri.co.id/en/national/2679048/indonesia-battles-202000-hectares-of-forest-fires-amid-strong-el-nino" target="_blank" rel="noopener">RRI: 2026 fire season</a></p>
+    <a href="https://eprints.whiterose.ac.uk/id/eprint/225066/" target="_blank" rel="noopener">Salmayenti et al. 2025</a></p>
   <p><button class="pill" id="aboutClose">Close</button></p>
 </dialog>
 
@@ -313,6 +312,12 @@ let DATA = /*__DATA__*/null;
 
 function main() {
 // ================= data & helpers =================
+// the site covers 2003–2025: 2026 is a partial year, so every series stops at December 2025
+(() => { const keep = DATA.months.indexOf('2025-12') + 1;
+  if (keep > 0 && keep < DATA.months.length) {
+    DATA.months = DATA.months.slice(0, keep); DATA.oni = DATA.oni.slice(0, keep); DATA.dmi = DATA.dmi.slice(0, keep);
+    DATA.cells.forEach(c => { for (const k of Object.keys(c.s)) c.s[k] = c.s[k].slice(0, keep); });
+    DATA.fireLast = Math.min(DATA.fireLast, keep - 1); } })();
 const MONTHS = DATA.months, T = MONTHS.length, cells = DATA.cells;
 cells.forEach(c => { if (c.island === 'Kalimantan') c.island = 'Borneo'; if (c.region === 'Kalimantan') c.region = 'Borneo'; }); // one name for old and new data builds
 const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -327,7 +332,7 @@ function ramp(stops, t) { t = clamp(t, 0, 1); const p = t * (stops.length - 1), 
 const mix = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
 let seed = 7; const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
 
-const CASE_YEARS = ['2015', '2019', '2023', '2026'];
+const CASE_YEARS = ['2015', '2019', '2023', '2025'];
 const NOW = T - 1;
 const FIRST_YEAR = +MONTHS[0].slice(0, 4), NOW_YEAR = +MONTHS[NOW].slice(0, 4);
 const state = { t: NOW, layer: 'fire', sel: null, playing: false, rel: [] };
@@ -790,9 +795,8 @@ function renderTimeline() {
   svg.onclick = ev => setTime(at(ev));
   if (svg.dataset.drag !== '1') { svg.dataset.drag = '1'; svg.addEventListener('pointermove', ev => { if (ev.buttons === 1) setTime(at(ev)); }); }
 }
-$('jumps').innerHTML = CASE_YEARS.map(y => `<button class="pill" data-y="${y}" style="margin-left:4px">${y === '2026' ? 'Now' : y}</button>`).join('');
+$('jumps').innerHTML = CASE_YEARS.map(y => `<button class="pill" data-y="${y}" style="margin-left:4px">${y}</button>`).join('');
 $('jumps').querySelectorAll('.pill').forEach(b => b.onclick = () => { const y = b.dataset.y;
-  if (y === '2026') return setTime(NOW);
   let bi = 0, bv = -1; MONTHS.forEach((m, i) => { if (m.startsWith(y)) { const v = cells.reduce((s, c) => s + c.s.fire[i], 0); if (v > bv) { bv = v; bi = i; } } }); setTime(bi); });
 
 let playTimer = null;
@@ -966,15 +970,12 @@ function renderPanel() {
   const P = $('panel');
   const JM = DATA.julyModel, RM = DATA.riskModel;
   if (!state.sel) {
-    const oniNow = [...DATA.oni].reverse().find(v => v != null), iO = DATA.oni.lastIndexOf(oniNow);
-    const nino34Now = DATA.nino34Latest ?? DATA.nino34Oct2026; // new data builds write nino34Latest; older builds nino34Oct2026
-    const tS = DATA.months.length - 1 - [...cells[0].s.soil].reverse().findIndex(v => v != null), dryNow = cells.filter(c => soilOf(c, tS) < THR_B).length;
     P.innerHTML = `<div class="intro"><h2 style="margin-top:0">Case file</h2><div class="place">Pick a place to investigate</div>
       <p>Every 0.5° cell (~55 km) of Sumatra and Borneo carries ${NOW_YEAR - FIRST_YEAR + 1} years of satellite measurements. Click anywhere to see:</p>
       <p>🔥 <b>The effect:</b> MODIS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
       <h2>Or start with a fire hotspot</h2><div class="quick">${['Palangka Raya','Pekanbaru','Kayu Agung (OKI)','Pontianak','Jambi','Ketapang'].map(n => `<button class="pill" data-town="${n}">${n}</button>`).join('')}</div>
       <h2>Evidence from NASA</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
-      <h2>What's happening in 2026</h2><p style="font-size:12.5px">The ocean clue is at a record: the Niño 3.4 anomaly reached <b>${nino34Now >= 0 ? "+" : ""}${nino34Now.toFixed(2)} °C</b> in ${mshort(DATA.months.indexOf(DATA.nino34LatestMonth) >= 0 ? DATA.months.indexOf(DATA.nino34LatestMonth) : NOW)}${DATA.nino34IsRecord ? `, the highest in the record since ${DATA.nino34RecordSince}` : ''}, and the ONI hit <b>${fmtIdx(oniNow)}</b> (${mshort(iO)}). In ${mshort(tS)}, <b>${dryNow} of ${cells.length}</b> cells were below the dryness line. The NASA FIRMS fire archive is published through ${mshort(FL)}; later fire months are shown as "not yet archived".</p></div>`;
+</div>`;
     P.querySelectorAll('[data-town]').forEach(b => b.onclick = () => { const t = TOWNS.find(x => x[0] === b.dataset.town);
       const c = cells.filter(c => Math.hypot(c.lon - t[1], c.lat - t[2]) < 0.75).sort((a, b2) => Math.hypot(a.lon - t[1], a.lat - t[2]) - Math.hypot(b2.lon - t[1], b2.lat - t[2]))[0] || nearestCell(t[1], t[2]);
       if (c) select(c, { lon: t[1], lat: t[2] }); });
@@ -989,7 +990,7 @@ function renderPanel() {
     <div class="meta"><span>${thrText}</span><span class="chip ${na ? 'na' : lit ? 'on' : 'off'}">${na ? 'N/A' : lit ? '● LIT' : '○ off'}</span></div>${sparkHtml}</div>`;
   const years = []; for (let yy = FIRST_YEAR; yy <= NOW_YEAR; yy++) years.push(yearCheck(c, String(yy)));
   const done = years.filter(r => r && !r.pending), hits = done.filter(r => r.correct).length;
-  const cmpYears = [[LAST_YEAR, `Last year (${LAST_YEAR})`], ['2019', '2019'], ['2015', '2015'], ['2006', '2006'], [String(NOW_YEAR), `${NOW_YEAR} (now)`]];
+  const cmpYears = [[LAST_YEAR, `${LAST_YEAR}`], ['2019', '2019'], ['2015', '2015'], ['2006', '2006'], [String(NOW_YEAR), `${NOW_YEAR} (latest)`]];
   if (!cmpYears.some(([k]) => k === state.cmpYear)) { if (/^\d{4}$/.test(state.cmpYear) && yearCheck(c, state.cmpYear)) cmpYears.push([state.cmpYear, state.cmpYear]); else state.cmpYear = '2019'; }
   const Y = years.find(r => r.y === state.cmpYear);
   const dot = (v, na) => na ? '<span class="dot na">·</span>' : v ? '<span class="dot on">●</span>' : '<span class="dot off">○</span>';
@@ -1035,7 +1036,7 @@ function renderPanel() {
       spark('spB', c.s.soil.map(v => v / 1000), { color: '#e0689a', thr: THR_B, dir: 'below', lo: 0.55, hi: 1, fmt: v => v.toFixed(3), unit: 'root-zone wetness' }))}
     ${clue('C', '#c9a26b', 'Tree cover lost since 2001', loss == null ? '—' : loss.toFixed(0), loss == null ? '' : '%', (loss ?? 0) >= THR_C, `Danger at ${THR_C}%+ (fitted) · Hansen/GFW through ${DATA.lossLast}`,
       loss == null ? '' : spark('spC', c.s.loss.map(v => (v ?? 0) / 10), { color: '#c9a26b', thr: THR_C, dir: 'above', lo: 0, hi: 90, fmt: v => v.toFixed(0), unit: '% decline' }), loss == null)}
-    <div class="src">Orange bands = fire seasons of 2015, 2019, 2023, 2026. Dashed line = danger line. Click any line to travel to that month.</div>
+    <div class="src">Orange bands = fire seasons of ${CASE_YEARS.join(', ')}. Dashed line = danger line. Click any line to travel to that month.</div>
 
     <h2>🛰 The air above · seen from space</h2>
     <div class="clue${hl('E')}"><div class="row"><span class="k" style="background:#b39ddb">E</span><span class="n">Smoke (aerosol optical depth)</span><span class="v">${ao == null ? 'n/a' : ao.toFixed(2)} <small>AOD</small></span></div>

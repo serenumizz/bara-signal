@@ -23,8 +23,9 @@ async function getData(name) {
   }
   return (await fetch(`data/${name}.json`)).json();
 }
-const [T, A, land, terrain] = await Promise.all(["timeline", "analysis", "land", "terrain"].map(getData));
-const O = A.obs2026;
+// the site covers 2003–2025: 2026 is a partial year and is left out of every table and chart
+const [T0, A, land, terrain] = await Promise.all(["timeline", "analysis", "land", "terrain"].map(getData));
+const T = T0.filter((d) => d.year <= 2025);
 
 const tipHead = (d) => `<b>near ${d.town.name}</b> <span class="tk">· ${d.lat.toFixed(2)}°, ${d.lon.toFixed(2)}°E</span><br>`;
 
@@ -34,14 +35,15 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 
 // ------------------------------------------------------------------ hero
 const y2015 = T.find((d) => d.year === 2015);
-$("#heroStat").textContent = `Niño 3.4 hit +${O.nino34_max_2026.toFixed(2)} °C in ${MONTHS[O.nino34_monthly.at(-1)[0] - 1]} 2026.`;
-$("#heroSub").innerHTML = `The previous high in the NOAA ERSSTv5 record since 1950 was +${O.nino34_record_before_2026.toFixed(2)} °C, in ${MONTHS[O.nino34_record_before_2026_when[1] - 1]} ${O.nino34_record_before_2026_when[0]}. In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire detections</b> across Sumatra and Borneo in four months, and the haze crossed borders.`;
-$("#liveLine").textContent = `Latest · ${A.live.n} MODIS fire detections in the study area, ${A.live.from} → ${A.live.to} (NASA FIRMS, 7-day feed)`;
+const fireTr = A.trends.find((t) => t.key === "fires_season");
+$("#heroStat").textContent = `fire detections are down ${Math.abs(fireTr.pct_per_decade).toFixed(0)}% per decade. Is that real?`;
+$("#heroSub").innerHTML = `In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire detections</b> across Sumatra and Kalimantan in four months, and the haze crossed borders. Ten years on, we test what changed, where, by how much, and whether the change is statistically significant.`;
+$("#liveLine").textContent = "NASA FIRMS MODIS fire detections, 2003–2025 (Terra + Aqua)";
 $("#genTime").textContent = A.generated.replace("T", " ");
 
 const hero = new MapScene($("#heroScene"), { terrain, grid: A.grid, autoRotate: true, camera: "hero", labels: false, interactive: false, rotate: true });
 hero.setFires(y2015.cells);
-hero.setClimate({ dryness: dryOf(y2015.soil), warm: warmOf(O.oni_latest), smoke: smokeOf(y2015.aod) * 0.9 });
+hero.setClimate({ dryness: dryOf(y2015.soil), warm: warmOf(y2015.oni), smoke: smokeOf(y2015.aod) * 0.9 });
 hero.start();
 window.addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 60), { passive: true });
 
@@ -83,16 +85,6 @@ const drawEvidence = () => {
   charts.hindChart($("#hindChart"), $("#hindLegend"), A);
 };
 drawEvidence();
-const fires26 = T.filter((d) => d.year >= 2003 && d.fires_season);
-const drierThan26 = fires26.filter((d) => d.soil < O.soil).map((d) => d.year);
-$("#now2026").innerHTML = [
-  `Ocean: Niño 3.4 reached <b>+${O.nino34_max_2026.toFixed(2)} °C</b> in 2026, above the previous record (+${O.nino34_record_before_2026.toFixed(2)} °C in ${O.nino34_record_before_2026_when[0]}). ONI for Jul–Sep: <b>${d3.format("+.2f")(O.oni)}</b>.`,
-  `Land: Jul–Oct root-zone soil wetness was <b>${O.soil.toFixed(3)}</b>. ${drierThan26.length ? `Only ${drierThan26.join(", ")} ${drierThan26.length === 1 ? "was" : "were"} drier in 2003–2025.` : "Drier than every season in 2003–2025."}`,
-  `Haze: 2026 fire-season aerosol optical depth so far is <b>${O.aod.toFixed(2)}</b> (2003–2025 range ${A.ranges.aod[0].toFixed(2)}–${A.ranges.aod[1].toFixed(2)}).`,
-  `Fire: NASA FIRMS has not yet published the 2026 archive, so the fire count for this season is still open. Live detections for the last 7 days: <b>${A.live.n}</b>.`,
-  `When FIRMS publishes the 2026 archive, the expected-vs-observed chart above will show whether the post-2016 gap survives a record El Niño.`,
-].map((s) => `<li>${s}</li>`).join("");
-
 // ------------------------------------------------------------------ methods
 document.querySelectorAll(".mtabs button").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll(".mtabs button").forEach((x) => x.classList.toggle("on", x === b));
@@ -117,7 +109,6 @@ $("#keyResults").innerHTML = [
   `Pettitt change point: raw fire after ${A.changepoint.raw_after} (p = ${pf(A.changepoint.raw_p)}). Climate-adjusted residual: new regime from ${A.changepoint.regime_start} (p = ${pf(A.changepoint.regime_p)}).`,
   `Spatial: ${A.spatial.length} cells tested; ${A.spatial.filter((c) => c.sig_fdr && c.sen < 0).length} significantly decreasing and ${A.spatial.filter((c) => c.sig_fdr && c.sen > 0).length} increasing after FDR.`,
   `Lag structure: rain → soil wetness peaks at a 1-month lag; soil → fire and fire → AOD respond in the same month.`,
-  `2026 so far: Jul–Oct root-zone soil wetness ${O.soil.toFixed(3)}, the 2nd driest of 27 years (only 2015 was drier); RH ${O.rh.toFixed(1)}%, the lowest on record.`,
   `${Math.round(100 * seasonShare)}% of 2003–2025 detections fall in the Jul–Oct season.`,
 ].map((s) => `<li>${s}</li>`).join("");
 
@@ -183,7 +174,7 @@ setNavH(); window.addEventListener("resize", setNavH);
     const f = new FormData(form), w = f.get("where");
     return { what: f.get("what"), where: w === "place" ? place.value : w, year: year.value };
   };
-  const summary = (a) => `${LBL[a.what]} · ${a.where} · ${a.year === "now" ? "now (Oct 2026)" : "peak of " + a.year}`;
+  const summary = (a) => `${LBL[a.what]} · ${a.where} · peak of ${a.year}`;
   const sync = () => { place.disabled = new FormData(form).get("where") !== "place"; $("#gqSum").textContent = summary(read()); };
   form.addEventListener("change", sync);
   place.addEventListener("focus", () => { form.elements.where.value = "place"; sync(); });
@@ -204,8 +195,8 @@ setNavH(); window.addEventListener("resize", setNavH);
     if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Borneo";
     else { const prov = { riau: "Pekanbaru", jambi: "Jambi", aceh: "Banda Aceh", lampung: "Bandar Lampung", bengkulu: "Bengkulu", "sumatera utara": "Medan", "north sumatra": "Medan", "south sumatra": "Palembang", "sumatera selatan": "Palembang", "central kalimantan": "Palangka Raya", "kalimantan tengah": "Palangka Raya", "west kalimantan": "Pontianak", "kalimantan barat": "Pontianak", "south kalimantan": "Banjarmasin", "kalimantan selatan": "Banjarmasin", "east kalimantan": "Samarinda", "kalimantan timur": "Samarinda" };
       const k = Object.keys(prov).find((p) => low.includes(p)); if (k) out.where = prov[k]; }
-    const y = t.match(/\b(20(?:0[3-9]|1\d|2[0-6]))\b/); if (y) out.year = y[1] === "2026" ? "now" : y[1];
-    else if (/\b(now|latest|current|today|sekarang|terbaru|saat ini)\b/i.test(t)) out.year = "now";
+    const y = t.match(/\b(20(?:0[3-9]|1\d|2[0-5]))\b/); if (y) out.year = y[1];
+    else if (/\b(now|latest|current|today|sekarang|terbaru|saat ini)\b/i.test(t)) out.year = "2025"; // the latest year covered
     return out;
   }
   const askGo = () => {
