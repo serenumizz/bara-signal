@@ -117,12 +117,11 @@ export async function initQuestions() {
   render();
 
   // data quality, coverage, missing observations
-  const q = Q.quality, tt = Object.values(Q.areas).flatMap((A) => Object.values(A.trend)), nSeasonalSig = tt.filter((t) => t.p_seasonal_monthly < 0.05).length;
+  const q = Q.quality;
   $("#qQualityBody").innerHTML = `<ul class="q-quality">
     <li><b>Coverage.</b> ${q.months} months (${q.years[0]}–${q.years[1]}), ${q.cells} half-degree cells (Sumatra ${Q.areas.Sumatra.n_cells}, Kalimantan ${Q.areas.Kalimantan.n_cells}), ${q.seasons} complete Jul–Oct seasons. The 2026 months are excluded because the year is incomplete.</li>
     <li><b>Missing observations.</b> ${q.fire_missing} missing fire, ${q.aod_missing} missing AOD and ${q.pm25_missing} missing PM₂.₅ cell-months in that period, so no gap-filling or interpolation was needed. ${q.zero_fire_cell_months_pct}% of cell-months have zero fire detections: that is a true zero (no detection), not missing data.</li>
     <li><b>Alignment.</b> Fire counts are per cell and month; each cell is matched to its nearest MERRA-2 grid point (${q.grid_points} distinct points, at most ${q.max_offset_deg}° away). An area's AOD and PM₂.₅ are means over its cells, its fire count is the sum. All series are then reduced to one Jul–Oct value per year, so seasonality cannot bias the trend.</li>
-    <li><b>Sensitivity check.</b> A seasonal Mann–Kendall on all ${q.months} monthly values (not autocorrelation-adjusted, so more permissive) flags ${nSeasonalSig} of ${tt.length} area-variable series as significant, against the stricter yearly test shown above. Where the two disagree, the weaker evidence of the yearly test is the one reported.</li>
     <li><b>Known limits.</b> MODIS counts hotspots, not burned area, and cloud or thick smoke can hide fires. AOD and PM₂.₅ are MERRA-2 model analyses that assimilate satellite AOD, not independent ground measurements, and they come from the same aerosol model. Neither identifies fire as the only source of particles, and association is not causation.</li>
   </ul>`;
 }
