@@ -283,7 +283,7 @@
     <tr><td>B · Dryness</td><td>NASA POWER GWETROOT root-zone soil wetness (MERRA-2); peat extent from PEATMAP (Xu et al. 2018)</td><td>wetness &lt; <span id="thrBLbl"></span>: fitted on 2003–2025 peat cells (best split of fire vs no-fire months)</td></tr>
     <tr><td>C · Forest loss</td><td>Hansen/UMD tree-cover loss (&gt;30% canopy) per regency, Global Forest Watch statistics</td><td>Heavily disturbed at <span id="thrCLbl"></span>%+</td></tr>
     <tr><td>D · Ocean</td><td>NOAA CPC Oceanic Niño Index; NOAA PSL Dipole Mode Index (HadISST)</td><td>ONI ≥ +0.5 or DMI ≥ +0.4 (Field 2016; Iskandar 2022)</td></tr>
-    <tr><td>E · Smoke</td><td>NASA POWER AOD_55: MERRA-2 aerosol optical depth at 550 nm</td><td>AOD &gt; 1: hazy brown sky</td></tr>
+    <tr><td>E · Smoke</td><td>MERRA-2 TOTEXTTAU (NASA Giovanni): aerosol optical depth at 550 nm</td><td>AOD &gt; 1: hazy brown sky</td></tr>
     <tr><td>Terrain</td><td>AWS Terrain Tiles (SRTM / GMTED-derived elevation)</td><td>—</td></tr>
     <tr><td>Chance &amp; risk</td><td>Logistic regressions fitted on all cells 2003–2025, tested leave-one-year-out</td><td id="modelLbl"></td></tr>
   </table>
@@ -877,12 +877,12 @@ function atmField(t) {
   atmCache.set(key, F); return F;
 }
 const ATM = {
-  aod: { name: 'Smoke (aerosol optical depth, 550 nm)', unit: 'AOD', inst: 'NASA POWER · MERRA-2 AOD_55 (monthly)', f: v => v, fmt: v => v.toFixed(2), norm: v => v / 2,
+  aod: { name: 'Smoke (aerosol optical depth, 550 nm)', unit: 'AOD', inst: 'NASA GES DISC · MERRA-2 TOTEXTTAU (monthly)', f: v => v, fmt: v => v.toFixed(2), norm: v => v / 2,
          ramp: ['#1e1b18', '#4a4038', '#8a7a68', '#c9b9a3', '#f4ece0'].map(hex), note: 'Above ~1 the sky turns hazy brown; smoke this thick blocks the sun.',
          def: 'AOD is a <b>column</b> measure: how much sunlight all the particles in the air, from the ground to the top of the atmosphere, block. It is unitless and also counts smoke high above the surface.' },
   pm25: { name: 'Surface PM₂.₅ (fine particles near the ground)', unit: 'µg/m³', inst: 'NASA GES DISC · MERRA-2 aerosol components (monthly), PM₂.₅ derived', f: v => v, fmt: v => v.toFixed(0), norm: v => v / 150,
          ramp: ['#1b1d24', '#3b3550', '#7a4f8f', '#d0707a', '#ffd6a8'].map(hex), note: 'Monthly means: they understate daily spikes. The WHO 24-hour guideline is 15 µg/m³, so even a monthly mean above 35 is unhealthy.',
-         def: 'PM₂.₅ is a <b>surface</b> measure: the mass of particles smaller than 2.5 µm in the air people breathe, in µg/m³. Here it is computed from MERRA-2 dust, sea salt, black carbon, organic carbon and sulfate (Buchard et al. 2016), so it is a model estimate, not a ground monitor.' }
+         def: 'PM₂.₅ is a <b>surface</b> measure: the mass of particles smaller than 2.5 µm in the air people breathe, in µg/m³. Here it is computed from MERRA-2 dust, sea salt, black carbon, organic carbon and sulfate (the NASA GMAO MERRA-2 recipe), so it is a model estimate, not a ground monitor.' }
 };
 state.atm = 'aod';
 const atmVal = (k, v) => v;
@@ -1050,7 +1050,7 @@ function renderPanel() {
 
     <h2>🛰 The air above · seen from space</h2>
     <div class="clue${hl('E')}"><div class="row"><span class="k" style="background:#b39ddb">E</span><span class="n">Smoke (aerosol optical depth)</span><span class="v">${ao == null ? 'n/a' : ao.toFixed(2)} <small>AOD</small></span></div>
-      <div class="meta"><span>NASA POWER · MERRA-2 AOD_55 · above ~1 the sky turns hazy brown</span><span class="chip ${ao == null ? 'na' : ao > 1 ? 'on' : 'off'}">${ao == null ? 'N/A' : ao > 1 ? '● SMOKY' : '○ clear-ish'}</span></div>
+      <div class="meta"><span>NASA GES DISC · MERRA-2 TOTEXTTAU · above ~1 the sky turns hazy brown</span><span class="chip ${ao == null ? 'na' : ao > 1 ? 'on' : 'off'}">${ao == null ? 'N/A' : ao > 1 ? '● SMOKY' : '○ clear-ish'}</span></div>
       ${spark('spE', aodSeries.map(v => (isNaN(v) ? 0 : v)), { color: '#b39ddb', thr: 1, dir: 'above', lo: 0, hi: Math.max(1.5, ...aodSeries.filter(v => !isNaN(v))), fmt: v => v.toFixed(2), unit: 'AOD (550 nm)' })}</div>
 
     <h2>⏪ Compare years · could we have seen it coming?</h2>
@@ -1200,7 +1200,7 @@ setTime(NOW); renderPanel(); loop();
   const VARS = {
     fire:  { nonneg: true, pl: true, g: 'Fires & haze', name: 'Fires', sub: 'NASA FIRMS · MODIS C6.1 (Terra + Aqua)', unit: 'fire detections', short: 'fire detections', agg: 'sum', layer: 'fire', def: 'How many fire detections the MODIS satellites spotted (Terra + Aqua, vegetation fires, confidence ≥ 30).', dec: 0,
       get: (cs, t) => t <= FL ? cs.reduce((s, c) => s + c.s.fire[t], 0) : null },
-    aod:   { nonneg: true, g: 'Fires & haze', name: 'Smoke in the air', sub: 'NASA POWER · MERRA-2 AOD_55', unit: 'AOD', agg: 'mean', layer: 'E', def: 'How hazy the sky is (aerosol optical depth). Above about 1 it is visibly brown.', dec: 2,
+    aod:   { nonneg: true, g: 'Fires & haze', name: 'Smoke in the air', sub: 'NASA GES DISC · MERRA-2 TOTEXTTAU', unit: 'AOD', agg: 'mean', layer: 'E', def: 'How hazy the sky is (aerosol optical depth). Above about 1 it is visibly brown.', dec: 2,
       get: (cs, t) => { const v = cs.map(c => aodOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },
     pm25:  { nonneg: true, g: 'Fires & haze', name: 'Fine particles near the ground (PM₂.₅)', sub: 'NASA GES DISC · MERRA-2 aerosol components', unit: 'µg/m³', agg: 'mean', layer: 'E', def: 'Mass of particles under 2.5 µm in the air people breathe (surface, not the whole column like AOD). Model estimate from MERRA-2 components.', dec: 1,
       get: (cs, t) => { const v = cs.map(c => pmOf(c, t)).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; } },

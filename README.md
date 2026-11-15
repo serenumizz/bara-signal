@@ -11,7 +11,8 @@ Live: https://web-zeta-six-76.vercel.app
 | Variable | Source | Where it is used |
 |---|---|---|
 | Active fires | NASA FIRMS · MODIS C6.1, Terra + Aqua (type 0, confidence ≥ 30) | all fire counts, trends, risk models |
-| Rain, root-zone wetness, aerosol optical depth (map cells, Evidence tab) | NASA POWER (MERRA-2): PRECTOTCORR, GWETROOT, AOD_55 | clues A, B, E |
+| Rain, root-zone wetness (map cells, Evidence tab) | NASA POWER (MERRA-2): PRECTOTCORR, GWETROOT | clues A, B |
+| Aerosol optical depth (map cells, Evidence tab, Findings: one series) | MERRA-2 TOTEXTTAU, NASA Giovanni / GES DISC (`analysis/10_align_aod.py`) | clue E |
 | Air temperature, humidity, wind (Trend Lab, whole study area) | MERRA-2 via NASA Giovanni / GES DISC: T2M, RH2M, SPEED | `web/explore/regional.json` |
 | AOD at 550 nm and surface PM2.5 (the two questions) | MERRA-2 TOTEXTTAU and aerosol components via NASA Giovanni (`analysis/07_pm25.py`, `08_questions.py`) | Trend scout: trends and significance, and high- vs low-fire seasons |
 | ENSO and Indian Ocean Dipole | NOAA CPC Oceanic Niño Index, NOAA PSL Dipole Mode Index | clue D |
