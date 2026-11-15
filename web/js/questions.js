@@ -62,43 +62,61 @@ export async function initQuestions() {
   }
 
   function renderQ2() {
-    const A = Q.areas[st.area], C = A.compare, S = A.series, hi = new Set(C.high_years), lo = new Set(C.low_years);
-    const idx = (ys) => ys.map((y) => years.indexOf(y)), mean = (k, ys) => d3.mean(idx(ys).map((i) => S[k][i]));
-    p2.innerHTML = `<h3 class="q-title">Do seasons with more fire hotspots coincide with higher AOD and surface PM₂.₅ in ${st.area === "Both islands" ? "Sumatra and Kalimantan" : st.area}?</h3>
-      <div class="q-legend"><span><i style="background:${HIGH}"></i>${C.k} highest-fire seasons</span><span><i style="background:${LOW}"></i>${C.k} lowest-fire seasons</span><span><i style="background:${MID}"></i>other seasons</span></div>
-      <div class="q-linked" id="qLinked"><div class="qtip" id="qTip"></div></div>
-      <div class="q-tablewrap"><table class="qtable"><thead><tr><th></th><th>${C.k} highest-fire seasons</th><th>${C.k} lowest-fire seasons</th><th>Ratio</th><th>Mann–Whitney p</th><th>Spearman ρ, all ${years.length} seasons</th></tr></thead><tbody>
-        <tr><td><b>Fire hotspots</b></td><td>${VARS[0].fmt(mean("fire", C.high_years))}</td><td>${VARS[0].fmt(mean("fire", C.low_years))}</td><td>×${(mean("fire", C.high_years) / mean("fire", C.low_years)).toFixed(1)}</td><td>—</td><td>—</td></tr>
-        ${["aod", "pm25"].map((k, i) => { const x = C[k], v = VARS[i + 1]; return `<tr><td><b>${v.name}</b></td><td>${v.fmt(x.high_mean)}</td><td>${v.fmt(x.low_mean)}</td><td>×${x.ratio.toFixed(1)}</td><td>${pTxt(x.mannwhitney_p)}</td><td>${x.spearman_rho.toFixed(2)} <small>p ${pTxt(x.spearman_p)}</small></td></tr>`; }).join("")}</tbody></table></div>
-      <p class="q-answer"><b>Answer.</b> Yes. In the ${C.k} highest-fire seasons the Jul–Oct AOD was <b>×${C.aod.ratio.toFixed(1)}</b> and surface PM₂.₅ <b>×${C.pm25.ratio.toFixed(1)}</b> the level of the ${C.k} lowest-fire seasons (both p ${pTxt(Math.max(C.aod.mannwhitney_p, C.pm25.mannwhitney_p)) }), and across all ${years.length} seasons fire rank tracks AOD (ρ = ${C.aod.spearman_rho.toFixed(2)}) and PM₂.₅ (ρ = ${C.pm25.spearman_rho.toFixed(2)}).</p>
-      <p class="q-method"><b>Association, not causation.</b> AOD and PM₂.₅ do not identify fire as the only source of particles, and both come from the same MERRA-2 aerosol model, so they are not independent evidence of each other. High-fire years here: ${C.high_years.join(", ")}; low-fire years: ${C.low_years.join(", ")}. <button class="q-link" type="button" id="qMap">Open 2015 on the map →</button></p>`;
-    // three linked charts sharing the x axis
-    const host = $("#qLinked"), W = 920, rowH = 112, m = { l: 62, r: 10, t: 22, b: 4 }, xAx = 20;
-    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${rowH * 3 + xAx}`).attr("role", "img").attr("aria-label", "Linked yearly charts of fire hotspots, AOD and PM2.5, highlighting the highest- and lowest-fire seasons");
-    const x = d3.scaleBand().domain(years).range([m.l, W - m.r]).padding(0.2), cols = (yr) => (hi.has(yr) ? HIGH : lo.has(yr) ? LOW : MID);
-    const rows = VARS.map((v, r) => {
-      const g = svg.append("g").attr("transform", `translate(0,${r * rowH})`), vals = S[v.k], y = d3.scaleLinear().domain([0, d3.max(vals) * 1.08]).nice().range([rowH - m.b, m.t]);
-      g.selectAll("line").data(y.ticks(3)).join("line").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y).attr("stroke", "rgba(255,255,255,.07)");
-      g.selectAll("text.t").data(y.ticks(3)).join("text").attr("class", "t").attr("x", m.l - 6).attr("y", (d) => y(d) + 3).attr("text-anchor", "end").attr("fill", "#8d8c84").attr("font-size", 10).attr("font-family", "monospace").text((d) => (d >= 1000 ? d3.format(".2s")(d) : d));
-      g.append("text").attr("x", m.l).attr("y", 14).attr("fill", v.color).attr("font-size", 11).attr("font-weight", 600).text(v.name);
-      g.selectAll("rect").data(years).join("rect").attr("x", (d) => x(d)).attr("width", x.bandwidth()).attr("y", (d, i) => y(vals[i])).attr("height", (d, i) => y(0) - y(vals[i])).attr("rx", 2).attr("fill", cols);
-      return { g, y, vals, v };
+    const ISL = ["Sumatra", "Kalimantan"], idx = (ys) => ys.map((y) => years.indexOf(y));
+    const mean = (S, k, ys) => d3.mean(idx(ys).map((i) => S[k][i]));
+    const k8 = Q.areas.Sumatra.compare.k;
+    // one y scale per variable, shared by both islands, so the two panels are directly comparable
+    const ymax = Object.fromEntries(VARS.map((v) => [v.k, d3.max(ISL, (n) => d3.max(Q.areas[n].series[v.k])) * 1.08]));
+    const rowsHtml = ISL.map((n) => { const C = Q.areas[n].compare, S = Q.areas[n].series; return `
+        <tr class="grp"><td colspan="6">${n}</td></tr>
+        <tr><td><b>Fire hotspots</b></td><td>${VARS[0].fmt(mean(S, "fire", C.high_years))}</td><td>${VARS[0].fmt(mean(S, "fire", C.low_years))}</td><td>×${(mean(S, "fire", C.high_years) / mean(S, "fire", C.low_years)).toFixed(1)}</td><td>—</td><td>—</td></tr>
+        ${["aod", "pm25"].map((k, i) => { const x = C[k], v = VARS[i + 1]; return `<tr><td><b>${v.name}</b></td><td>${v.fmt(x.high_mean)}</td><td>${v.fmt(x.low_mean)}</td><td>×${x.ratio.toFixed(1)}</td><td>${pTxt(x.mannwhitney_p)}</td><td>${x.spearman_rho.toFixed(2)} <small>p ${pTxt(x.spearman_p)}</small></td></tr>`; }).join("")}`; }).join("");
+    const ans = ISL.map((n) => { const C = Q.areas[n].compare; return `<b>${n}</b>: AOD <b>×${C.aod.ratio.toFixed(1)}</b> and surface PM₂.₅ <b>×${C.pm25.ratio.toFixed(1)}</b> (both p ${pTxt(Math.max(C.aod.mannwhitney_p, C.pm25.mannwhitney_p))}; Spearman ρ = ${C.aod.spearman_rho.toFixed(2)} for AOD, ${C.pm25.spearman_rho.toFixed(2)} for PM₂.₅)`; }).join("; ");
+    p2.innerHTML = `<h3 class="q-title">Do seasons with more fire hotspots coincide with higher AOD and surface PM₂.₅? Sumatra and Kalimantan side by side</h3>
+      <div class="q-legend"><span><i class="dot" style="background:${HIGH}"></i>${k8} highest-fire seasons</span><span><i class="dot" style="background:${LOW}"></i>${k8} lowest-fire seasons</span><span><i class="dot" style="background:${MID}"></i>other seasons</span><span>Same y axis in both panels · hover a year to compare</span></div>
+      <div class="q-compare" id="qCompare">${ISL.map((n) => `<div class="q-linked" data-isl="${n}"><div class="q-isl">${n} <small>${Q.areas[n].n_cells} cells</small></div><div class="qtip"></div></div>`).join("")}</div>
+      <div class="q-tablewrap"><table class="qtable"><thead><tr><th></th><th>${k8} highest-fire seasons</th><th>${k8} lowest-fire seasons</th><th>Ratio</th><th>Mann–Whitney p</th><th>Spearman ρ, all ${years.length} seasons</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+      <p class="q-answer"><b>Answer.</b> Yes, in both. In the highest-fire seasons the Jul–Oct level was ${ans}, relative to the lowest-fire seasons.</p>
+      <p class="q-method"><b>Association, not causation.</b> AOD and PM₂.₅ do not identify fire as the only source of particles, and both come from the same MERRA-2 aerosol model, so they are not independent evidence of each other. High-fire years: Sumatra ${Q.areas.Sumatra.compare.high_years.join(", ")}; Kalimantan ${Q.areas.Kalimantan.compare.high_years.join(", ")}. <button class="q-link" type="button" id="qMap">Open 2015 on the map →</button></p>`;
+
+    const W = 560, rowH = 118, m = { l: 48, r: 10, t: 22, b: 4 }, xAx = 20, H = rowH * 3 + xAx;
+    const x = d3.scalePoint().domain(years).range([m.l + 6, W - m.r - 6]);
+    const panels = ISL.map((n) => {
+      const host = document.querySelector(`.q-linked[data-isl="${n}"]`), C = Q.areas[n].compare, S = Q.areas[n].series, hi = new Set(C.high_years), lo = new Set(C.low_years);
+      const col = (yr) => (hi.has(yr) ? HIGH : lo.has(yr) ? LOW : MID);
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", `${n}: yearly line charts of fire hotspots, AOD and PM2.5, with the highest- and lowest-fire seasons marked`);
+      const step = x.step();
+      VARS.forEach((v, r) => {
+        const g = svg.append("g").attr("transform", `translate(0,${r * rowH})`), vals = S[v.k], y = d3.scaleLinear().domain([0, ymax[v.k]]).nice().range([rowH - m.b, m.t]);
+        g.append("g").selectAll("rect").data(years.filter((yr) => hi.has(yr) || lo.has(yr))).join("rect").attr("x", (d) => x(d) - step / 2).attr("width", step).attr("y", m.t).attr("height", rowH - m.b - m.t).attr("fill", (d) => (hi.has(d) ? HIGH : LOW)).attr("opacity", 0.1);
+        g.selectAll("line.gl").data(y.ticks(3)).join("line").attr("class", "gl").attr("x1", m.l).attr("x2", W - m.r).attr("y1", y).attr("y2", y).attr("stroke", "rgba(255,255,255,.07)");
+        g.selectAll("text.t").data(y.ticks(3)).join("text").attr("class", "t").attr("x", m.l - 6).attr("y", (d) => y(d) + 3).attr("text-anchor", "end").attr("fill", "#8d8c84").attr("font-size", 10).attr("font-family", "monospace").text((d) => (d >= 1000 ? d3.format(".2s")(d) : d));
+        g.append("text").attr("x", m.l).attr("y", 14).attr("fill", v.color).attr("font-size", 11).attr("font-weight", 600).text(v.name);
+        g.append("path").datum(vals).attr("fill", "none").attr("stroke", v.color).attr("stroke-width", 2).attr("stroke-linejoin", "round").attr("d", d3.line().x((d, i) => x(years[i])).y((d) => y(d)));
+        g.selectAll("circle").data(years).join("circle").attr("cx", (d) => x(d)).attr("cy", (d, i) => y(vals[i])).attr("r", (d) => (hi.has(d) || lo.has(d) ? 4 : 2.5)).attr("fill", col).attr("stroke", "#0b0e14").attr("stroke-width", 1);
+      });
+      [years[0], 2005, 2010, 2015, 2020, years.at(-1)].forEach((d) => svg.append("text").attr("x", x(d)).attr("y", rowH * 3 + 14).attr("text-anchor", "middle").attr("fill", "#8d8c84").attr("font-size", 10).attr("font-family", "monospace").text(d));
+      const cur = svg.append("line").attr("y1", 0).attr("y2", rowH * 3).attr("stroke", "rgba(255,255,255,.5)").style("display", "none");
+      return { n, host, svg, cur, S, hi, lo, tip: host.querySelector(".qtip") };
     });
-    [years[0], 2005, 2010, 2015, 2020, years.at(-1)].forEach((d) => svg.append("text").attr("x", x(d) + x.bandwidth() / 2).attr("y", rowH * 3 + 14).attr("text-anchor", "middle").attr("fill", "#8d8c84").attr("font-size", 10).attr("font-family", "monospace").text(d));
-    const cur = svg.append("line").attr("y1", 0).attr("y2", rowH * 3).attr("stroke", "rgba(255,255,255,.5)").style("display", "none"), tip = $("#qTip");
-    svg.append("rect").attr("x", m.l).attr("y", 0).attr("width", W - m.l - m.r).attr("height", rowH * 3).attr("fill", "transparent")
-      .on("mousemove", (ev) => { const [mx] = d3.pointer(ev); const i = Math.max(0, Math.min(years.length - 1, Math.floor(((mx - m.l) / (W - m.l - m.r)) * years.length))), cx = x(years[i]) + x.bandwidth() / 2;
-        cur.attr("x1", cx).attr("x2", cx).style("display", ""); const kind = hi.has(years[i]) ? "highest-fire season" : lo.has(years[i]) ? "lowest-fire season" : "";
-        tip.style.display = "block"; tip.innerHTML = `<b>${years[i]}</b>${kind ? ` · ${kind}` : ""}<br>${VARS.map((v) => `${v.name}: <b>${v.fmt(S[v.k][i])}</b>`).join("<br>")}`;
-        const r = svg.node().getBoundingClientRect(), hr = host.getBoundingClientRect(); tip.style.left = Math.min(hr.width - 210, (r.left - hr.left) + (cx / W) * r.width + 14) + "px"; tip.style.top = "14px"; })
-      .on("mouseleave", () => { cur.style("display", "none"); tip.style.display = "none"; });
-    $("#qMap")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("gq:run", { detail: { what: "smoke", where: st.area === "Both islands" ? "Kalimantan" : st.area, year: "2015" } })));
+    const show = (i) => panels.forEach((P) => {
+      const cx = x(years[i]), kind = P.hi.has(years[i]) ? "highest-fire season" : P.lo.has(years[i]) ? "lowest-fire season" : "";
+      P.cur.attr("x1", cx).attr("x2", cx).style("display", "");
+      P.tip.style.display = "block"; P.tip.innerHTML = `<b>${years[i]}</b>${kind ? ` · ${kind}` : ""}<br>${VARS.map((v) => `${v.name}: <b>${v.fmt(P.S[v.k][i])}</b>`).join("<br>")}`;
+      const r = P.svg.node().getBoundingClientRect(), hr = P.host.getBoundingClientRect(); P.tip.style.left = Math.min(hr.width - 190, (r.left - hr.left) + (cx / W) * r.width + 12) + "px"; P.tip.style.top = "30px";
+    });
+    const hide = () => panels.forEach((P) => { P.cur.style("display", "none"); P.tip.style.display = "none"; });
+    panels.forEach((P) => P.svg.append("rect").attr("x", m.l).attr("y", 0).attr("width", W - m.l - m.r).attr("height", rowH * 3).attr("fill", "transparent")
+      .on("mousemove", (ev) => { const [mx] = d3.pointer(ev); show(Math.max(0, Math.min(years.length - 1, Math.round(((mx - x.range()[0]) / (x.range()[1] - x.range()[0])) * (years.length - 1))))); })
+      .on("mouseleave", hide));
+    $("#qMap")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("gq:run", { detail: { what: "smoke", where: "Kalimantan", year: "2015" } })));
   }
 
   function render() {
     $("#qt1").setAttribute("aria-selected", st.q === 1); $("#qt2").setAttribute("aria-selected", st.q === 2);
     document.querySelectorAll("[data-area]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.area === st.area));
     p1.hidden = st.q !== 1; p2.hidden = st.q !== 2;
+    const ar = document.querySelector(".qarea"); if (ar) ar.hidden = st.q === 2;   // question 2 always shows both islands side by side
     (st.q === 1 ? renderQ1 : renderQ2)();
   }
   $("#qt1").addEventListener("click", () => { st.q = 1; render(); });
