@@ -54,6 +54,14 @@ def island_series(sel):
         aod.append(float(a)); pm.append(float(p))
     return {"fire": fire, "aod": aod, "pm25": pm}
 
+def monthly_series(sel):
+    """all 276 months 2003-2025 (fire sum, AOD mean, PM2.5 mean) for the seasonal Mann-Kendall robustness check"""
+    mi = [months.index(f"{y}-{m:02d}") for y in YEARS for m in range(1, 13)]
+    gi = [gm.index(f"{y}{m:02d}") for y in YEARS for m in range(1, 13)]
+    return {"fire": [float(sum(cells[k]["s"]["fire"][i] for k in sel)) for i in mi],
+            "aod": [float(np.nanmean([TOT[g][idx[k]] for k in sel])) for g in gi],
+            "pm25": [float(np.nanmean([PM[g][idx[k]] for k in sel])) for g in gi]}
+
 def trend(v):
     v = np.asarray(v, float); x = np.arange(len(v))
     h = mk.hamed_rao_modification_test(v); plain = mk.original_test(v)
@@ -84,8 +92,21 @@ out = {"years": YEARS, "season": "Jul-Oct", "areas": {}, "method": {
     "pm25": "DUSMASS25 + SSSMASS25 + BCSMASS + 1.4 OCSMASS + 1.375 SO4SMASS, MERRA-2 (ug/m3)",
     "sources": {"fire": "NASA FIRMS MODIS C6.1 (Terra + Aqua)", "aod": "MERRA-2 TOTEXTTAU, NASA Giovanni / GES DISC", "pm25": "MERRA-2 aerosol components, NASA Giovanni / GES DISC"}}}
 for name, sel in areas.items():
-    s = island_series(sel)
-    out["areas"][name] = {"n_cells": len(sel), "series": s, "trend": {v: trend(s[v]) for v in s}, "compare": compare(s)}
+    s = island_series(sel); ms = monthly_series(sel)
+    tr = {v: trend(s[v]) for v in s}
+    for v in s:   # robustness: seasonal Mann-Kendall (Hirsch-Slack, Hamed-Rao-adjusted not available) on all 276 monthly values
+        r = mk.seasonal_test(np.asarray(ms[v]), period=12); tr[v]["p_seasonal_monthly"] = float(r.p); tr[v]["seasonal_monthly_trend"] = r.trend
+    out["areas"][name] = {"n_cells": len(sel), "series": s, "trend": tr, "compare": compare(s)}
+# data quality / coverage / missing observations
+ok = [idx[k] for k in range(len(cells))]
+dist = [float(max(abs(lat[i] - cells[k]["lat"]), abs(lon[j] - cells[k]["lon"]))) for k, (i, j) in enumerate(idx)]
+gsel = [gmon_idx(y, m) for y in YEARS for m in range(1, 13)]
+fire_all = np.array([[cells[k]["s"]["fire"][months.index(f"{y}-{m:02d}")] for y in YEARS for m in range(1, 13)] for k in range(len(cells))], float)
+out["quality"] = {"months": len(gsel), "years": [YEARS[0], YEARS[-1]], "cells": len(cells),
+    "fire_missing": int(np.isnan(fire_all).sum()), "aod_missing": int(np.isnan(TOT[gsel]).sum()), "pm25_missing": int(np.isnan(PM[gsel]).sum()),
+    "grid_points": int(len(set(idx))), "max_offset_deg": round(max(dist), 2), "zero_fire_cell_months_pct": round(float((fire_all == 0).mean() * 100), 1),
+    "seasons": len(YEARS)}
+print("\nquality:", out["quality"])
 (ROOT / "web/data/questions.json").write_text(json.dumps(out, separators=(",", ":")))
 for name, a in out["areas"].items():
     print(f"\n== {name} ({a['n_cells']} cells)")
