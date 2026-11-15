@@ -521,7 +521,7 @@ html { scroll-behavior: smooth; }
 .qc-head { display: flex; align-items: baseline; gap: 8px; }
 
 /* Q1 compact cards, hover tooltips */
-.q1-rows { gap: 14px; max-width: 980px; }
+.q1-rows { gap: 14px; width: 100%; }
 .q1-pair .qcard { padding: 10px 14px 8px; gap: 4px; }
 .q1-pair .qc-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 .q1-pair .qc-head b { font-size: 15px; }
