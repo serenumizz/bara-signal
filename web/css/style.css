@@ -519,3 +519,20 @@ html { scroll-behavior: smooth; }
 .q1-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 8px; }
 @media (max-width: 700px) { .q1-pair { grid-template-columns: 1fr; } }
 .qc-head { display: flex; align-items: baseline; gap: 8px; }
+
+/* Q1 compact cards, hover tooltips */
+.q1-rows { gap: 14px; max-width: 980px; }
+.q1-pair .qcard { padding: 10px 14px 8px; gap: 4px; }
+.q1-pair .qc-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.q1-pair .qc-head b { font-size: 15px; }
+.q1-pair .qc-big { font-size: 26px; } .q1-pair .qc-big small { font-size: 11.5px; margin-left: 6px; }
+.q1-pair .qbadge { font-size: 11px; padding: 2px 8px; }
+.q1-pair .qc-chart { position: relative; }
+.q1-var b { font-size: 15px; } .q1-var small { font-size: 12px; }
+.qc-chart .qtip { top: -6px; max-width: 220px; white-space: normal; font-size: 12px; }
+.qc-chart .qtip span, .qc-chart .qtip em { color: var(--text-3); font-style: normal; }
+[data-tip] { position: relative; cursor: help; }
+[data-tip]:hover::after, [data-tip]:focus::after { content: attr(data-tip); position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: max-content; max-width: 280px; padding: 8px 11px; border-radius: 10px; background: #0b0e14f5; border: 1px solid var(--line-2); color: var(--text-2); font: 400 12.5px/1.5 var(--font); letter-spacing: 0; text-transform: none; white-space: normal; pointer-events: none; box-shadow: 0 8px 24px #0008; }
+.q1-info { color: var(--text-3); font-size: 14px; cursor: help; }
+.q1-info:hover, .q1-info:focus { color: var(--text); outline: none; }
+.qcard:hover { border-color: #ffffff2a; }
