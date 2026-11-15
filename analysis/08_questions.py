@@ -54,14 +54,6 @@ def island_series(sel):
         aod.append(float(a)); pm.append(float(p))
     return {"fire": fire, "aod": aod, "pm25": pm}
 
-def monthly_series(sel):
-    """all 276 months 2003-2025 (fire sum, AOD mean, PM2.5 mean) for the seasonal Mann-Kendall robustness check"""
-    mi = [months.index(f"{y}-{m:02d}") for y in YEARS for m in range(1, 13)]
-    gi = [gm.index(f"{y}{m:02d}") for y in YEARS for m in range(1, 13)]
-    return {"fire": [float(sum(cells[k]["s"]["fire"][i] for k in sel)) for i in mi],
-            "aod": [float(np.nanmean([TOT[g][idx[k]] for k in sel])) for g in gi],
-            "pm25": [float(np.nanmean([PM[g][idx[k]] for k in sel])) for g in gi]}
-
 def trend(v):
     v = np.asarray(v, float); x = np.arange(len(v))
     h = mk.hamed_rao_modification_test(v); plain = mk.original_test(v)
@@ -89,13 +81,11 @@ areas = {"Sumatra": [i for i, c in enumerate(cells) if c["island"] == "Sumatra"]
 out = {"years": YEARS, "season": "Jul-Oct", "areas": {}, "method": {
     "trend": "Sen's slope; Mann-Kendall with the Hamed-Rao autocorrelation correction (pymannkendall 1.4.3), one Jul-Oct value per year",
     "compare": "8 highest vs 8 lowest fire seasons, Mann-Whitney U; Spearman rank correlation over all seasons",
-    "pm25": "DUSMASS25 + SSSMASS25 + BCSMASS + 1.4 OCSMASS + 1.375 SO4SMASS, MERRA-2 (ug/m3)",
+    "pm25": "DUSMASS25 + OCSMASS + BCSMASS + SSSMASS25 + SO4SMASS x (132.14/96.06), NASA GMAO MERRA-2 recipe (ug/m3)",
     "sources": {"fire": "NASA FIRMS MODIS C6.1 (Terra + Aqua)", "aod": "MERRA-2 TOTEXTTAU, NASA Giovanni / GES DISC", "pm25": "MERRA-2 aerosol components, NASA Giovanni / GES DISC"}}}
 for name, sel in areas.items():
-    s = island_series(sel); ms = monthly_series(sel)
+    s = island_series(sel)
     tr = {v: trend(s[v]) for v in s}
-    for v in s:   # robustness: seasonal Mann-Kendall (Hirsch-Slack, Hamed-Rao-adjusted not available) on all 276 monthly values
-        r = mk.seasonal_test(np.asarray(ms[v]), period=12); tr[v]["p_seasonal_monthly"] = float(r.p); tr[v]["seasonal_monthly_trend"] = r.trend
     out["areas"][name] = {"n_cells": len(sel), "series": s, "trend": tr, "compare": compare(s)}
 # data quality / coverage / missing observations
 ok = [idx[k] for k in range(len(cells))]
