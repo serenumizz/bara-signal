@@ -243,7 +243,7 @@
 
 <div class="leftcol"><div class="brand glass">
   <h1>Jejak <span>Api</span> · Explore the Islands</h1>
-  <p>Fly over Sumatra and Borneo on real terrain. Click any place to open its case file: the clues A–E measured from orbit, the fires, and the same spot in past fire years.</p>
+  <p>Fly over Sumatra and Kalimantan on real terrain. Click any place to open its case file: the clues A–E measured from orbit, the fires, and the same spot in past fire years.</p>
   <span class="proto real">REAL DATA · NASA FIRMS · NASA POWER · NOAA · GFW</span>
   <button class="pill" id="aboutBtn" style="margin-left:6px">Data &amp; sources</button>
 </div>
@@ -262,7 +262,7 @@
     <span style="font-size:11px;color:var(--muted)"><span style="display:inline-block;width:14px;height:3px;background:#5fa8ff;vertical-align:middle"></span> D lit &nbsp; <span style="display:inline-block;width:8px;height:10px;background:#ff7a3d;vertical-align:middle;border-radius:1px"></span> fires &nbsp;·&nbsp; Jump to:</span>
     <span id="jumps"></span>
   </div>
-  <svg id="tl" role="img" aria-label="Monthly NASA FIRMS fire detections across Sumatra and Borneo, 2003 to 2025"></svg>
+  <svg id="tl" role="img" aria-label="Monthly NASA FIRMS fire detections across Sumatra and Kalimantan, 2003 to 2025"></svg>
 </div>
 
 <aside class="panel glass" id="panel"></aside>
@@ -322,7 +322,7 @@ function main() {
     DATA.cells.forEach(c => { for (const k of Object.keys(c.s)) c.s[k] = c.s[k].slice(0, keep); });
     DATA.fireLast = Math.min(DATA.fireLast, keep - 1); } })();
 const MONTHS = DATA.months, T = MONTHS.length, cells = DATA.cells;
-cells.forEach(c => { if (c.island === 'Kalimantan') c.island = 'Borneo'; if (c.region === 'Kalimantan') c.region = 'Borneo'; }); // one name for old and new data builds
+cells.forEach(c => { if (c.island === 'Borneo') c.island = 'Kalimantan'; if (c.region === 'Borneo') c.region = 'Kalimantan'; }); // one name for old and new data builds
 const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MNF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const mlab = i => { const [y, m] = MONTHS[i].split('-'); return `${MNF[+m-1]} ${y}`; };
@@ -745,7 +745,7 @@ renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return; down = null;
   const g = pick(e); if (!g) return; const c = nearestCell(g.lon, g.lat);
-  if (c) select(c, g); else showTip('<b>No data here</b><div class="k">Click on Sumatra or Borneo</div>', e.clientX, e.clientY);
+  if (c) select(c, g); else showTip('<b>No data here</b><div class="k">Click on Sumatra or Kalimantan</div>', e.clientX, e.clientY);
 });
 renderer.domElement.addEventListener('pointermove', e => {
   if (e.buttons) { hideTip(); return; } const now = performance.now(); if (now - lastHover < 60) return; lastHover = now;
@@ -913,7 +913,7 @@ function atmMaxNow(k) { const of = (k || state.atm) === 'pm25' ? pmOf : aodOf; l
 const EVIDENCE = [
   { id: 'space', icon: '🛰', name: 'Seen from space · 2015 smoke', lon: 111.6, lat: 0.6, space: true,
     stories: [
-      { y: '2015', t: 'NASA\'s MOPITT sensor measured carbon monoxide near the surface of up to nearly 1,300 ppb over parts of Borneo, against a usual ~100 ppb. Burning peat released especially large amounts.', src: 'NASA Earth Observatory', url: 'https://earthobservatory.nasa.gov/images/87119' },
+      { y: '2015', t: 'NASA\'s MOPITT sensor measured carbon monoxide near the surface of up to nearly 1,300 ppb over parts of Kalimantan, against a usual ~100 ppb. Burning peat released especially large amounts.', src: 'NASA Earth Observatory', url: 'https://earthobservatory.nasa.gov/images/87119' },
       { y: '2015–17', t: 'The pollution did not stay low: carbon monoxide from the 2015 fires was carried into the upper troposphere and on into the stratosphere, where it stayed high until the end of 2016.', src: 'Park et al. 2021, JGR (NASA MLS)', url: 'https://doi.org/10.1029/2020JD033474' }
     ] }
 ];
@@ -983,7 +983,7 @@ function renderPanel() {
   const JM = DATA.julyModel, RM = DATA.riskModel;
   if (!state.sel) {
     P.innerHTML = `<div class="intro"><h2 style="margin-top:0">Case file</h2><div class="place">Pick a place to investigate</div>
-      <p>Every 0.5° cell (~55 km) of Sumatra and Borneo carries ${NOW_YEAR - FIRST_YEAR + 1} years of satellite measurements. Click anywhere to see:</p>
+      <p>Every 0.5° cell (~55 km) of Sumatra and Kalimantan carries ${NOW_YEAR - FIRST_YEAR + 1} years of satellite measurements. Click anywhere to see:</p>
       <p>🔥 <b>The effect:</b> MODIS fire detections and a fitted risk score<br>🕵️ <b>The clues:</b> A rain, B soil dryness, C forest loss, D ocean<br>🛰 <b>From space:</b> MERRA-2 smoke (aerosol optical depth) over the spot<br>⏪ <b>Compare years:</b> what the July clues said, and what actually burned</p>
       <h2>Or start with a fire hotspot</h2><div class="quick">${['Palangka Raya','Pekanbaru','Kayu Agung (OKI)','Pontianak','Jambi','Ketapang'].map(n => `<button class="pill" data-town="${n}">${n}</button>`).join('')}</div>
       <h2>Evidence from NASA</h2><div class="quick">${EVIDENCE.map(e => `<button class="pill" data-ev="${e.id}">${e.icon} ${e.name.split(' · ')[0]}</button>`).join('')}</div>
@@ -1108,7 +1108,7 @@ setTime(NOW); renderPanel(); loop();
   const q = new URLSearchParams(location.search), what = q.get('layer');
   const GL = { fire: 'fire', drought: 'B', smoke: 'E', forest: 'C', ocean: 'D' }, GN = { fire: 'Fires & haze', drought: 'Drought & rain', smoke: 'Air from space', forest: 'Forests', ocean: 'Ocean & wind' };
   if (!GL[what]) return;
-  const where = (q.get('where') || 'Borneo').replace(/^Kalimantan$/, 'Borneo'), yr = q.get('year') || 'now';
+  const where = (q.get('where') || 'Kalimantan').replace(/^Borneo$/, 'Kalimantan'), yr = q.get('year') || 'now';
   const town = TOWNS.find(x => x[0] === where), cellOf = town && nearestCell(town[1], town[2]);
   const group = cellOf ? [cellOf] : cells.filter(c => where === 'Sumatra' ? c.lon < 107.5 : c.lon >= 107.5);
   const mean = (f) => { let s = 0, n = 0; for (const c of group) { const v = f(c); if (v != null) { s += v; n++; } } return n ? s / n : null; };
@@ -1250,7 +1250,7 @@ setTime(NOW); renderPanel(); loop();
   const pTxt = p => p < 0.001 ? '< 0.001' : p.toFixed(3);
   const esc = t => String(t).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
   // ---- state + UI
-  const S = { place: PLACES.some(([, p]) => p.includes('Central Kalimantan')) ? 'Central Kalimantan' : (ISLANDS.includes('Borneo') ? 'Borneo' : ISLANDS[0]), mode: 'season', from: YR0, v: 'fire', built: false };
+  const S = { place: PLACES.some(([, p]) => p.includes('Central Kalimantan')) ? 'Central Kalimantan' : (ISLANDS.includes('Kalimantan') ? 'Kalimantan' : ISLANDS[0]), mode: 'season', from: YR0, v: 'fire', built: false };
   const years = []; for (let y = YR0; y <= YR1 - 5; y++) years.push(y);
   function build() {
     const groups = {}; Object.entries(VARS).forEach(([k, V]) => (groups[V.g] ||= []).push(k));
