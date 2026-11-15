@@ -559,3 +559,10 @@ html.intro-open, html.intro-open body { overflow: hidden; }
 
 .rq b { color: var(--fire-1); margin-right: 2px; }
 .rq-line { display: block; } .rq-line + .rq-line { margin-top: 10px; }
+
+/* answer: technical / plain words */
+.q-mode { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line-2); border-radius: 999px; margin: 18px 0 0; }
+.q-mode button { font: 600 13px var(--font); padding: 6px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--text-2); cursor: pointer; }
+.q-mode button[aria-pressed="true"] { background: var(--fire-2); color: #1b0a02; }
+.q-answer-wrap .q-answer { margin-top: 12px; } .q-answer[hidden] { display: none; }
+.q-plain { margin: 8px 0 8px; padding-left: 20px; } .q-plain li { margin-bottom: 4px; }
