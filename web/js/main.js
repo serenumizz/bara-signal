@@ -38,7 +38,7 @@ const smokeOf = (aod) => Math.max(0, Math.min(1.15, ((aod ?? 0.35) - 0.33) / 0.6
 const y2015 = T.find((d) => d.year === 2015);
 const fireTr = A.trends.find((t) => t.key === "fires_season");
 $("#heroStat").textContent = `fire detections are down ${Math.abs(fireTr.pct_per_decade).toFixed(0)}% per decade. Is that real?`;
-$("#heroSub").innerHTML = `In 2015, MODIS counted <b>${fmt(y2015.fires_season)} fire detections</b> across Sumatra and Kalimantan in four months, and the haze crossed borders. Ten years on, we test what changed, where, by how much, and whether the change is statistically significant.`;
+$("#heroSub").innerHTML = `NASA satellites count fire hotspots (FIRMS), smoke haze (aerosol optical depth, AOD) and fine particles near the ground (surface PM₂.₅, MERRA-2) over Sumatra and Kalimantan, 2003–2025. Below we test whether each one changed and whether it is significant, and whether the seasons with the most fire also have the worst pollution. For scale: in 2015 MODIS counted <b>${fmt(y2015.fires_season)} fire detections</b> in four months.`;
 $("#liveLine").textContent = "NASA FIRMS MODIS fire detections, 2003–2025 (Terra + Aqua)";
 $("#genTime").textContent = A.generated.replace("T", " ");
 
@@ -47,123 +47,6 @@ hero.setFires(y2015.cells);
 hero.setClimate({ dryness: dryOf(y2015.soil), warm: warmOf(y2015.oni), smoke: smokeOf(y2015.aod) * 0.9 });
 hero.start();
 window.addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 60), { passive: true });
-
-// ------------------------------------------------------------------ chain diagram (correlations from data)
-const fit = T.filter((d) => d.year >= 2003 && d.fires_season);
-const pear = (a, b) => {
-  const xs = fit.map(a), ys = fit.map(b), mx = d3.mean(xs), my = d3.mean(ys);
-  return d3.sum(xs, (x, i) => (x - mx) * (ys[i] - my)) / Math.sqrt(d3.sum(xs, (x) => (x - mx) ** 2) * d3.sum(ys, (y) => (y - my) ** 2));
-};
-const rr = [pear((d) => d.oni, (d) => d.rain), pear((d) => d.rain, (d) => d.soil), pear((d) => d.soil, (d) => Math.log(d.fires_season)), pear((d) => Math.log(d.fires_season), (d) => d.aod)];
-rr.forEach((r, i) => ($(`#arr${i}`).textContent = `r = ${r > 0 ? "+" : "−"}${Math.abs(r).toFixed(2)}`));
-const nodes = [...document.querySelectorAll("#chainDiagram .node")];
-let litI = 0;
-setInterval(() => { nodes.forEach((n, i) => n.classList.toggle("lit", i === litI)); litI = (litI + 1) % (nodes.length + 2); }, 900);
-
-// ------------------------------------------------------------------ evidence
-const tr = Object.fromEntries(A.trends.map((t) => [t.key, t]));
-const cellsSig = A.spatial.filter((c) => c.sig_fdr);
-// name the places from the data: the nearest town to the strongest falling / rising cells
-const falling = cellsSig.filter((c) => c.sen < 0).sort((a, b) => a.sen - b.sen), rising = cellsSig.filter((c) => c.sen > 0).sort((a, b) => b.sen - a.sen);
-const townsOf = (cs, n) => [...new Set(cs.map((c) => nearestTown(c.lon, c.lat)).filter((t) => t.km <= 120 && !/^(Singapore|Kuala Lumpur)$/.test(t.name)).map((t) => t.name))].slice(0, n);
-const joinList = (a) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a.at(-1)}` : a[0] ?? "");
-const fallList = joinList(townsOf(falling.slice(0, 12), 3)), riseList = joinList(townsOf(rising, 2));
-const whereText = `are significantly falling after FDR control${fallList ? `, strongest around ${fallList}` : ""}. `
-  + (rising.length ? `${rising.length === 1 ? "One cell is" : `${rising.length} cells are`} significantly rising${riseList ? `, around ${riseList}` : ""}.` : "No cell is significantly rising.")
-  + (tr.share_outside ? ` The share of fires outside these two islands grew ${tr.share_outside.pct_per_decade.toFixed(0)}% per decade.` : "");
-const verdicts = [
-  ["What", `Fire is falling`, `Fire-season detections are down ${Math.abs(tr.fires_season.pct_per_decade).toFixed(0)}% per decade (p = ${tr.fires_season.p.toFixed(3)}). Aqua-only and Terra-only counts agree.`],
-  ["Where", `${Math.round(100 * falling.length / A.spatial.length)}% of cells`, whereText],
-  ["How much", `−${Math.round(-100 * A.chain.regime_effect)}% at equal dryness`, `After ${A.changepoint.regime_start}, the same soil wetness produces about ${(1 / (1 + A.chain.regime_effect)).toFixed(1)}× fewer fires. Soil wetness also trended wetter (+${tr.soil.pct_per_decade.toFixed(0)}%/decade, p = ${tr.soil.p.toFixed(3)}).`],
-  ["Significant?", `Yes, twice`, `Mann–Kendall trend p = ${tr.fires_season.p.toFixed(3)}, and a Pettitt break in climate-adjusted fire at ${A.changepoint.regime_start} (p = ${A.changepoint.regime_p.toFixed(3)}). The chain model scores LOO R² = ${A.chain.soil_to_fires.r2_loo.toFixed(2)}.`],
-];
-$("#verdicts").innerHTML = verdicts.map(([q, a, p]) => `<div class="verdict"><div class="q">${q}</div><div class="a">${a}</div><p>${p}</p></div>`).join("");
-charts.trendTable($("#trendTable"), A.trends);
-const drawEvidence = () => {
-  charts.trendMap($("#trendMap"), $("#trendMapLegend"), A.spatial, land);
-  charts.gapChart($("#gapChart"), $("#gapLegend"), T, A);
-  charts.lagChart($("#lagChart"), A.lags);
-  charts.hindChart($("#hindChart"), $("#hindLegend"), A);
-};
-drawEvidence();
-// ------------------------------------------------------------------ methods
-document.querySelectorAll(".mtabs button").forEach((b) => b.addEventListener("click", () => {
-  document.querySelectorAll(".mtabs button").forEach((x) => x.classList.toggle("on", x === b));
-  document.querySelectorAll(".mpanel").forEach((p) => p.classList.toggle("on", p.id === b.dataset.tab));
-}));
-const ch = A.chain;
-const pf = (p) => (p < 0.001 ? "<0.001" : p.toFixed(3));
-const coefRows = [
-  ["Rain ← ENSO + IOD", "rain (mm/d)", ch.climate_to_rain, ["oni", "dmi"]],
-  ["Soil ← rain", "GWETROOT", ch.rain_to_soil, ["rain"]],
-  ["ln(fire) ← soil + regime", "ln fire detections", ch.soil_to_fires, ["soil", "regime"]],
-  ["AOD ← ln(fire)", "AOD Aug–Oct", ch.fires_to_aod, ["ln_fires"]],
-];
-$("#coefTable").innerHTML = `<thead><tr><th>Link</th><th>Term</th><th class="num">Coef.</th><th class="num">p</th><th class="num">R²</th><th class="num">LOO R²</th></tr></thead><tbody>${
-  coefRows.map(([nm, , L, terms]) => terms.map((t, i) => `<tr><td>${i ? "" : nm}</td><td>${t}</td><td class="num">${d3.format("+.3f")(L.coef[t])}</td><td class="num">${pf(L.p[t])}</td><td class="num">${i ? "" : L.r2.toFixed(2)}</td><td class="num">${i ? "" : L.r2_loo.toFixed(2)}</td></tr>`).join("")).join("")}</tbody>`;
-const seasonShare = d3.sum(fit, (d) => d.fires_season) / d3.sum(fit, (d) => d.fires_year);
-$("#seasonSharePct").textContent = Math.round(100 * seasonShare);
-$("#aquaTrend").textContent = `${tr.fires_aqua_season.pct_per_decade.toFixed(0)}%/decade, p = ${pf(tr.fires_aqua_season.p)}; combined ${tr.fires_season.pct_per_decade.toFixed(0)}%/decade`;
-$("#keyResults").innerHTML = [
-  `Fire-season detections: Sen slope ${fmt(tr.fires_season.sen_slope)} per year (${tr.fires_season.pct_per_decade.toFixed(0)}%/decade), p = ${pf(tr.fires_season.p)}. Aqua-only: p = ${pf(tr.fires_aqua_season.p)}. Terra-only 2001–2025: p = ${pf(tr.fires_terra_year.p)}.`,
-  `Root-zone soil wetness trended up ${tr.soil.pct_per_decade.toFixed(1)}%/decade (p = ${pf(tr.soil.p)}), but rainfall (p = ${pf(tr.rain.p)}), ${tr.t2m ? "air temperature" : "Tmax"} (p = ${pf((tr.t2m ?? tr.tmax).p)}), ONI and DMI show no significant trend.`,
-  `Pettitt change point: raw fire after ${A.changepoint.raw_after} (p = ${pf(A.changepoint.raw_p)}). Climate-adjusted residual: new regime from ${A.changepoint.regime_start} (p = ${pf(A.changepoint.regime_p)}).`,
-  `Spatial: ${A.spatial.length} cells tested; ${A.spatial.filter((c) => c.sig_fdr && c.sen < 0).length} significantly decreasing and ${A.spatial.filter((c) => c.sig_fdr && c.sen > 0).length} increasing after FDR.`,
-  `Lag structure: rain → soil wetness peaks at a 1-month lag; soil → fire and fire → AOD respond in the same month.`,
-  `${Math.round(100 * seasonShare)}% of 2003–2025 detections fall in the Jul–Oct season.`,
-].map((s) => `<li>${s}</li>`).join("");
-
-let rT;
-window.addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => redraw[activeTab]?.(), 250); });
-
-// ------------------------------------------------------------------ tabs (one numbered section at a time)
-const TABS = [...document.querySelectorAll("#tabbar [data-tab]")].map((b) => ({ id: b.dataset.tab, btn: b, label: b.textContent.replace(/^\d+/, "").trim(), num: b.querySelector("span").textContent }));
-const redraw = {
-  evidence: () => drawEvidence(),
-};
-// prev / next buttons at the bottom of every panel
-TABS.forEach((t, i) => {
-  const nav = document.createElement("div");
-  nav.className = "tabnav";
-  const prev = TABS[i - 1], next = TABS[i + 1];
-  nav.innerHTML = (prev ? `<button class="prev" data-go="${prev.id}"><small>← ${prev.num}</small>${prev.label}</button>` : "")
-    + (next ? `<button class="next" data-go="${next.id}"><small>${next.num} →</small>${next.label}</button>` : "");
-  document.getElementById(t.id).appendChild(nav);
-});
-let activeTab = null;
-function showTab(id, { scroll = true } = {}) {
-  if (!TABS.some((t) => t.id === id)) return;
-  activeTab = id;
-  TABS.forEach((t) => {
-    const on = t.id === id;
-    t.btn.classList.toggle("on", on);
-    t.btn.setAttribute("aria-selected", on);
-    document.getElementById(t.id).classList.toggle("active", on);
-  });
-  document.querySelectorAll(".nav-links a").forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + id));
-  history.replaceState(null, "", "#" + id);
-  requestAnimationFrame(() => { redraw[id]?.(); });
-  TABS.find((t) => t.id === id).btn.scrollIntoView({ block: "nearest", inline: "center" });
-  if (scroll) {
-    const bar = $("#tabbar");
-    window.scrollTo({ top: bar.getBoundingClientRect().top + scrollY - $("#nav").offsetHeight + 1, behavior: "smooth" });
-  }
-}
-$("#tabbar").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
-document.addEventListener("click", (e) => {
-  const g = e.target.closest("[data-go]");
-  if (g) return showTab(g.dataset.go);
-  const a = e.target.closest('a[href^="#"]');
-  if (a && TABS.some((t) => "#" + t.id === a.getAttribute("href"))) { e.preventDefault(); showTab(a.getAttribute("href").slice(1)); }
-});
-$("#tabbar").addEventListener("keydown", (e) => {
-  if (!["ArrowRight", "ArrowLeft"].includes(e.key)) return;
-  const i = TABS.findIndex((t) => t.id === activeTab);
-  const n = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
-  showTab(n.id, { scroll: false }); n.btn.focus();
-});
-const startTab = location.hash.slice(1);
-if (TABS.some((t) => t.id === startTab)) showTab(startTab); else showTab("question", { scroll: false });
 const setNavH = () => document.documentElement.style.setProperty("--navh", $("#nav").offsetHeight + "px");
 setNavH(); window.addEventListener("resize", setNavH);
 
@@ -193,7 +76,7 @@ setNavH(); window.addEventListener("resize", setNavH);
     const hit = TOPICS.find(([, re]) => re.test(t)); if (hit) out.what = hit[0];
     if (/\b(hot|hotter|heat|temperature|warm|panas|suhu|gerah)\b/i.test(t)) { out.what = out.what || "drought"; out.heat = true; }
     const town = TOWNS_ALL.find((n) => low.includes(n.toLowerCase().replace(/ \(.*\)/, "")));
-    if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Borneo";
+    if (town) out.where = town; else if (/sumatra|sumatera/.test(low)) out.where = "Sumatra"; else if (/kalimantan|borneo/.test(low)) out.where = "Kalimantan";
     else { const prov = { riau: "Pekanbaru", jambi: "Jambi", aceh: "Banda Aceh", lampung: "Bandar Lampung", bengkulu: "Bengkulu", "sumatera utara": "Medan", "north sumatra": "Medan", "south sumatra": "Palembang", "sumatera selatan": "Palembang", "central kalimantan": "Palangka Raya", "kalimantan tengah": "Palangka Raya", "west kalimantan": "Pontianak", "kalimantan barat": "Pontianak", "south kalimantan": "Banjarmasin", "kalimantan selatan": "Banjarmasin", "east kalimantan": "Samarinda", "kalimantan timur": "Samarinda" };
       const k = Object.keys(prov).find((p) => low.includes(p)); if (k) out.where = prov[k]; }
     const y = t.match(/\b(20(?:0[3-9]|1\d|2[0-5]))\b/); if (y) out.year = y[1];
@@ -222,7 +105,6 @@ setNavH(); window.addEventListener("resize", setNavH);
   $("#gqBack").addEventListener("click", () => showStep(Math.max(1, step - 1)));
   const openDlg = () => { showStep(1); sync(); dlg.showModal(); };
   $("#gqOpen").addEventListener("click", openDlg);
-  $("#heroOpen").addEventListener("click", openDlg);
   $("#gqDlgClose").addEventListener("click", () => dlg.close());
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); }); // click on the backdrop
   // other parts of the page (the trend scout) can run an investigation on the map
@@ -273,7 +155,7 @@ setNavH(); window.addEventListener("resize", setNavH);
       <ol class="sv">${rows}</ol>
       <div class="sv-how"><b>Then test it like a data detective.</b> Download the monthly series (daily and monthly data are the easiest), remove the seasonal cycle, then run a Mann–Kendall test and Sen's slope for the size of the trend. A trend that is not yet significant is still a finding: a longer record can make it significant. Guides: ${GUIDES.map((g) => `<a href="${g.url}" target="_blank" rel="noopener">${esc(g.name)} ↗</a>`).join(" · ")}</div>
       <div class="sv-act">
-        ${a?.site ? `<button class="btn primary" type="button" id="svSite">${esc(a.site.text)} →</button>` : `<span class="sv-none">This site maps Sumatra and Borneo; use the tools above for your region.</span>`}
+        ${a?.site ? `<button class="btn primary" type="button" id="svSite">${esc(a.site.text)} →</button>` : `<span class="sv-none">This site maps Sumatra and Kalimantan; use the tools above for your region.</span>`}
         ${EXPLAIN_URL ? `<button class="btn" type="button" id="svAi">✨ Tailor with AI</button>` : ""}
       </div>`;
     out.hidden = false;

@@ -490,3 +490,13 @@ details.more > .lede { margin-top: 16px; font-size: 15px; } details.more > .scou
 .defs > div { border: 1px solid var(--line, rgba(255,255,255,.14)); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
 .defs b { display: block; margin-bottom: 4px; }
 .defs span { color: var(--muted, #9aa0a6); }
+
+/* background page (case, evidence, methods in one tab) */
+.pagehead { padding: 110px 0 24px; border-bottom: 1px solid var(--line); }
+.pagehead h1 { font-family: var(--font-display, inherit); font-size: clamp(30px, 5vw, 48px); margin: 4px 0 12px; line-height: 1.1; }
+#panels > .section { display: block; padding-top: 64px; scroll-margin-top: 60px; }
+.rq-card.opt { margin: 14px 0 18px; }
+html { scroll-behavior: smooth; }
+.q-quality { margin: 10px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.q-quality li { margin-bottom: 8px; }
+.q-quality b { color: var(--text); }
